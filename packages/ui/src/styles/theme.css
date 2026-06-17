@@ -1,0 +1,103 @@
+/*
+ * Resonance design tokens — the single source of truth for color, type, radius,
+ * and elevation. Tailwind v4 CSS-first theme: every token below generates utilities
+ * (e.g. `--color-primary` → `bg-primary`/`text-primary`). Components reference these
+ * utilities, never raw hex values (ADR-0012).
+ *
+ * Values marked PROVISIONAL come from a brand-palette extraction; the Figma
+ * Professional-plan quota blocked deep variable reads. Refine against Figma variables
+ * when quota allows — see packages/ui/CLAUDE.md. The brand primary (#A855F7) and the
+ * gradient stops are extracted and final.
+ */
+@import "tailwindcss";
+
+/* Scan workspace UI + app sources for class usage (Tailwind v4 monorepo). */
+@source "../**/*.{ts,tsx}";
+
+@theme {
+  /* Brand palette — EXTRACTED from Figma */
+  --color-brand-cyan: #22d3ee;
+  --color-brand-indigo: #6366f1;
+  --color-brand-purple: #a855f7;
+  --color-brand-pink: #ec4899;
+  --color-brand-orange: #f97316;
+  --color-brand-yellow: #facc15;
+
+  /* Primary ramp (anchored on extracted #A855F7; ramp PROVISIONAL) */
+  --color-primary-50: #faf5ff;
+  --color-primary-100: #f3e8ff;
+  --color-primary-200: #e9d5ff;
+  --color-primary-300: #d8b4fe;
+  --color-primary-400: #c084fc;
+  --color-primary-500: #a855f7;
+  --color-primary-600: #9333ea;
+  --color-primary-700: #7e22ce;
+  --color-primary-800: #6b21a8;
+  --color-primary-900: #581c87;
+  --color-primary: #a855f7;
+  --color-primary-strong: #6366f1;
+  --color-on-primary: #ffffff;
+
+  /* Neutrals — PROVISIONAL (slate ramp) */
+  --color-background: #ffffff;
+  --color-background-subtle: #f8fafc;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f1f5f9;
+  --color-foreground: #0f172a;
+  --color-muted: #475569;
+  --color-subtle: #94a3b8;
+  --color-border: #e2e8f0;
+  --color-border-strong: #cbd5e1;
+
+  /* Semantic — PROVISIONAL (warning/info aligned to extracted brand stops) */
+  --color-success: #22c55e;
+  --color-success-subtle: #dcfce7;
+  --color-warning: #f97316;
+  --color-warning-subtle: #ffedd5;
+  --color-danger: #ef4444;
+  --color-danger-subtle: #fee2e2;
+  --color-info: #6366f1;
+  --color-info-subtle: #e0e7ff;
+
+  /* Typography — family PROVISIONAL (Inter); type-scale names extracted */
+  --font-sans:
+    "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
+
+  /* Border radius — PROVISIONAL */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+
+  /* Elevation — PROVISIONAL (soft, brand-tinted CTA shadow) */
+  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 12px 24px rgba(15, 23, 42, 0.1);
+  --shadow-brand: 0 8px 24px rgba(168, 85, 247, 0.25);
+}
+
+/* Signature brand gradient (extracted stops). Use sparingly for hero/brand moments. */
+@utility bg-brand-gradient {
+  background-image: linear-gradient(
+    90deg,
+    var(--color-brand-cyan) 0%,
+    var(--color-brand-indigo) 25%,
+    var(--color-brand-purple) 50%,
+    var(--color-brand-pink) 70%,
+    var(--color-brand-orange) 88%,
+    var(--color-brand-yellow) 100%
+  );
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+  }
+}

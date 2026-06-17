@@ -1,0 +1,5 @@
+/* App stylesheet. The design system (Tailwind + tokens) comes from @resonance/ui;
+   we add the app's own files as a Tailwind content source so their classes are kept. */
+@import "@resonance/ui/styles.css";
+
+@source "./**/*.{ts,tsx}";

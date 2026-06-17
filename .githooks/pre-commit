@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Pre-commit guardrail (ADR-0014). Enable once per clone with:
+#   git config core.hooksPath .githooks
+#
+# Fast checks only — formatting + lint on staged files. The full typecheck/test/build
+# gate runs in CI (.github/workflows/ci.yml), not here, to keep commits snappy.
+set -euo pipefail
+
+staged="$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx|js|jsx|mjs|cjs|json|md|css)$' || true)"
+[ -n "$staged" ] || exit 0
+
+echo "pre-commit: prettier --check on staged files"
+# shellcheck disable=SC2086
+pnpm exec prettier --check $staged || {
+  echo "✗ Formatting issues. Run: pnpm format" >&2
+  exit 1
+}
+
+ts_staged="$(printf '%s\n' "$staged" | grep -E '\.(ts|tsx|js|jsx)$' || true)"
+if [ -n "$ts_staged" ]; then
+  echo "pre-commit: eslint on staged TS/JS"
+  # shellcheck disable=SC2086
+  pnpm exec eslint $ts_staged || {
+    echo "✗ Lint errors. Fix, or run: pnpm lint" >&2
+    exit 1
+  }
+fi
+
+echo "pre-commit: ok"

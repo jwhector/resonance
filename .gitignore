@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Builds
+dist/
+.next/
+out/
+build/
+*.tsbuildinfo
+
+# Turbo
+.turbo/
+
+# Env — never commit real secrets (see .env.example for the template)
+.env
+.env.local
+.env.*.local
+
+# Test / coverage
+coverage/
+playwright-report/
+test-results/
+.playwright/
+
+# Editor / OS
+.DS_Store
+.idea/
+*.log
+
+# Scratch
+.tmp-*
