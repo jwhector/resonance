@@ -39,8 +39,13 @@ tooling/*           Shared tsconfig + eslint config
 docs/adr            Architecture Decision Records — READ THESE before changing architecture
 docs/architecture   Living architecture diagram (the visual index of the ADRs)
 docs/conventions.md Coding conventions every package follows
+docs/working-with-agents.md  How to run a productive agent session against this repo
 .claude/skills      Recipes: how to do recurring tasks the Resonance way
 ```
+
+> **New to a work session here?** Read [docs/working-with-agents.md](docs/working-with-agents.md)
+> first — it covers how to scope a session, use the recipes/MCP/conventions, and keep
+> the framework (ADRs + diagram + CLAUDE.md files) in sync as work lands.
 
 ## Golden rules
 

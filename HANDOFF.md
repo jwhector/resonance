@@ -28,7 +28,7 @@ Verified green: `pnpm typecheck`, `pnpm lint`, `pnpm test` (15/15), `pnpm build`
   ⚠️ **`.claude/settings.json` NOT yet created** — the format-on-save hook config was
   blocked by the auto-mode self-modification guard; needs explicit user approval.
 - Recipes: `.claude/skills/{update-architecture-diagram,scaffold-domain-package,
-  add-ai-agent,add-ui-component-from-figma,add-db-migration}/SKILL.md`.
+add-ai-agent,add-ui-component-from-figma,add-db-migration}/SKILL.md`.
 - Design system: `@resonance/ui` — Tailwind v4 token theme + typed tokens + `cn()` +
   `Button` primitive + `CLAUDE.md`.
 - Packages: `core` (real: errors, `StoragePort`, `Role`), `db` `auth` `ai`
@@ -39,24 +39,29 @@ Verified green: `pnpm typecheck`, `pnpm lint`, `pnpm test` (15/15), `pnpm build`
 - Figma tokens in `.tmp-figma-tokens.md` (gitignored) — brand primary `#A855F7` final;
   neutrals/type/radius/shadow PROVISIONAL (Figma quota blocked deep reads — ADR-0012).
 
-### Remaining at the checkpoint
+Foundation checkpoint items are **done**: `.claude/settings.json` save hook created,
+and the foundation committed to `main` (`chore: scaffold foundation + agentic
+engineering layer`).
 
-1. **(Decision) `.claude/settings.json`** — approve the format-on-save hook, or leave
-   it out (pre-commit + CI still enforce formatting/lint).
-2. **(Optional) Initial git commit** of the foundation.
-
-### After the checkpoint (slice phase — not started)
+### Next: the reference vertical slice (not started)
 
 Build Creator Interview → ProfileGen end-to-end (auth + db + ai registry + UI from
 Figma + embeddings + tests), authoring/using each recipe as it goes. See ADR-0013.
+Recommended shape: **plan first, then build in focused per-layer sessions** (data+auth
+→ ai → ui+wiring+E2E). See [docs/working-with-agents.md](docs/working-with-agents.md).
 
-## How to resume
+## How to resume / start a session
+
+**Read [docs/working-with-agents.md](docs/working-with-agents.md) first** — it's the
+guide to running a productive agent session here (kickoff prompt, scoping, recipes,
+hygiene, maintenance contract).
 
 - **Same Claude Code session:** from this directory, `claude --continue` (most recent)
   or `claude --resume` (pick from list); the IDE extension also lists recent sessions.
 - **Fresh agent (no prior session):** point it at this repo and say "read `CLAUDE.md`,
-  `HANDOFF.md`, and `docs/adr/`, then continue the foundation phase from the Remaining
-  list." The repo is self-describing by design — that's the whole point of ADR-0014.
+  `HANDOFF.md`, `docs/working-with-agents.md`, and `docs/adr/`, then build the reference
+  slice (ADR-0013), starting with a plan." The repo is self-describing by design —
+  that's the whole point of ADR-0014.
 
 ## Locked stack (quick ref)
 
