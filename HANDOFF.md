@@ -23,10 +23,9 @@ Verified green: `pnpm typecheck`, `pnpm lint`, `pnpm test` (15/15), `pnpm build`
   `docs/conventions.md`, ADRs `0000`–`0015`.
 - **Architecture diagram** (`docs/architecture/`) — drawio source + SVG/PNG, wired into
   docs as a living source of truth (ADR-0015) + `update-architecture-diagram` recipe.
-- Automation: `.claude/hooks/post-edit.sh`, `.mcp.json` (Figma·Context7·Neon·Playwright),
-  `.github/workflows/ci.yml`, `.env.example`, `.githooks/pre-commit`.
-  ⚠️ **`.claude/settings.json` NOT yet created** — the format-on-save hook config was
-  blocked by the auto-mode self-modification guard; needs explicit user approval.
+- Automation: `.claude/settings.json` (format-on-save hook), `.claude/hooks/post-edit.sh`,
+  `.mcp.json` (Figma·Context7·Neon·Playwright), `.github/workflows/ci.yml`,
+  `.env.example`, `.githooks/pre-commit`.
 - Recipes: `.claude/skills/{update-architecture-diagram,scaffold-domain-package,
 add-ai-agent,add-ui-component-from-figma,add-db-migration}/SKILL.md`.
 - Design system: `@resonance/ui` — Tailwind v4 token theme + typed tokens + `cn()` +
