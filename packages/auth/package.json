@@ -17,7 +17,9 @@
     "clean": "rm -rf dist .turbo *.tsbuildinfo"
   },
   "dependencies": {
-    "@resonance/core": "workspace:*"
+    "@resonance/core": "workspace:*",
+    "@resonance/db": "workspace:*",
+    "better-auth": "1.6.20"
   },
   "devDependencies": {
     "@resonance/eslint-config": "workspace:*",
