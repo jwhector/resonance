@@ -11,8 +11,13 @@ import { createDb, type Db } from "@resonance/db";
 import { resolveMail } from "./mail";
 
 export function createAuth(opts: { db: Db; mail: MailPort; secret?: string; baseURL?: string }) {
+  const resolvedSecret =
+    opts.secret ?? process.env.BETTER_AUTH_SECRET ?? "dev-insecure-secret-change-me";
+  if (!opts.secret && !process.env.BETTER_AUTH_SECRET && process.env.NODE_ENV === "production") {
+    throw new Error("BETTER_AUTH_SECRET must be set in production");
+  }
   return betterAuth({
-    secret: opts.secret ?? process.env.BETTER_AUTH_SECRET ?? "dev-insecure-secret-change-me",
+    secret: resolvedSecret,
     baseURL: opts.baseURL ?? process.env.BETTER_AUTH_URL ?? "http://localhost:3000",
     database: drizzleAdapter(opts.db, { provider: "pg" }),
     plugins: [

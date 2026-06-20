@@ -1,4 +1,5 @@
 import { cosineDistance, desc, eq, sql } from "drizzle-orm";
+import { ResonanceError } from "@resonance/core";
 import { creatorProfiles, embeddings, type CreatorProfileInput } from "../schema/creator";
 import type { Db } from "../types";
 
@@ -9,7 +10,8 @@ export async function createCreatorProfile(
   input: CreatorProfileInput,
 ): Promise<CreatorProfileRow> {
   const [row] = await db.insert(creatorProfiles).values(input).returning();
-  if (!row) throw new Error("createCreatorProfile: insert returned no row");
+  if (!row)
+    throw new ResonanceError("db_insert_no_row", "createCreatorProfile: insert returned no row");
   return row;
 }
 

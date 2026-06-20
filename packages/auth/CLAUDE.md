@@ -80,6 +80,8 @@ transport is selected at runtime:
 | `"1"`             | `createFakeMail()` — captures sent links in memory; logs to console in dev      |
 | unset / `"0"`     | `stubMail` from `@resonance/core` — no-op (live Resend deferred to Increment 3) |
 
+`createFakeMail()` returns `{ port: MailPort; sent: Array<{ email, url, token }> }` — the `sent` array is the test capture hook; assert against it to verify magic links were dispatched.
+
 Live Resend transport is **not wired yet** — it lands in Increment 3 alongside the
 sign-in UX. Until then `RESONANCE_FAKES="1"` is the only way to actually receive
 a magic link in development.
@@ -100,3 +102,4 @@ Returns `null` when there is no valid session.
 - Secrets (`BETTER_AUTH_SECRET`) come from env, validated at runtime in `createAuth`.
 - All tests use `createAuth({ db: testDb, mail: createFakeMail().port })` so they
   never touch Neon or Resend.
+- `zod` is a **direct** dependency of this package (not just transitively via `@resonance/core`) because TypeScript requires it to name better-auth's inferred types in declaration emit — removing it reintroduces TS2742.
