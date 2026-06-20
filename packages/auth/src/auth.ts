@@ -4,25 +4,13 @@
 // does NOT require DATABASE_URL at module-evaluation time.
 
 import { betterAuth } from "better-auth";
-import type { Auth as BetterAuthInstance } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { magicLink } from "better-auth/plugins";
 import type { MailPort } from "@resonance/core";
 import { createDb, type Db } from "@resonance/db";
 import { resolveMail } from "./mail";
 
-// `BetterAuthInstance<any>` is intentional: TS2742 fires on the fully-inferred
-// options generic because it leaks Zod v4 internals through non-portable pnpm
-// paths. Erasing the options type here is safe — callers only need the stable
-// `Auth` alias (which is `BetterAuthInstance<any>` too) and `api.getSession`.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function createAuth(opts: {
-  db: Db;
-  mail: MailPort;
-  secret?: string;
-  baseURL?: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-}): BetterAuthInstance<any> {
+export function createAuth(opts: { db: Db; mail: MailPort; secret?: string; baseURL?: string }) {
   return betterAuth({
     secret: opts.secret ?? process.env.BETTER_AUTH_SECRET ?? "dev-insecure-secret-change-me",
     baseURL: opts.baseURL ?? process.env.BETTER_AUTH_URL ?? "http://localhost:3000",
