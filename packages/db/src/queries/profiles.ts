@@ -46,16 +46,19 @@ export async function findSimilarProfiles(
   limit = 10,
 ): Promise<Array<{ id: string; displayName: string; headline: string; similarity: number }>> {
   const similarity = sql<number>`1 - (${cosineDistance(embeddings.embedding, embedding)})`;
-  return db
-    .select({
-      id: creatorProfiles.id,
-      displayName: creatorProfiles.displayName,
-      headline: creatorProfiles.headline,
-      similarity,
-    })
-    .from(embeddings)
-    .innerJoin(creatorProfiles, eq(creatorProfiles.id, embeddings.sourceId))
-    .where(eq(embeddings.sourceType, "creator_profile"))
-    .orderBy(desc(similarity))
-    .limit(limit);
+  return (
+    db
+      .select({
+        id: creatorProfiles.id,
+        displayName: creatorProfiles.displayName,
+        headline: creatorProfiles.headline,
+        similarity,
+      })
+      .from(embeddings)
+      // innerJoin intentionally excludes profiles that have no embedding row yet
+      .innerJoin(creatorProfiles, eq(creatorProfiles.id, embeddings.sourceId))
+      .where(eq(embeddings.sourceType, "creator_profile"))
+      .orderBy(desc(similarity))
+      .limit(limit)
+  );
 }

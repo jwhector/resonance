@@ -100,5 +100,8 @@ describe("profile queries", () => {
     });
     const results = await findSimilarProfiles(db, unit(2), 10);
     expect(results.filter((r) => r.id === p.id)).toHaveLength(1);
+    const match = results.find((r) => r.id === p.id);
+    expect(match).toBeDefined();
+    expect(match!.similarity).toBeCloseTo(1.0, 5);
   });
 });
