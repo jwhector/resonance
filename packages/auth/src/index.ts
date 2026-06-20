@@ -7,6 +7,9 @@ export type { SessionUser } from "./session";
 // Auth instance factory, lazy singleton, and type.
 export { createAuth, getAuth, type Auth } from "./auth";
 
+// Fail-closed secret resolver — exported for unit testing and advanced use.
+export { resolveAuthSecret } from "./auth-secret";
+
 // Session helper — decode session cookie into SessionUser.
 export { getSession } from "./session";
 

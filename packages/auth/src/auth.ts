@@ -9,13 +9,10 @@ import { magicLink } from "better-auth/plugins";
 import type { MailPort } from "@resonance/core";
 import { createDb, type Db } from "@resonance/db";
 import { resolveMail } from "./mail";
+import { resolveAuthSecret } from "./auth-secret";
 
 export function createAuth(opts: { db: Db; mail: MailPort; secret?: string; baseURL?: string }) {
-  const resolvedSecret =
-    opts.secret ?? process.env.BETTER_AUTH_SECRET ?? "dev-insecure-secret-change-me";
-  if (!opts.secret && !process.env.BETTER_AUTH_SECRET && process.env.NODE_ENV === "production") {
-    throw new Error("BETTER_AUTH_SECRET must be set in production");
-  }
+  const resolvedSecret = resolveAuthSecret(opts.secret);
   return betterAuth({
     secret: resolvedSecret,
     baseURL: opts.baseURL ?? process.env.BETTER_AUTH_URL ?? "http://localhost:3000",
