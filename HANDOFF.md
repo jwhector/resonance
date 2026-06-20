@@ -3,16 +3,11 @@
 > Working notes for resuming the scaffold. Delete once the project is past scaffolding.
 > The authoritative "why" lives in `docs/adr/`; this file is just "where we are / what's next."
 
-## Where we are (2026-06-17)
+## Where we are (2026-06-20)
 
-**Foundation phase COMPLETE and verified.** At the **checkpoint** before the reference
-vertical slice. Decisions are locked via the design interview — see `docs/adr/0001`–`0015`.
-
-Approach: **foundation first → checkpoint (here) → then build the vertical slice**
-(Creator Interview → ProfileGen, ADR-0013).
-
-Verified green: `pnpm typecheck`, `pnpm lint`, `pnpm test` (15/15), `pnpm build`
-(Next app prerenders), `pnpm format:check`.
+**Increment 1 (data + auth) COMPLETE and verified.** The reference vertical slice
+(Creator Interview → ProfileGen, ADR-0013) is underway. Foundation decisions are locked
+via `docs/adr/0001`–`0015`.
 
 ### Done (foundation)
 
@@ -30,24 +25,40 @@ Verified green: `pnpm typecheck`, `pnpm lint`, `pnpm test` (15/15), `pnpm build`
 add-ai-agent,add-ui-component-from-figma,add-db-migration}/SKILL.md`.
 - Design system: `@resonance/ui` — Tailwind v4 token theme + typed tokens + `cn()` +
   `Button` primitive + `CLAUDE.md`.
-- Packages: `core` (real: errors, `StoragePort`, `Role`), `db` `auth` `ai`
-  (`ai` has the typed agent-registry shape), `commerce` `community` (stubs). Each typed,
-  bounded, with `CLAUDE.md`.
 - App shell: `apps/web` Next.js App Router, boots + prerenders a landing page using the
   design system; Playwright + Vitest configured.
 - Figma tokens in `.tmp-figma-tokens.md` (gitignored) — brand primary `#A855F7` final;
   neutrals/type/radius/shadow PROVISIONAL (Figma quota blocked deep reads — ADR-0012).
 
-Foundation checkpoint items are **done**: `.claude/settings.json` save hook created,
-and the foundation committed to `main` (`chore: scaffold foundation + agentic
-engineering layer`).
+### Done (Increment 1 — data + auth)
 
-### Next: the reference vertical slice (not started)
+Verified green: `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm build`, `pnpm format:check`.
 
-Build Creator Interview → ProfileGen end-to-end (auth + db + ai registry + UI from
-Figma + embeddings + tests), authoring/using each recipe as it goes. See ADR-0013.
-Recommended shape: **plan first, then build in focused per-layer sessions** (data+auth
-→ ai → ui+wiring+E2E). See [docs/working-with-agents.md](docs/working-with-agents.md).
+- **`@resonance/core`** — `MailPort` interface + `stubMail` added (the mail-seam port
+  that `@resonance/auth` depends on).
+- **`@resonance/db`** — REAL. Drizzle schema (`user`/`session`/`account`/`verification`
+  Better Auth tables + `creator_profiles` + `embeddings` with pgvector HNSW index),
+  migrations (`0000_enable_pgvector.sql`, `0001_pink_stone_men.sql`), query helpers
+  (`createCreatorProfile`, `getCreatorProfileById`, `upsertProfileEmbedding`,
+  `findSimilarProfiles`), and **PGlite in-memory test harness** (`createTestDb()`).
+  Driver-agnostic `Db` type covers both Neon (prod) and PGlite (test). Fully tested.
+- **`@resonance/auth`** — REAL. Better Auth magic-link over `@resonance/db`, roles
+  stored as comma-encoded `text` via `encodeRoles`/`decodeRoles` (Better Auth has no
+  array field type), `MailPort` seam via `resolveMail()` (fake under `RESONANCE_FAKES=1`;
+  live Resend deferred to Increment 3), `getSession(headers)` → `SessionUser` for
+  RSC/Server Actions, `createAuth({ db, mail })` injection seam used by integration
+  tests. Fully tested mock-first.
+- **`RESONANCE_FAKES` flag** added to `.env.example` (ADR-0016 seam — controls
+  fake AI/email/PGlite for local dev; Increment 1 uses it for mail only).
+- **Architecture diagram** updated: `@resonance/db` and `@resonance/auth` shown as REAL
+  (green fill); Resend shown as deferred (dashed) since live transport is Increment 3.
+
+### Next: Increment 2 — AI layer (not started)
+
+Build the AI Gateway client, typed agent/tool registry, and embedding generation in
+`@resonance/ai`. Needs its own plan. See ADR-0009, ADR-0010, ADR-0013.
+Recommended: plan first, then implement in a focused session against the spec in
+`docs/superpowers/specs/2026-06-17-creator-interview-profilegen-design.md`.
 
 ## How to resume / start a session
 

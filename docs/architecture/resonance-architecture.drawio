@@ -54,7 +54,7 @@
         <mxCell id="p_ai" value="@resonance/ai&#xa;agent+tool registry&#xa;embeddings" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=1;" vertex="1" parent="sw_pkgs">
           <mxGeometry x="515" y="55" width="150" height="75" as="geometry" />
         </mxCell>
-        <mxCell id="p_auth" value="@resonance/auth&#xa;Better Auth" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="sw_pkgs">
+        <mxCell id="p_auth" value="@resonance/auth&#xa;Better Auth&#xa;magic-link" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="sw_pkgs">
           <mxGeometry x="680" y="55" width="150" height="75" as="geometry" />
         </mxCell>
         <mxCell id="p_commerce" value="@resonance/commerce&#xa;Stripe Connect&#xa;(modeled · stubbed)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;dashed=1;fontColor=#666666;" vertex="1" parent="sw_pkgs">
@@ -80,7 +80,7 @@
         <mxCell id="e_stripe" value="Stripe Connect&#xa;(marketplace payouts)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;dashed=1;fontColor=#666666;" vertex="1" parent="sw_ext">
           <mxGeometry x="510" y="42" width="190" height="74" as="geometry" />
         </mxCell>
-        <mxCell id="e_resend" value="Resend&#xa;(transactional email)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;" vertex="1" parent="sw_ext">
+        <mxCell id="e_resend" value="Resend&#xa;(email — deferred)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;dashed=1;fontColor=#666666;" vertex="1" parent="sw_ext">
           <mxGeometry x="750" y="42" width="170" height="74" as="geometry" />
         </mxCell>
         <mxCell id="e_blob" value="Vercel Blob&#xa;(media — deferred)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;dashed=1;fontColor=#666666;" vertex="1" parent="sw_ext">
@@ -129,7 +129,7 @@
         <mxCell id="ed6" value="Connect (stubbed)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#999999;" edge="1" parent="1" source="p_commerce" target="e_stripe">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="ed7" value="magic link" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#6c8ebf;" edge="1" parent="1" source="p_auth" target="e_resend">
+        <mxCell id="ed7" value="magic link (deferred)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#999999;fontColor=#666666;" edge="1" parent="1" source="p_auth" target="e_resend">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="ed8" value="documents &amp; guides every layer above" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;startArrow=classic;endArrow=none;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;strokeColor=#82b366;fontColor=#2D5016;fontStyle=2;" edge="1" parent="1" source="sw_agentic" target="sw_ext">
