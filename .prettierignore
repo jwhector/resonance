@@ -1,0 +1,18 @@
+# Dependencies (prettier ignores node_modules by default, listed for clarity)
+node_modules/
+
+# Build outputs
+.next/
+dist/
+out/
+build/
+coverage/
+
+# Turbo cache
+.turbo/
+
+# Drizzle-kit generated migration metadata — do not hand-format
+packages/*/drizzle/
+
+# SDD scratch — gitignored, not real source
+.superpowers/
