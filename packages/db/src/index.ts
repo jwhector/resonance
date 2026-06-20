@@ -1,8 +1,16 @@
-// @resonance/db — the single data-access layer (Drizzle + Neon Postgres + pgvector).
+// @resonance/db — single data-access layer (Drizzle + Neon Postgres + pgvector).
 // ADR-0004 / ADR-0010. All DB access in the system goes through this package.
 //
-// Public exports (db singleton, Db type, schema, query helpers) are wired in Task 4.
-// Schema, client factory, and PGlite test harness are in place (Task 2).
+// Production bundles import from "@resonance/db".
+// Test harness (PGlite) lives at "@resonance/db/testing" — never bundled in production.
 
-export { createDb } from "./client";
+export * from "./schema";
 export type { Db } from "./types";
+export { createDb } from "./client";
+export {
+  createCreatorProfile,
+  getCreatorProfileById,
+  upsertProfileEmbedding,
+  findSimilarProfiles,
+  type CreatorProfileRow,
+} from "./queries/profiles";
