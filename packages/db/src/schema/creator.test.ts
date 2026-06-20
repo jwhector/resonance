@@ -48,8 +48,10 @@ describe("creator schema (PGlite + pgvector)", () => {
     expect(rows).toHaveLength(1);
     expect(rows[0]?.embedding).toHaveLength(1024);
 
-    // the pgvector distance operator is available (extension registered)
-    const probe = await db.execute(sql`select '[1,0,0]'::vector <=> '[0,1,0]'::vector as d`);
-    expect(probe).toBeTruthy();
+    // the pgvector cosine-distance operator returns ~1.0 for orthogonal unit vectors
+    const probe = await db.execute<{ d: string }>(
+      sql`select ('[1,0,0]'::vector <=> '[0,1,0]'::vector)::text as d`,
+    );
+    expect(Number(probe.rows[0]!.d)).toBeCloseTo(1.0);
   });
 });
