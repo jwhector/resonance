@@ -35,8 +35,9 @@ Import from `"@resonance/db"` for production code; `"@resonance/db/testing"` for
 The `./testing` subpath is behind a separate package.json export so PGlite never lands
 in production bundles.
 
+**`@resonance/db`** — main entrypoint (`src/index.ts`):
+
 ```ts
-// Main entrypoint
 export * from "./schema"; // tables + Zod schemas (OfferingSchema, etc.)
 export type { Db } from "./types"; // union Drizzle type (Neon | PGlite)
 export { createDb } from "./client"; // production client factory
@@ -47,8 +48,14 @@ export {
   findSimilarProfiles,
   type CreatorProfileRow,
 } from "./queries/profiles";
+```
 
-// Testing subpath (@resonance/db/testing)
+The PGlite test harness is exported ONLY from the `@resonance/db/testing` subpath
+(keeps PGlite out of production bundles) — it is not part of the main entrypoint.
+
+**`@resonance/db/testing`** — separate import path (`src/testing/create-test-db.ts`):
+
+```ts
 export { createTestDb, type TestDb } from "./testing/create-test-db";
 ```
 
@@ -76,8 +83,10 @@ that was embedded), `embedding` (`vector(1024)`). Unique index on
 `(sourceType, sourceId, model)` so `upsertProfileEmbedding` is idempotent.
 HNSW index (`vector_cosine_ops`) for ANN search.
 
-**Currently only `"creator_profile"` is produced** (once Increment 2 of the
-reference slice lands). The other values in `EMBEDDING_SOURCE_TYPES`
+**No embeddings are generated yet.** The schema and `upsertProfileEmbedding`
+helper are in place, but the AI call that produces vectors is not wired up until
+Increment 2 of the reference slice lands. Once it does, only `"creator_profile"`
+vectors will be produced. The other values in `EMBEDDING_SOURCE_TYPES`
 (`"offering"`, `"post"`, `"interest"`) are reserved for future slices — see
 _Future evolution_ in the design spec.
 
