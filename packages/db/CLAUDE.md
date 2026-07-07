@@ -20,13 +20,15 @@ src/
 │   ├── creator.ts              creator_profiles, embeddings (+ Zod schemas)
 │   └── index.ts                re-exports both schema files
 ├── queries/
-│   └── profiles.ts             createCreatorProfile, getCreatorProfileById,
-│                               upsertProfileEmbedding, findSimilarProfiles
+│   ├── profiles.ts             createCreatorProfile, getCreatorProfileById,
+│   │                           upsertProfileEmbedding, findSimilarProfiles
+│   └── users.ts                setUserRoles — single write path for user.roles
 └── testing/
     └── create-test-db.ts       createTestDb() — PGlite in-memory harness (dev/test only)
 migrations/
     0000_enable_pgvector.sql    Hand-written: enables pgvector extension (runs first)
     0001_pink_stone_men.sql     drizzle-kit generated: auth + creator_profiles + embeddings
+    0002_yellow_changeling.sql  drizzle-kit generated: unique index on creator_profiles.user_id
 ```
 
 ## Public API
@@ -48,6 +50,7 @@ export {
   findSimilarProfiles,
   type CreatorProfileRow,
 } from "./queries/profiles";
+export { setUserRoles } from "./queries/users"; // overwrite user.roles (single write path)
 ```
 
 The PGlite test harness is exported ONLY from the `@resonance/db/testing` subpath
@@ -72,8 +75,11 @@ Auth generates string IDs, not UUIDs). The `user` table adds a `roles` column
 
 `uuid` PK, `userId` (FK → `user.id`, text), `displayName`, `headline`, `bio`,
 `tags` (jsonb `string[]`), `offerings` (jsonb `Offering[]`), `status`
-(`"draft" | "ready"`), timestamps. Accompanying Zod schemas: `OfferingSchema`,
-`ProfileStatusSchema`, `CreatorProfileInputSchema`.
+(`"draft" | "ready"`), timestamps. Unique index on `userId`
+(`creator_profiles_user_id_uq`) — one profile per user, so `createCreatorProfile`
+upserts on conflict (idempotent under model retry / profile regeneration).
+Accompanying Zod schemas: `OfferingSchema`, `ProfileStatusSchema`,
+`CreatorProfileInputSchema`.
 
 ### `embeddings` (`schema/creator.ts`)
 
@@ -83,10 +89,10 @@ that was embedded), `embedding` (`vector(1024)`). Unique index on
 `(sourceType, sourceId, model)` so `upsertProfileEmbedding` is idempotent.
 HNSW index (`vector_cosine_ops`) for ANN search.
 
-**No embeddings are generated yet.** The schema and `upsertProfileEmbedding`
-helper are in place, but the AI call that produces vectors is not wired up until
-Increment 2 of the reference slice lands. Once it does, only `"creator_profile"`
-vectors will be produced. The other values in `EMBEDDING_SOURCE_TYPES`
+**Only `"creator_profile"` vectors are produced today.** Increment 2 of the
+reference slice wired the AI call that fills them: the `profile-gen` `saveProfile`
+tool embeds the generated profile via `@resonance/ai` and writes the row through
+`upsertProfileEmbedding`. The other values in `EMBEDDING_SOURCE_TYPES`
 (`"offering"`, `"post"`, `"interest"`) are reserved for future slices — see
 _Future evolution_ in the design spec.
 

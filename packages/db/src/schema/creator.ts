@@ -21,29 +21,35 @@ export type Offering = z.infer<typeof OfferingSchema>;
 export const ProfileStatusSchema = z.enum(["draft", "ready"]);
 export type ProfileStatus = z.infer<typeof ProfileStatusSchema>;
 
-export const creatorProfiles = pgTable("creator_profiles", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-  displayName: text("display_name").notNull(),
-  headline: text("headline").notNull(),
-  bio: text("bio").notNull(),
-  tags: jsonb("tags")
-    .$type<string[]>()
-    .notNull()
-    .default(sql`'[]'::jsonb`),
-  offerings: jsonb("offerings")
-    .$type<Offering[]>()
-    .notNull()
-    .default(sql`'[]'::jsonb`),
-  status: text("status").$type<ProfileStatus>().notNull().default("draft"),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .defaultNow()
-    .$onUpdate(() => new Date())
-    .notNull(),
-});
+export const creatorProfiles = pgTable(
+  "creator_profiles",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    displayName: text("display_name").notNull(),
+    headline: text("headline").notNull(),
+    bio: text("bio").notNull(),
+    tags: jsonb("tags")
+      .$type<string[]>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    offerings: jsonb("offerings")
+      .$type<Offering[]>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    status: text("status").$type<ProfileStatus>().notNull().default("draft"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  // One creator profile per user: makes createCreatorProfile idempotent (upsert on conflict),
+  // so a model retry or profile regeneration updates the same row instead of duplicating it.
+  (t) => [uniqueIndex("creator_profiles_user_id_uq").on(t.userId)],
+);
 
 // Generic, polymorphic vector store. sourceType is open-ended; only "creator_profile"
 // is used in this slice. sourceId is the uuid of the source row.

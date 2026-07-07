@@ -70,12 +70,32 @@ Verified green: `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm build`, `pnpm 
 - **Architecture diagram** updated: `@resonance/db` and `@resonance/auth` shown as REAL
   (green fill); Resend shown as deferred (dashed) since live transport is Increment 3.
 
-### Next: Increment 2 — AI layer (not started)
+### Done (Increment 2 — AI layer)
 
-Build the AI Gateway client, typed agent/tool registry, and embedding generation in
-`@resonance/ai`. Needs its own plan. See ADR-0009, ADR-0010, ADR-0013.
-Recommended: plan first, then implement in a focused session against the spec in
-`docs/superpowers/specs/2026-06-17-creator-interview-profilegen-design.md`.
+Verified green: `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm build`, `pnpm format:check`.
+
+- **`@resonance/ai`** — REAL. AI SDK v6 via the Gateway (`provider/model` strings), the typed
+  agent/tool registry driven by **one shared runner** (`runAgentStream` streaming +
+  `runAgentStructured` tool-driven, throwing a typed `AgentError`), Voyage `voyage-3.5`
+  embeddings (1024-dim, pinning the `vector(1024)` column), and the two agents:
+  `creator-interview` (Sonnet, streaming) + `profile-gen` (Opus) with the **`saveProfile`** tool
+  that persists → flips the user role → embeds → writes the embedding. Three swap seams
+  (`resolveModel` / `resolveEmbedder` / the runner) each hide a live service + a fake, so the
+  whole layer is verified mock-first with zero credentials. Model defaults:
+  `anthropic/claude-sonnet-5` (interview) · `anthropic/claude-opus-4-8` (profile-gen).
+- **Enabling foundations** folded in: `@resonance/core` gained `InterviewMessageSchema`
+  (the shared chat contract); `@resonance/db` gained `setUserRoles` (the single write path for
+  the `user.roles` column, so the `saveProfile` tool flips member→creator through the data layer).
+- **Context-injection pattern** established: `defineProfileGenAgent({ userId, currentRoles, db,
+embedder })` — the canonical seam for any tool needing server context (registry type untouched).
+
+### Next: Increment 3 — UI + wiring + E2E (not started)
+
+Build the streaming `WeaveRail` + `ProfileView` in `@resonance/ui` (Figma-derived), wire
+`apps/web` (Better Auth routes, the interview streaming route handler, the `generateProfile`
+Server Action, the `/profile/[id]` RSC), and the Playwright E2E driving the whole flow under
+`RESONANCE_FAKES=1`. `profile-gen`'s fakes path needs a canned tool-calling model wired at the
+Server Action (see `@resonance/ai` `resolveModel` note). See ADR-0013 and the design spec.
 
 ## How to resume / start a session
 

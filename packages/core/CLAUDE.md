@@ -10,6 +10,8 @@ packages speak.
   `ValidationError`. Throw these, not bare strings.
 - `ports/storage.ts` — `StoragePort` interface + `stubStorage` (media deferred, ADR-0007).
 - `types.ts` — `Role` (+ Zod schema), branded `Id<Brand>` helper.
+- `interview.ts` — `InterviewMessageSchema` / `InterviewMessage`: the shared chat
+  contract (role + text) for the Weave interview, spoken by `ai`, `web`, and `ui`.
 
 ## Rules
 

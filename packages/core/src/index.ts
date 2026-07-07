@@ -5,3 +5,4 @@ export { ResonanceError, NotImplementedError, ValidationError } from "./errors";
 export { type StoragePort, stubStorage } from "./ports/storage";
 export { type MailPort, stubMail } from "./ports/mail";
 export { RoleSchema, type Role, type Id } from "./types";
+export { InterviewMessageSchema, type InterviewMessage } from "./interview";

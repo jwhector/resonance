@@ -14,3 +14,4 @@ export {
   findSimilarProfiles,
   type CreatorProfileRow,
 } from "./queries/profiles";
+export { setUserRoles } from "./queries/users";
