@@ -4,6 +4,62 @@ Conventions every package follows. These exist so the codebase reads as if one
 careful person wrote it — which lets agents replicate patterns instead of inventing
 them. When in doubt, match surrounding code.
 
+## Module design — deep modules
+
+The overarching design tenet the rest of these conventions serve: design **deep
+modules** — a lot of behaviour behind a small **interface**, placed at a clean **seam**,
+testable through that interface. Use the exact vocabulary so design intent stays
+reviewable. The full teaching is in the [`module-design`](../.claude/skills/module-design/SKILL.md)
+skill; the _why_ and the Resonance mapping are ratified in
+[ADR-0017](adr/0017-design-deep-modules.md). This section is the operative rule.
+
+**Vocabulary** (don't substitute "component/service/API/layer"):
+
+- **Module** — anything with an interface and an implementation (function → package →
+  slice). A `@resonance/*` package is a module.
+- **Interface** — everything a caller must know: the signature _and_ invariants, error
+  modes, ordering, required config, performance. Broader than "API."
+- **Depth** — behaviour exercised per unit of interface learned. Deep = small interface
+  over large implementation; **shallow** = interface ≈ implementation (a pass-through
+  that only adds surface — avoid).
+- **Seam** — where an interface lives; a place you can swap behaviour without editing
+  there. A package's `src/index.ts` is a seam; a **port** is a finer seam.
+- **Adapter** — a concrete thing satisfying an interface at a seam.
+- **boundary vs seam** — "boundary" keeps its ADR-0003 sense (the package / context /
+  ownership unit); "seam" is the finer-grained location of an interface. A package
+  boundary _is_ one kind of seam.
+
+**When designing an interface, ask** (aim to shrink it):
+
+1. Can I reduce the number of methods?
+2. Can I simplify the parameters?
+3. Can I hide more complexity inside?
+
+**Depth checks:**
+
+- **The deletion test.** Imagine deleting the module. If complexity vanishes, it was a
+  pass-through (shallow). If complexity reappears across N callers, it earned its keep.
+- **The interface is the test surface.** Callers and tests cross the same seam. Wanting
+  to test _past_ the interface means the module is the wrong shape — fix the shape, don't
+  reach around it.
+- **One adapter = a hypothetical seam; two = a real one.** Don't introduce a seam unless
+  something varies across it. A **test fake counts as the second adapter** when the real
+  variance is known/imminent (this is why the model-ahead ports — `StoragePort`,
+  `PaymentsPort` — are legitimate; see ADR-0017). Avoid a single-adapter seam with no
+  known variance.
+
+**Design for testability** (these fall out of depth):
+
+- **Accept dependencies, don't create them.** `createAuth({ db, mail })` and
+  `Db`-as-first-arg, not a function that news up its own client.
+- **Return results, don't produce side effects.** `calculateDiscount(cart): Discount`,
+  not `applyDiscount(cart): void` that mutates.
+- **Small surface area.** Fewer methods = fewer tests; fewer params = simpler setup.
+
+**Recording design learnings.** When you record a design insight to mulch, use this
+vocabulary ("shallow module," "leaky seam," "deps created not accepted") so records stay
+consistent and searchable across sessions.
+
 ## TypeScript
 
 - **Strict everywhere.** `strict`, `noUncheckedIndexedAccess`, `noUnusedLocals/Parameters`
