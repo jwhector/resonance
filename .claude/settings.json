@@ -18,11 +18,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "ml prime"
+            "command": "export PATH=\"$HOME/.bun/bin:$PATH\"; ml prime"
           },
           {
             "type": "command",
-            "command": "sd prime"
+            "command": "export PATH=\"$HOME/.bun/bin:$PATH\"; sd prime"
           }
         ]
       }

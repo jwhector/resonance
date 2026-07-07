@@ -101,7 +101,7 @@ Work runs as one loop (**ADR-0016**): **seed → `ml prime` → worktree → fir
 crewmate → no-mistakes gate → lavish review → `ml record`**. The seed id threads the
 whole loop and returns to mulch as an evidence anchor. **Full reference:**
 [docs/agentic-workflow.md](docs/agentic-workflow.md). To run an entire slice end-to-end
-(plan → autonomous build → your review), use the **`ship-slice`** skill.
+(plan → conditional parallel build → your review), invoke the **`/feature`** skill.
 
 - **Orchestration — firstmate, one crewmate per package.** Boundaries are the
   parallelization boundary (ADR-0003): each package's work is an isolated crewmate in

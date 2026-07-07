@@ -3,6 +3,22 @@
 > Working notes for resuming the scaffold. Delete once the project is past scaffolding.
 > The authoritative "why" lives in `docs/adr/`; this file is just "where we are / what's next."
 
+## Update (2026-07-07) — agentic workflow tooling + firstmate
+
+The **agentic workflow** is built and committed on `chore/agentic-workflow`: seeds
+(planning) + mulch (memory, 10 domains + ADR index) + treehouse (worktrees) +
+no-mistakes (gate) + lavish (review), governed by ADR-0016 and documented in
+[docs/agentic-workflow.md](docs/agentic-workflow.md). Governance is wired into every
+surface agents touch (SessionStart primes, skill loop-brackets, package `CLAUDE.md`
+stanzas, `loop-guard` + `pnpm check:workspace` gates). The ProfileGen slice is
+decomposed as seeds plan `pl-97aa` with `db`/`core` ready.
+
+**Immediate next step: put it under firstmate orchestration** (parallel crewmates, one
+per package) — follow the step-by-step in
+[docs/firstmate-integration.md](docs/firstmate-integration.md). Prereqs (gh auth, tmux,
+lavish CLI, PATH) are done; what remains is pushing the tooling onto the base branch and
+launching + configuring firstmate.
+
 ## Where we are (2026-06-20)
 
 **Increment 1 (data + auth) COMPLETE and verified.** The reference vertical slice
@@ -48,8 +64,9 @@ Verified green: `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm build`, `pnpm 
   live Resend deferred to Increment 3), `getSession(headers)` → `SessionUser` for
   RSC/Server Actions, `createAuth({ db, mail })` injection seam used by integration
   tests. Fully tested mock-first.
-- **`RESONANCE_FAKES` flag** added to `.env.example` (ADR-0016 seam — controls
-  fake AI/email/PGlite for local dev; Increment 1 uses it for mail only).
+- **`RESONANCE_FAKES` flag** added to `.env.example` (controls fake AI/email/PGlite for
+  local dev; Increment 1 uses it for mail only). _Note: originally slated for an
+  "ADR-0016" that was never written; 0016 is now the agentic-workflow ADR._
 - **Architecture diagram** updated: `@resonance/db` and `@resonance/auth` shown as REAL
   (green fill); Resend shown as deferred (dashed) since live transport is Increment 3.
 
@@ -69,9 +86,12 @@ hygiene, maintenance contract).
 - **Same Claude Code session:** from this directory, `claude --continue` (most recent)
   or `claude --resume` (pick from list); the IDE extension also lists recent sessions.
 - **Fresh agent (no prior session):** point it at this repo and say "read `CLAUDE.md`,
-  `HANDOFF.md`, `docs/working-with-agents.md`, and `docs/adr/`, then build the reference
-  slice (ADR-0013), starting with a plan." The repo is self-describing by design —
-  that's the whole point of ADR-0014.
+  `HANDOFF.md`, `docs/working-with-agents.md`, `docs/agentic-workflow.md`, and
+  `docs/adr/`, then build the reference slice (ADR-0013) via the agentic loop." The repo
+  is self-describing by design — that's the whole point of ADR-0014.
+- **Running the fleet:** to orchestrate with firstmate, follow
+  [docs/firstmate-integration.md](docs/firstmate-integration.md) (includes a paste-able
+  new-session kickoff prompt).
 
 ## Locked stack (quick ref)
 

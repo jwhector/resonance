@@ -107,27 +107,42 @@ an ADR. The ADR holds the _why_; the operational extract lives once in the hot/w
 
 ## From one agent to a fleet
 
-**Today you are the first mate** — you walk the loop yourself, one seed at a time.
-Everything above already works single-agent.
+**The default fleet is `/feature`'s own orchestration.** When a plan parallelizes, the
+skill fans out **worktree-isolated subagents** — one per package, leased from treehouse,
+each running the loop and shipping through its own gate — all from a single session. No
+extra tooling; this covers most features.
 
-**At scale (once firstmate + `gh` land):** firstmate reads `sd ready`, spawns one
-crewmate per package-labelled seed, each in a treehouse worktree, each auto-primed to
-its domain, each shipping through the gate, each recording to its domain. You talk to
-one liaison and supervise with `/afk`. The seed DAG makes this safe automatically — a
-crewmate can't usefully start `ai` before `db`+`core` close, and package boundaries mean
-crewmates never touch the same files.
+**firstmate is the escalation** for when you outgrow one session: unattended / overnight
+runs, cross-harness crewmates, `/afk` zero-token supervision, scale beyond one session's
+context. It reads `sd ready`, spawns one crewmate per package-labelled seed in a treehouse
+worktree, each self-governing via the repo's hooks. The seed DAG makes both paths safe —
+a dependent can't start before its dependency merges, and package boundaries keep parallel
+agents off each other's files.
 
-## Running the whole thing: the `ship-slice` skill
+**Configuring it:** the gh + tmux + lavish + PATH prereqs are done; the step-by-step (get
+the tooling onto the branch firstmate clones, launch it, and the operating block +
+crewmate prompt to paste into firstmate's `AGENTS.md`) is in
+[firstmate-integration.md](firstmate-integration.md). Crewmates are independent Claude
+sessions running in the repo, so they inherit our hooks/skills/CLAUDE.md and self-govern
+— the `loop-guard` **Stop** hook already covers each crewmate (set `LOOP_GUARD_BLOCK=1`
+in its env to make the nudge blocking); `SubagentStop` is not involved.
 
-For a full vertical slice, invoke **`/ship-slice`** (`.claude/skills/ship-slice/`). It
-runs the loop with two human touchpoints:
+## Running the whole thing: the `/feature` skill
 
-1. **Rigorous plan (you're in the loop)** — it stress-tests the slice with you, then
-   decomposes it into seeds via `sd plan`. You approve before execution.
-2. **Autonomous execution** — it walks the DAG package by package, gating and recording,
-   without stopping except on judgment-call escalations.
-3. **Review handoff (you're back in the loop)** — it surfaces the finished slice via
+`/feature` (`.claude/skills/feature/`) is the single entry point for a feature or slice.
+It runs the loop with two human touchpoints and orchestrates the middle itself:
+
+1. **Rigorous plan (you're in the loop)** — it stress-tests the feature with you, then
+   decomposes it into a seeds plan with a dependency DAG. You approve before execution.
+2. **Conditional parallel execution** — it drains the DAG in waves: a single ready seed
+   runs inline; multiple ready seeds fan out to **worktree-isolated subagents** (one per
+   package, leased from treehouse), each shipping through its own no-mistakes gate and
+   recording findings. Orchestration happens **only when the plan parallelizes**.
+3. **Review handoff (you're back in the loop)** — it surfaces the finished feature via
    lavish for your review, applies feedback, then closes.
+
+firstmate is the **escalation** for Phase 2 when you outgrow one session (unattended /
+overnight / cross-harness), not a separate step for normal work.
 
 ## Setup + current gaps
 
