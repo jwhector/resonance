@@ -1,5 +1,7 @@
+import { eq } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { user } from "../schema/auth";
+import { creatorProfiles } from "../schema/creator";
 import { createTestDb, type TestDb } from "../testing/create-test-db";
 import {
   createCreatorProfile,
@@ -19,7 +21,10 @@ describe("profile queries", () => {
   let close: () => Promise<void>;
   beforeEach(async () => {
     ({ db, close } = await createTestDb());
-    await db.insert(user).values({ id: "u1", name: "Ada", email: "ada@x.com" });
+    await db.insert(user).values([
+      { id: "u1", name: "Ada", email: "ada@x.com" },
+      { id: "u2", name: "Bo", email: "bo@x.com" },
+    ]);
   });
   afterEach(async () => {
     await close();
@@ -39,6 +44,33 @@ describe("profile queries", () => {
     expect(read?.displayName).toBe("Ada");
   });
 
+  it("upserts on user_id — a second create for the same user updates in place", async () => {
+    const first = await createCreatorProfile(db, {
+      userId: "u1",
+      displayName: "Ada",
+      headline: "Maker",
+      bio: "Builds tools.",
+      tags: ["tools"],
+      offerings: [],
+      status: "ready",
+    });
+    const second = await createCreatorProfile(db, {
+      userId: "u1",
+      displayName: "Ada v2",
+      headline: "Maker of tools",
+      bio: "Still building.",
+      tags: ["tools", "craft"],
+      offerings: [],
+      status: "ready",
+    });
+
+    expect(second.id).toBe(first.id);
+    const rows = await db.select().from(creatorProfiles).where(eq(creatorProfiles.userId, "u1"));
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.displayName).toBe("Ada v2");
+    expect(rows[0]?.headline).toBe("Maker of tools");
+  });
+
   it("ranks profiles by cosine similarity to a query vector", async () => {
     const near = await createCreatorProfile(db, {
       userId: "u1",
@@ -50,7 +82,7 @@ describe("profile queries", () => {
       status: "ready",
     });
     const far = await createCreatorProfile(db, {
-      userId: "u1",
+      userId: "u2",
       displayName: "Far",
       headline: "h",
       bio: "b",

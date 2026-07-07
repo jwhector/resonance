@@ -15,6 +15,13 @@
       "when": 1781983653214,
       "tag": "0001_pink_stone_men",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1783459630131,
+      "tag": "0002_yellow_changeling",
+      "breakpoints": true
     }
   ]
 }

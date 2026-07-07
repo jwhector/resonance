@@ -9,7 +9,24 @@ export async function createCreatorProfile(
   db: Db,
   input: CreatorProfileInput,
 ): Promise<CreatorProfileRow> {
-  const [row] = await db.insert(creatorProfiles).values(input).returning();
+  // Idempotent on the unique (user_id) index: a retry or regeneration updates the existing
+  // profile in place (same id) rather than inserting a duplicate.
+  const [row] = await db
+    .insert(creatorProfiles)
+    .values(input)
+    .onConflictDoUpdate({
+      target: creatorProfiles.userId,
+      set: {
+        displayName: input.displayName,
+        headline: input.headline,
+        bio: input.bio,
+        tags: input.tags,
+        offerings: input.offerings,
+        status: input.status,
+        updatedAt: new Date(),
+      },
+    })
+    .returning();
   if (!row)
     throw new ResonanceError("db_insert_no_row", "createCreatorProfile: insert returned no row");
   return row;

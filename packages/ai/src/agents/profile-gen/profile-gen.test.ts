@@ -1,5 +1,5 @@
 import { MockLanguageModelV3 } from "ai/test";
-import { findSimilarProfiles, getCreatorProfileById, user } from "@resonance/db";
+import { creatorProfiles, findSimilarProfiles, getCreatorProfileById, user } from "@resonance/db";
 import { createTestDb, type TestDb } from "@resonance/db/testing";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createFakeEmbedder } from "../../embeddings";
@@ -80,6 +80,15 @@ describe("profile-gen saveProfile tool (PGlite)", () => {
     const rows = await db.select().from(user);
     const ada = rows.find((r) => r.id === "u1");
     expect(ada?.roles).toBe("member,creator");
+  });
+
+  it("is idempotent — a second run for the same user updates in place, no duplicate", async () => {
+    const { output: first } = await run();
+    const { output: second } = await run();
+
+    expect(second.profileId).toBe(first.profileId);
+    const rows = await db.select().from(creatorProfiles);
+    expect(rows.filter((r) => r.userId === "u1")).toHaveLength(1);
   });
 
   it("embeds the profile so the matching backbone finds it (ADR-0010)", async () => {

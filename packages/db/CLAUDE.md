@@ -72,8 +72,11 @@ Auth generates string IDs, not UUIDs). The `user` table adds a `roles` column
 
 `uuid` PK, `userId` (FK → `user.id`, text), `displayName`, `headline`, `bio`,
 `tags` (jsonb `string[]`), `offerings` (jsonb `Offering[]`), `status`
-(`"draft" | "ready"`), timestamps. Accompanying Zod schemas: `OfferingSchema`,
-`ProfileStatusSchema`, `CreatorProfileInputSchema`.
+(`"draft" | "ready"`), timestamps. Unique index on `userId`
+(`creator_profiles_user_id_uq`) — one profile per user, so `createCreatorProfile`
+upserts on conflict (idempotent under model retry / profile regeneration).
+Accompanying Zod schemas: `OfferingSchema`, `ProfileStatusSchema`,
+`CreatorProfileInputSchema`.
 
 ### `embeddings` (`schema/creator.ts`)
 

@@ -50,6 +50,14 @@ export function defineProfileGenAgent(ctx: ProfileGenContext): AgentDefinition<S
           // narrowed type at this boundary (the registry handler receives `unknown`).
           const input = ProfileGenSchema.parse(raw);
 
+          // No DB transaction wraps these writes: the production neon-http driver has no
+          // interactive transactions (ADR-0004). Instead we order for atomicity — run the
+          // failure-prone external embedding first (nothing is committed if Voyage fails),
+          // then the idempotent upserts (profile keyed on user_id, embedding on
+          // (source,model)), and flip the role LAST so a member only becomes a creator once
+          // a discoverable profile+embedding is durably persisted.
+          const { model, content, embedding } = await ctx.embedder.embedProfile(input);
+
           const profile = await createCreatorProfile(ctx.db, {
             userId: ctx.userId,
             displayName: input.displayName,
@@ -60,15 +68,14 @@ export function defineProfileGenAgent(ctx: ProfileGenContext): AgentDefinition<S
             status: "ready",
           });
 
-          await setUserRoles(ctx.db, ctx.userId, [...ctx.currentRoles, "creator"]);
-
-          const { model, content, embedding } = await ctx.embedder.embedProfile(input);
           await upsertProfileEmbedding(ctx.db, {
             profileId: profile.id,
             model,
             content,
             embedding,
           });
+
+          await setUserRoles(ctx.db, ctx.userId, [...ctx.currentRoles, "creator"]);
 
           return { profileId: profile.id };
         },
