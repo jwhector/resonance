@@ -17,11 +17,15 @@
     "clean": "rm -rf dist .turbo *.tsbuildinfo"
   },
   "dependencies": {
-    "@resonance/core": "workspace:*"
+    "@resonance/core": "workspace:*",
+    "@resonance/db": "workspace:*",
+    "better-auth": "1.6.20",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@resonance/eslint-config": "workspace:*",
     "@resonance/tsconfig": "workspace:*",
+    "@types/node": "^22.0.0",
     "eslint": "^9.18.0",
     "typescript": "^5.7.3",
     "vitest": "^3.0.2"
