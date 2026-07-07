@@ -26,6 +26,9 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      - name: Workspace integrity
+        run: pnpm check:workspace
+
       - name: Format check
         run: pnpm format:check
 

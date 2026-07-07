@@ -8,6 +8,13 @@ description: Use when adding a new AI capability to Resonance (a generator, assi
 Every AI feature is a **typed agent** in `@resonance/ai`. They share one runner, so a
 new agent is a definition + prompt + (optional) tools — not new orchestration code.
 
+## Loop bracket (seeds + mulch)
+
+This recipe runs inside the agentic loop (root CLAUDE.md → _Agentic workflow_, ADR-0016):
+
+- **Before you start** — claim the seed for this work (`sd ready` → `sd update <id> --status in_progress`) and load prior learnings with `ml prime ai` (or `ml prime --files packages/ai/...`).
+- **When you finish** — record anything non-obvious to the **`ai`** mulch domain (`ml record ai --type <convention|pattern|failure|decision> --description "..." --evidence-seeds <id>`), push through the no-mistakes gate, then `sd close <id>`.
+
 ## Steps
 
 1. **Define the agent** under `packages/ai/src/agents/<id>/`:

@@ -8,6 +8,13 @@ description: Use when building a UI component in @resonance/ui from the Figma de
 Components live in `@resonance/ui` and are styled **only** with design tokens — never
 hard-coded colors/sizes. Accessibility comes from the owned shadcn/Radix primitives.
 
+## Loop bracket (seeds + mulch)
+
+This recipe runs inside the agentic loop (root CLAUDE.md → _Agentic workflow_, ADR-0016):
+
+- **Before you start** — claim the seed (`sd ready` → `sd update <id> --status in_progress`), confirm the **Figma MCP is authorized** (`/mcp`), and load prior learnings with `ml prime ui`.
+- **When you finish** — record anything non-obvious to the **`ui`** mulch domain (`ml record ui --type <convention|pattern|failure|decision> --description "..." --evidence-seeds <id>`), push through the no-mistakes gate, then `sd close <id>`.
+
 ## Steps
 
 1. **Read the design.** Use the Figma MCP (`get_design_context` / `get_screenshot` /

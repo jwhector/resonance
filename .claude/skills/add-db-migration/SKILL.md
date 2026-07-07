@@ -9,6 +9,13 @@ All schema lives in `@resonance/db` as Drizzle TypeScript. Migrations are explic
 files generated from the schema — never hand-edit generated SQL unless you must, and
 if you do, say so in the PR.
 
+## Loop bracket (seeds + mulch)
+
+This recipe runs inside the agentic loop (root CLAUDE.md → _Agentic workflow_, ADR-0016):
+
+- **Before you start** — claim the seed for this work (`sd ready` → `sd update <id> --status in_progress`) and load prior learnings with `ml prime db` (or `ml prime --files packages/db/...`).
+- **When you finish** — record anything non-obvious to the **`db`** mulch domain (`ml record db --type <convention|pattern|failure|decision> --description "..." --evidence-seeds <id>`), push through the no-mistakes gate, then `sd close <id>`.
+
 ## Steps
 
 1. **Edit the schema** in `packages/db/src/schema/` (one file per domain area, e.g.
