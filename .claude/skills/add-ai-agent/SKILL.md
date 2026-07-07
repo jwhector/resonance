@@ -8,6 +8,15 @@ description: Use when adding a new AI capability to Resonance (a generator, assi
 Every AI feature is a **typed agent** in `@resonance/ai`. They share one runner, so a
 new agent is a definition + prompt + (optional) tools — not new orchestration code.
 
+**Deep-module framing.** The shared **registry runner is the deep module**: its small
+**interface** — define an agent by its `id`, prompt, `tools`, `outputSchema`, and
+`model` — hides a large **implementation** (streaming, the tool-call loop, model routing
+through the Gateway), which is why a new agent is a definition, not orchestration code.
+Keep each individual agent's **interface** small too: one clear job, a tight
+`outputSchema`, the fewest tools that do it. Vocabulary and rule:
+[`conventions.md` § Module design](../../../docs/conventions.md) and
+[ADR-0017](../../../docs/adr/0017-design-deep-modules.md).
+
 ## Loop bracket (seeds + mulch)
 
 This recipe runs inside the agentic loop (root CLAUDE.md → _Agentic workflow_, ADR-0016):

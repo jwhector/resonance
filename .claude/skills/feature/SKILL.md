@@ -35,9 +35,11 @@ Don't shortcut this; "rigorous" is the point.
 4. **Decompose along package boundaries.** `sd plan prompt <id>` → author the plan
    (context / approach / steps / risks / acceptance). **One step per package touched**,
    with an explicit dependency DAG: foundations first (`core`, `db`), then `ai` + `ui`
-   in parallel, then `web`, then `e2e`. Label each step with its package. Submit:
-   `sd plan submit <id> --plan <file>`. **The DAG is what makes Phase 2 parallelizable —
-   design it so independent steps are genuinely independent.**
+   in parallel, then `web`, then `e2e`. Label each step with its package. **Design for
+   depth (ADR-0017):** name each step's **interface/seam** and sanity-check its **depth**
+   with the deletion test; the plan's `approach` should identify the **seams** the slice
+   adds. Submit: `sd plan submit <id> --plan <file>`. **The DAG is what makes Phase 2
+   parallelizable — design it so independent steps are genuinely independent.**
 5. **Present for approval.** Show the plan (render via **lavish** for annotation).
    **Wait for the user's explicit go-ahead before Phase 2.**
 
@@ -58,6 +60,7 @@ Drain the plan's DAG in **waves**. Per wave:
    git checkout -b "feat/<seed-slug>"                        # own branch → own PR
    sd update "<seed-id>" --status in_progress
    ml prime "<domain>"                                       # + read that package's CLAUDE.md
+   # design deep modules (ADR-0017): a small interface at a clean seam, testable through it
    # ...build via the matching recipe (add-db-migration, add-ai-agent, ...); write tests...
    git push no-mistakes                                      # its OWN gate + PR ("its own review")
    ml record "<domain>" --type <...> --evidence-seeds "<seed-id>" --files <touched>

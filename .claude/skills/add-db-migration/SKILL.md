@@ -9,6 +9,15 @@ All schema lives in `@resonance/db` as Drizzle TypeScript. Migrations are explic
 files generated from the schema — never hand-edit generated SQL unless you must, and
 if you do, say so in the PR.
 
+**Deep-module framing.** Callers never touch Drizzle directly — each **query helper is a
+seam**, a small, deep **interface** over the Drizzle/pgvector **implementation** (this is
+what makes `@resonance/db` a deep module). Keep each helper's surface small, and take
+`Db` as the first argument: that's the dependency-injection **seam** — accept deps, don't
+create them — so tests exercise the very same **interface** callers do (the PGlite fake
+and Neon are its two adapters). Vocabulary and rule:
+[`conventions.md` § Module design](../../../docs/conventions.md) and
+[ADR-0017](../../../docs/adr/0017-design-deep-modules.md).
+
 ## Loop bracket (seeds + mulch)
 
 This recipe runs inside the agentic loop (root CLAUDE.md → _Agentic workflow_, ADR-0016):

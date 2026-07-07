@@ -129,7 +129,8 @@ workflow", ADR-0016):
 
 1. Claim: `sd update <SEED_ID> --status in_progress`.
 2. Prime: `ml prime <domain>` (the seed's package label) + read that package's CLAUDE.md.
-3. Build using the matching recipe skill; write tests (ADR-0011).
+3. Build using the matching recipe skill; design deep modules — a small interface at a
+   clean seam, testable through it (ADR-0017); write tests (ADR-0011).
 4. Gate: `git push no-mistakes`. Fix mechanical findings. If a real judgment call
    blocks you, record a scout note and stop rather than guess.
 5. Record: `ml record <domain> --type <...> --evidence-seeds <SEED_ID>` for anything

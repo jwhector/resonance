@@ -8,6 +8,15 @@ description: Use when building a UI component in @resonance/ui from the Figma de
 Components live in `@resonance/ui` and are styled **only** with design tokens — never
 hard-coded colors/sizes. Accessibility comes from the owned shadcn/Radix primitives.
 
+**Deep-module framing.** A component is a **module** and its **props are the interface** —
+keep that prop surface small, with the accessible behaviour (ARIA, focus, keyboard
+handling from the owned Radix primitives) hidden behind it as the **implementation**. A
+sprawling prop list is a **shallow** component: an interface nearly as wide as what it
+renders, leaking layout decisions onto every caller. Prefer a variant over one more
+boolean, and hide complexity inside. Vocabulary and rule:
+[`conventions.md` § Module design](../../../docs/conventions.md) and
+[ADR-0017](../../../docs/adr/0017-design-deep-modules.md).
+
 ## Loop bracket (seeds + mulch)
 
 This recipe runs inside the agentic loop (root CLAUDE.md → _Agentic workflow_, ADR-0016):

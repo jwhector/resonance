@@ -60,6 +60,10 @@ skill; the _why_ and the Resonance mapping are ratified in
 vocabulary ("shallow module," "leaky seam," "deps created not accepted") so records stay
 consistent and searchable across sessions.
 
+**Reviewing for depth.** Code review flags module-depth smells against
+[docs/review-checklist.md](review-checklist.md) — shallow module, leaky interface,
+test-past-the-interface, deps created-not-accepted, side-effects-not-results.
+
 ## TypeScript
 
 - **Strict everywhere.** `strict`, `noUncheckedIndexedAccess`, `noUnusedLocals/Parameters`

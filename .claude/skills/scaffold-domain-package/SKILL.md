@@ -8,6 +8,16 @@ description: Use when adding a new package to the Resonance monorepo — a domai
 Every package looks the same so agents can navigate any of them by analogy. Follow
 this exactly; deviation is a smell.
 
+**Deep-module framing.** A `@resonance/*` package is a **deep module**: design the
+smallest `src/index.ts` **interface** that delivers the behaviour — that entrypoint is
+the package's **seam**, so hide internals behind it and export only what callers need
+(Steps 5–6). Before you commit to the surface, run the **deletion test**: if deleting
+the package would scatter the same complexity across N callers it earned its keep, but
+if the interface is nearly as wide as the implementation you've built a **shallow**
+pass-through — collapse it or fold it into `@resonance/core`. Vocabulary and rule:
+[`conventions.md` § Module design](../../../docs/conventions.md) and
+[ADR-0017](../../../docs/adr/0017-design-deep-modules.md).
+
 ## Loop bracket (seeds + mulch)
 
 This recipe runs inside the agentic loop (root CLAUDE.md → _Agentic workflow_, ADR-0016):
