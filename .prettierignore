@@ -16,3 +16,6 @@ packages/*/drizzle/
 
 # SDD scratch — gitignored, not real source
 .superpowers/
+
+# Tool-managed knowledge store (mulch generates README/records) — do not hand-format
+.mulch/

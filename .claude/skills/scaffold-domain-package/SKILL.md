@@ -8,6 +8,24 @@ description: Use when adding a new package to the Resonance monorepo — a domai
 Every package looks the same so agents can navigate any of them by analogy. Follow
 this exactly; deviation is a smell.
 
+**Deep-module framing.** A `@resonance/*` package is a **deep module**: design the
+smallest `src/index.ts` **interface** that delivers the behaviour — that entrypoint is
+the package's **seam**, so hide internals behind it and export only what callers need
+(Steps 5–6). Before you commit to the surface, run the **deletion test**: if deleting
+the package would scatter the same complexity across N callers it earned its keep, but
+if the interface is nearly as wide as the implementation you've built a **shallow**
+pass-through — collapse it or fold it into `@resonance/core`. Vocabulary and rule:
+[`conventions.md` § Module design](../../../docs/conventions.md) and
+[ADR-0017](../../../docs/adr/0017-design-deep-modules.md).
+
+## Loop bracket (seeds + mulch)
+
+This recipe runs inside the agentic loop (root CLAUDE.md → _Agentic workflow_, ADR-0016):
+
+- **Before you start** — claim the seed (`sd ready` → `sd update <id> --status in_progress`) and `ml prime architecture` for prior scaffolding decisions.
+- **Part of the recipe** — a new package is a new context boundary, so **register it as a mulch domain** (`ml add <name>`), give its `CLAUDE.md` the standard _Working here (seeds + mulch)_ stanza, index its ADR with a `reference` record, and add it to the root CLAUDE.md tree (Steps 6 and 9). `pnpm check:workspace` verifies the wiring.
+- **When you finish** — record the scaffolding decision to the **`architecture`** mulch domain (`ml record architecture --type decision --description "..." --evidence-seeds <id>`), update the diagram, push through the gate, then `sd close <id>`.
+
 ## Steps
 
 1. **Create the directory** `packages/<name>/` with this layout:
@@ -51,7 +69,15 @@ this exactly; deviation is a smell.
    `docs/architecture/resonance-architecture.drawio` (ADR-0015) via the
    `update-architecture-diagram` recipe. New package = diagram change, same PR.
 
+9. **Register in the knowledge layer (keep the framework self-healing):**
+   - **Mulch domain:** `ml add <name>` — creates `.mulch/expertise/<name>.jsonl`.
+   - **ADR index:** `ml record <name> --type reference --classification foundational --name "ratified decisions (ADR index)" --files docs/adr/NNNN-<slug>.md --dir-anchor packages/<name> --tags "adr,ratified-decision" --description "<one-line decision> — open ADR-NNNN before changing."` — **pass `--files` explicitly**, or `ml` auto-fills `files[]` with the whole changeset and pollutes the record.
+   - **Root CLAUDE.md tree:** add the package to the "How this repo is organized" list.
+   - Run **`pnpm check:workspace`** — it fails if a package lacks a `CLAUDE.md` or a mulch domain (the same check gates CI).
+
 ## Done when
 
 `pnpm install && pnpm --filter @resonance/<name> typecheck lint` is clean, the package
-has a `CLAUDE.md`, and the diagram shows it.
+has a `CLAUDE.md`, the diagram shows it, and **`pnpm check:workspace` passes** (CLAUDE.md
+
+- mulch domain wired, ADR indexed).

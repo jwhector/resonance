@@ -103,3 +103,7 @@ Returns `null` when there is no valid session.
 - All tests use `createAuth({ db: testDb, mail: createFakeMail().port })` so they
   never touch Neon or Resend.
 - `zod` is a **direct** dependency of this package (not just transitively via `@resonance/core`) because TypeScript requires it to name better-auth's inferred types in declaration emit — removing it reintroduces TS2742.
+
+## Working here (seeds + mulch)
+
+Work in this package is tracked by a `auth`-labelled seed — `sd ready` / `sd search auth` to find it, then `sd update <id> --status in_progress` to claim it. Before closing, record any non-obvious learning to the **`auth`** mulch domain: `ml record auth --type <convention|pattern|failure|decision> --description "..." --evidence-seeds <id>`. Full loop: root CLAUDE.md → _Agentic workflow_ (ADR-0016).

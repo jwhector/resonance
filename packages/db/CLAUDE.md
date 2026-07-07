@@ -126,3 +126,7 @@ a `Db` into query helpers rather than the singleton so tests can inject `TestDb`
 - Depends only on `@resonance/core`. Domain packages depend on this; it does not depend
   on any domain package.
 - No `any`. Use `import type` / `export type` for type-only imports/exports.
+
+## Working here (seeds + mulch)
+
+Work in this package is tracked by a `db`-labelled seed — `sd ready` / `sd search db` to find it, then `sd update <id> --status in_progress` to claim it. Before closing, record any non-obvious learning to the **`db`** mulch domain: `ml record db --type <convention|pattern|failure|decision> --description "..." --evidence-seeds <id>`. Full loop: root CLAUDE.md → _Agentic workflow_ (ADR-0016).

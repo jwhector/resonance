@@ -8,6 +8,13 @@ description: Use when an architectural change lands in Resonance — a package o
 The architecture diagram in `docs/architecture/` is a source of truth (ADR-0015). It
 must change in the **same PR** as the architectural change it reflects.
 
+## Loop bracket (seeds + mulch)
+
+This recipe runs inside the agentic loop (root CLAUDE.md → _Agentic workflow_, ADR-0016):
+
+- **Before you start** — claim the seed (`sd ready` → `sd update <id> --status in_progress`) and `ml prime architecture`.
+- **When you finish** — record the change to the **`architecture`** mulch domain (`ml record architecture --type decision --description "..." --evidence-seeds <id>`), push through the no-mistakes gate, then `sd close <id>`.
+
 ## When this applies
 
 - A `packages/*` package or external service is added, removed, or renamed.

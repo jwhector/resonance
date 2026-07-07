@@ -6,6 +6,12 @@ produce uniform, reviewable results. This guide is how to run a productive agent
 session against that framework. It's general; the current next-step lives in
 [`HANDOFF.md`](../HANDOFF.md).
 
+> **The end-to-end workflow** — planning, execution, gating, and memory via seeds +
+> mulch + treehouse + no-mistakes — is defined in
+> [agentic-workflow.md](agentic-workflow.md) (ADR-0016). This guide covers session
+> hygiene _within_ that loop. Where the two differ (e.g. plans now live in **seeds**,
+> not `docs/plans/`), the workflow doc wins.
+
 ## TL;DR — your first move in a new session
 
 **Don't re-explain the project. Point the agent at the docs and name the task.** The

@@ -11,6 +11,36 @@
           }
         ]
       }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "export PATH=\"$HOME/.bun/bin:$PATH\"; ml prime"
+          },
+          {
+            "type": "command",
+            "command": "export PATH=\"$HOME/.bun/bin:$PATH\"; sd prime"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/loop-guard.sh"
+          },
+          {
+            "type": "command",
+            "command": "node scripts/check-workspace-integrity.mjs --changed"
+          }
+        ]
+      }
     ]
   }
 }
