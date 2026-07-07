@@ -94,3 +94,135 @@ Full rationale for each: `docs/adr/`.
 Scaffold phase. The reference vertical slice is **Creator Interview → ProfileGen**
 (see ADR-0013). Most of `commerce` and `community` are typed stubs. When a package
 is a stub, its `CLAUDE.md` says so and lists what's real vs. pending.
+
+## Agentic workflow
+
+Work runs as one loop (**ADR-0016**): **seed → `ml prime` → worktree → firstmate
+crewmate → no-mistakes gate → lavish review → `ml record`**. The seed id threads the
+whole loop and returns to mulch as an evidence anchor. **Full reference:**
+[docs/agentic-workflow.md](docs/agentic-workflow.md). To run an entire slice end-to-end
+(plan → autonomous build → your review), use the **`ship-slice`** skill.
+
+- **Orchestration — firstmate, one crewmate per package.** Boundaries are the
+  parallelization boundary (ADR-0003): each package's work is an isolated crewmate in
+  its own treehouse worktree. `gnhf` is **parked** (not the default).
+- **Knowledge ownership — one fact, one home, by temperature.** **mulch** (hot, primed)
+  = agent-discovered learnings + a `reference` index into the ADRs · **CLAUDE.md** (warm,
+  always loaded) = stable rules + pointers · **ADRs** (cold, on-demand) = ratified
+  decision + _why_ · **seeds** = work. An ADR holds the _why_, not the operative rule;
+  don't restate a fact across stores — link. Full rule: ADR-0016.
+- **Gates layer, don't stack.** The on-save hook does format/lint/typecheck (fast,
+  local); the **no-mistakes** push gate and CI run `pnpm typecheck && pnpm lint &&
+pnpm test`, scoped to Turbo-affected packages. Don't run the suite twice per change.
+- **Review — use lavish** for anything visual (plans, the architecture diagram,
+  Figma-derived UI), not ad-hoc HTML.
+
+Current backlog: the ProfileGen slice is decomposed into a seeds plan — `sd plan show
+pl-97aa`; run `sd ready` to claim the next unblocked step.
+
+<!-- mulch:start -->
+
+## Project Expertise (Mulch)
+
+<!-- mulch-onboard:v0.10.7 -->
+
+This project uses [Mulch](https://github.com/jayminwest/mulch) v0.10.7 for structured expertise management.
+
+**At the start of every session**, run:
+
+```bash
+ml prime
+```
+
+Injects project-specific conventions, patterns, decisions, failures, references, and guides into
+your context. Run `ml prime --files src/foo.ts` before editing a file to load only records
+relevant to that path (per-file framing, classification age, and confirmation scores included).
+
+For monolith projects where dumping every record wastes context, set
+`prime.default_mode: manifest` in `.mulch/mulch.config.yaml` (or pass `--manifest`) to emit a
+quick reference + domain index. Agents then scope-load with `ml prime <domain>` or
+`ml prime --files <path>`.
+
+**Before completing your task**, record insights worth preserving — conventions discovered,
+patterns applied, failures encountered, or decisions made:
+
+```bash
+ml record <domain> --type <convention|pattern|failure|decision|reference|guide> --description "..."
+```
+
+Evidence auto-populates from git (current commit + changed files). Link explicitly with
+`--evidence-seeds <id>` / `--evidence-gh <id>` / `--evidence-linear <id>` / `--evidence-bead <id>`,
+`--evidence-commit <sha>`, or `--relates-to <mx-id>`. Upserts of named records merge outcomes
+instead of replacing them; validation failures print a copy-paste retry hint with missing fields
+pre-filled.
+
+Run `ml status` for domain health, `ml doctor` to check record integrity (add `--fix` to strip
+broken file anchors), `ml --help` for the full command list. Write commands use file locking and
+atomic writes, so multiple agents can record concurrently. Expertise survives `git worktree`
+cleanup — `.mulch/` resolves to the main repo.
+
+`ml prune` soft-archives stale records to `.mulch/archive/` instead of deleting them; pass
+`--hard` for true deletion. Restore an archived record with `ml restore <id>`. Do not read
+`.mulch/archive/` directly — those records are stale by definition. If you need historical
+context, run `ml search --archived <query>`.
+
+### Before You Finish
+
+If you discovered conventions, patterns, decisions, or failures worth preserving during
+this session, record them before closing:
+
+```bash
+ml learn                                                                    # see what files changed
+ml record <domain> --type <convention|pattern|failure|decision|reference|guide> --description "..."
+ml sync                                                                     # validate, stage, commit
+```
+
+Skip if no insight surfaced. Unrecorded learnings are lost; ritual filler records are also noise.
+
+<!-- mulch:end -->
+
+<!-- seeds:start -->
+
+## Issue Tracking (Seeds)
+
+<!-- seeds-onboard:v0.5.14 -->
+<!-- seeds-onboard-schema:7 -->
+
+This project uses [Seeds](https://github.com/jayminwest/seeds) v0.5.14 for git-native issue tracking.
+
+**At the start of every session**, run:
+
+```
+sd prime
+```
+
+This injects session context: rules, command reference, and workflows. Pass `--format json|compact|markdown|plain|ids` on any command for agent-friendly output.
+
+**Quick reference:**
+
+- `sd ready` — Find unblocked work
+- `sd search <query>` — Full-text search across titles + descriptions
+- `sd create --title "..." --type task --priority 2` — Create issue
+- `sd update <id> --status in_progress` — Claim work
+- `sd close <id>` — Complete work
+- `sd dep add <id> <depends-on>` — Add dependency between issues
+- `sd sync` — Sync with git (run before pushing)
+
+### Planning
+
+Use `sd plan` when work is large or ambiguous enough that an LLM benefits from structured decomposition. Submit spawns one child seed per step; `step.blocks` uses forward semantics (step i with `blocks: [j]` means step i blocks step j, and step j gets step i's id in its `blockedBy`).
+
+- `sd plan templates` — List built-ins (`feature`, `bug`, `refactor`) plus custom templates
+- `sd plan prompt <seed-id>` — Emit a structured prompt the LLM fills in
+- `sd plan submit <seed-id> --plan <file>` — Validate + spawn child seeds
+- `sd plan show <pl-id>` — View sections, children, sub-plans
+- `sd plan edit <id> [--name | --section <name> <text> | --step <i> --title/--priority/--type]` — In-place field edits; bumps revision
+- `sd plan outcome <pl-id> --result success|partial|failure` — Record outcome (storage-only)
+- `sd plan review <pl-id> --by <name>` — Record reviewer (informational)
+
+### Before You Finish
+
+1. Close completed issues: `sd close <id>`
+2. File issues for remaining work: `sd create --title "..."`
+3. Sync and push: `sd sync && git push`
+<!-- seeds:end -->

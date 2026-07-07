@@ -52,3 +52,7 @@ notes and exact node ids.
 ## Testing
 
 React Testing Library (`*.test.tsx`) — render, interactions, a11y roles (ADR-0011).
+
+## Working here (seeds + mulch)
+
+Work in this package is tracked by a `ui`-labelled seed — `sd ready` / `sd search ui` to find it, then `sd update <id> --status in_progress` to claim it. Before closing, record any non-obvious learning to the **`ui`** mulch domain: `ml record ui --type <convention|pattern|failure|decision> --description "..." --evidence-seeds <id>`. Full loop: root CLAUDE.md → _Agentic workflow_ (ADR-0016).

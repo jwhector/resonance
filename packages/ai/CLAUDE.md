@@ -42,3 +42,7 @@ let that decision get lost.
 - Orchestration stays server-side (Server Actions / route handlers).
 - Depends on `@resonance/core` and (for embeddings) `@resonance/db`.
 - Tool handlers reach the DB/domains through their packages, never directly.
+
+## Working here (seeds + mulch)
+
+Work in this package is tracked by a `ai`-labelled seed — `sd ready` / `sd search ai` to find it, then `sd update <id> --status in_progress` to claim it. Before closing, record any non-obvious learning to the **`ai`** mulch domain: `ml record ai --type <convention|pattern|failure|decision> --description "..." --evidence-seeds <id>`. Full loop: root CLAUDE.md → _Agentic workflow_ (ADR-0016).
