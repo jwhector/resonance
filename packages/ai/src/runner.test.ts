@@ -92,6 +92,33 @@ describe("runAgentStructured", () => {
     ).rejects.toBeInstanceOf(AgentError);
   });
 
+  it("throws AgentError preserving the cause when the tool handler throws", async () => {
+    const cause = new Error("voyage embedding failed");
+    const failing = defineAgent<{ ok: boolean }>({
+      id: "failing",
+      model: "anthropic/x",
+      system: "call it",
+      tools: [
+        {
+          name: "record",
+          description: "record a value",
+          inputSchema: z.object({ v: z.number() }),
+          handler: async () => {
+            throw cause;
+          },
+        },
+      ],
+    });
+
+    const error = await runAgentStructured(failing, {
+      messages: [{ role: "user", content: "double 21" }],
+      model: toolCallModel("record", { v: 21 }),
+    }).catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(AgentError);
+    expect((error as AgentError).cause).toBe(cause);
+  });
+
   it("throws AgentError when the model calls an unknown tool", async () => {
     await expect(
       runAgentStructured(doubler, {

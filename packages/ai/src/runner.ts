@@ -97,6 +97,11 @@ export async function runAgentStructured<Output>(
     throw new AgentError(`Agent "${agent.id}" failed to generate`, { cause: err });
   }
 
+  const toolError = result.content.find((part) => part.type === "tool-error");
+  if (toolError) {
+    throw new AgentError(`Agent "${agent.id}" tool failed`, { cause: toolError.error });
+  }
+
   const toolResult = result.toolResults.at(-1);
   if (!toolResult) {
     throw new AgentError(`Agent "${agent.id}" did not call its required tool`);
