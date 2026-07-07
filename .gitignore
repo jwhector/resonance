@@ -30,3 +30,6 @@ test-results/
 
 # Scratch
 .tmp-*
+
+# Lavish review artifacts (ephemeral)
+.lavish/
