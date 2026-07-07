@@ -79,18 +79,3 @@ Note the ADR-0016 numbering history: an "ADR-0016" was once penciled for the
 `RESONANCE_FAKES` fakes-seam but never written (0016 became the agentic-workflow ADR).
 The fakes seam is still unwritten — **module-design takes 0017**; leave the fakes seam for
 a later number if it's ever ratified.
-
-## Kickoff prompt for the fresh session
-
-```text
-Read CLAUDE.md, docs/agentic-workflow.md, docs/module-design-integration-handoff.md,
-.claude/skills/module-design/SKILL.md, and docs/adr/README.md.
-
-Goal: weave the deep-module design tenet into every workflow juncture, tracked under
-seed resonance-d279. Treat it as a /feature run: Phase 1, decompose resonance-d279 into
-seeds via `sd plan` following the "Suggested order" in the handoff (ADR-0017 first, then
-conventions, CLAUDE.md, the four recipes, planning + prompts, review dimension). Show me
-the plan for approval before executing. Honor the two "tensions to resolve" — keep
-"boundary" for ADR-0003's package sense and add "seam" for interface location, and note
-the model-ahead-ports resolution in the ADR.
-```

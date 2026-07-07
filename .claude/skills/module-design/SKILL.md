@@ -85,14 +85,15 @@ When designing an interface, ask:
 
 ---
 
-## How this maps to Resonance _(provisional — to be ratified in ADR-0017)_
+## How this maps to Resonance _(ratified in [ADR-0017](../../../docs/adr/0017-design-deep-modules.md))_
 
 - A `@resonance/*` **package is a Module**; its `src/index.ts` public entrypoint is its
   **Seam/Interface**; "import only from the public entrypoint" (ADR-0003) is "don't reach
   past the seam."
 - A **port** (`MailPort`, `StoragePort`, `PaymentsPort`) is an **Interface at a Seam**;
   the stub/fake and the real client are its two **Adapters** (so these are _real_ seams,
-  not hypothetical — the test fake is the second adapter).
+  not hypothetical — the test fake is the second adapter, and the variance is known/imminent;
+  see the model-ahead-ports resolution in ADR-0017).
 - `@resonance/db` is a **deep module**: small interface (a few query helpers) over a large
   implementation (Drizzle + pgvector + Neon/PGlite duality). `Db`-as-first-arg is a seam
   for testability — tests exercise it through the same interface.
