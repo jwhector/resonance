@@ -52,22 +52,25 @@ docs/working-with-agents.md  How to run a productive agent session against this 
 1. **Respect package boundaries.** Import from a package's public entrypoint
    (`@resonance/x`), never its internals. pnpm + lint enforce this. If you need
    something cross-cutting, it belongs in `@resonance/core`.
-2. **Logic lives in packages, not in `apps/web`.** The app composes and renders;
+2. **Design deep modules.** A lot of behaviour behind a small interface, at a clean
+   seam — the package's public entrypoint is its seam. Prefer a small interface over a
+   shallow pass-through (ADR-0017, conventions.md § Module design).
+3. **Logic lives in packages, not in `apps/web`.** The app composes and renders;
    it does not contain domain rules. This keeps logic extraction-ready (ADR-0002).
-3. **Validate at every boundary with Zod.** Server Action inputs, AI tool inputs,
+4. **Validate at every boundary with Zod.** Server Action inputs, AI tool inputs,
    external API payloads. Types are not validation.
-4. **Secrets and AI orchestration stay server-side** (RSC / Server Actions / route
+5. **Secrets and AI orchestration stay server-side** (RSC / Server Actions / route
    handlers). Never ship a provider key to the client.
-5. **Follow the recipes.** Recurring tasks (new domain package, new AI agent, new UI
+6. **Follow the recipes.** Recurring tasks (new domain package, new AI agent, new UI
    component from Figma, new DB migration) have a skill in `.claude/skills/`. Use it
    so the codebase stays uniform and agents can replicate the pattern.
-6. **Record decisions as ADRs, and keep the diagram true.** A non-obvious
+7. **Record decisions as ADRs, and keep the diagram true.** A non-obvious
    architectural choice gets an ADR in `docs/adr/`. If it changes the system's shape
    (a package, service, dependency, or data flow), update
    `docs/architecture/resonance-architecture.drawio` **in the same change** — the
    diagram is a source of truth, not decoration (ADR-0015). Use the
    `update-architecture-diagram` recipe.
-7. **Tests are not optional.** Vitest (unit/integration) + RTL (components) +
+8. **Tests are not optional.** Vitest (unit/integration) + RTL (components) +
    Playwright (E2E). New behavior ships with tests (ADR-0011).
 
 ## Stack at a glance
