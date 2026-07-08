@@ -30,24 +30,28 @@ The app imports `@resonance/ui/styles.css` (tokens + Tailwind) and components fr
 
 ## Figma source
 
-- File key: `7FOYLdtzCTITjcPeGKwF31`
+- Primary file key: `7FOYLdtzCTITjcPeGKwF31`. A team copy with a higher MCP call
+  budget lives at `UYlkCL7jkCVgKWiqAVlEFp` (same node ids — Figma copies preserve them).
 - Design System page: node `252:288` (Brand `1509:75825`, Gray Scale `1509:75822`,
   Indicators `1509:75823`, Fonts `1429:46784`)
+- **Reading tokens:** `get_variable_defs` is selection-gated in this setup (it reads the
+  desktop selection, ignoring `nodeId` → "nothing selected"). Use **`get_design_context`
+  on a specific frame** instead — the returned code carries resolved hexes / font specs.
 
-## ⚠️ Token fidelity — refine when Figma quota allows
+## Token fidelity — colors + type are EXTRACTED
 
-The brand primary (`#A855F7`) and the 6-stop gradient are **extracted and final**. The
-neutral ramp, semantic colors, the type scale's px values, the font family (currently
-`Inter`), radii, and shadows are **provisional** — the Figma Professional-plan View-seat
-quota blocked deep variable reads during scaffolding. To finalize:
+Colors and typography are **extracted and final** (from `get_design_context` on the color
 
-1. `get_variable_defs` on `252:288` → exact color/spacing/radius variables.
-2. `get_design_context` on `1429:46784` (Fonts) → real font family + type sizes.
-3. `get_design_context` on the color frames → neutral + semantic hexes.
+- Fonts frames above). Two things to know:
 
-Then replace the `PROVISIONAL` values in `theme.css` (and the mirror in `tokens/`).
-The local file `.tmp-figma-tokens.md` (gitignored, repo root) has the full extraction
-notes and exact node ids.
+* **The neutral ramp is inverted:** `gray-0` = black … `gray-900` = white. Semantic roles
+  are mapped from the ramp's Figma labels (Text=`gray-300` `#2b2b2b`, Subtext=`gray-600`
+  `#a6a6a6`, Border=`gray-700` `#cdcdcd`, Background=`gray-800` `#f2f2f2`).
+* **Font family is "Helvetica Neue"** (not Inter). Type scale + weights (400/500/700) are
+  in `theme.css` (`--text-*`) and mirrored in `tokens/`.
+
+Still design-consistent **defaults** (the design system ships no explicit token frame for
+these): border radius, elevation/shadows, and the `*-subtle` semantic tints.
 
 ## Testing
 
