@@ -47,40 +47,29 @@ describe("createResendMail (live Resend transport)", () => {
   });
 });
 
-describe("resolveMail precedence (per-seam by key)", () => {
-  const saved = {
-    RESEND_API_KEY: process.env.RESEND_API_KEY,
-    RESONANCE_FAKES: process.env.RESONANCE_FAKES,
-  };
+describe("resolveMail (live-by-default by key presence, ADR-0018)", () => {
+  const savedKey = process.env.RESEND_API_KEY;
   beforeEach(() => {
     send.mockReset();
     send.mockResolvedValue({ data: { id: "e" }, error: null });
     delete process.env.RESEND_API_KEY;
-    delete process.env.RESONANCE_FAKES;
   });
   afterEach(() => {
-    for (const [k, v] of Object.entries(saved)) {
-      if (v === undefined) delete process.env[k];
-      else process.env[k] = v;
-    }
+    if (savedKey === undefined) delete process.env.RESEND_API_KEY;
+    else process.env.RESEND_API_KEY = savedKey;
   });
 
-  it("uses live Resend when RESEND_API_KEY is set — even with fakes on", async () => {
+  it("uses the live Resend transport when RESEND_API_KEY is set", async () => {
     process.env.RESEND_API_KEY = "re_live";
-    process.env.RESONANCE_FAKES = "1"; // fakes on, but the key wins for the mail seam
     await resolveMail().sendLoginCode({ email: "u@x.com", otp: "222222", type: "sign-in" });
     expect(send).toHaveBeenCalledTimes(1);
   });
 
-  it("uses the in-memory fake when only RESONANCE_FAKES is set", async () => {
-    process.env.RESONANCE_FAKES = "1";
-    await resolveMail().sendLoginCode({ email: "u@x.com", otp: "333333", type: "sign-in" });
-    expect(send).not.toHaveBeenCalled();
-  });
-
-  it("falls back to the fail-closed stub when neither is set", async () => {
+  it("falls back to the fail-closed stub (throws on send) when RESEND_API_KEY is absent", async () => {
+    // No key, no fake branch — the stub degrades explicitly rather than silently no-oping.
     await expect(
       resolveMail().sendLoginCode({ email: "u@x.com", otp: "444444", type: "sign-in" }),
     ).rejects.toBeInstanceOf(NotImplementedError);
+    expect(send).not.toHaveBeenCalled();
   });
 });

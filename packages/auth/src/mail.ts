@@ -11,7 +11,7 @@ export type OtpType = "sign-in" | "email-verification" | "forget-password" | "ch
  * The mail seam used by @resonance/auth. A superset of the core `MailPort`:
  * magic-link dispatches through `sendMagicLink`; the emailOTP capability
  * dispatches the 6-digit code through `sendLoginCode`. Both go through the SAME
- * transport instance, so a single fake captures both in tests/dev.
+ * transport instance, so a single fake captures both in tests.
  *
  * Kept local to this package (not promoted to `@resonance/core`) because the OTP
  * send is an auth concern only — core ports are earned by 2+ packages.
@@ -20,51 +20,13 @@ export type AuthMailPort = MailPort & {
   sendLoginCode(args: { email: string; otp: string; type: OtpType }): Promise<void>;
 };
 
-export function createFakeMail(): {
-  port: AuthMailPort;
-  sent: Array<{ email: string; url: string; token: string }>;
-  codes: Array<{ email: string; otp: string; type: OtpType }>;
-} {
-  const sent: Array<{ email: string; url: string; token: string }> = [];
-  const codes: Array<{ email: string; otp: string; type: OtpType }> = [];
-  return {
-    sent,
-    codes,
-    port: {
-      async sendMagicLink(args) {
-        sent.push(args);
-        // Surface the link in dev so a human can click it without a mailbox.
-        if (process.env.NODE_ENV !== "test") {
-          console.info(`[fake-mail] magic link for ${args.email}: ${args.url}`);
-        }
-      },
-      async sendLoginCode(args) {
-        codes.push(args);
-        // Surface the code in dev so a human can enter it without a mailbox.
-        if (process.env.NODE_ENV !== "test") {
-          console.info(`[fake-mail] login code for ${args.email}: ${args.otp}`);
-        }
-      },
-    },
-  };
-}
-
 /**
- * The fake transport is a PROCESS-wide singleton (pinned to `globalThis`), not a plain
- * module-level `const`. In Next.js dev / route-handler bundles `@resonance/auth` can be evaluated
- * in more than one module scope (the Better Auth catch-all that WRITES the code vs. a separate
- * route that READS it via `peekLoginCode`), and each scope would otherwise get its own capture
- * buffer — the write and read could land on different instances. A shared global buffer guarantees
- * one instance. Only the fake path (RESONANCE_FAKES) ever touches this; prod uses the stub. */
-const DEV_FAKE_KEY = "__resonance_auth_dev_fake_mail__";
-type DevFake = ReturnType<typeof createFakeMail>;
-function devFakeMail(): DevFake {
-  const store = globalThis as unknown as Record<string, DevFake | undefined>;
-  return (store[DEV_FAKE_KEY] ??= createFakeMail());
-}
-
-/** Fail-closed stub: both send paths reject when no live transport is configured
- *  and fakes are off, so nothing silently no-ops in production. */
+ * Fail-closed stub: both send paths reject when no live transport is configured, so a
+ * missing `RESEND_API_KEY` degrades **explicitly** (an error on send) instead of silently
+ * no-oping. This is the live-by-default fallback — never a fake selected by an env flag
+ * (ADR-0018). Tests never reach it; they inject `createFakeMail()` from
+ * `@resonance/auth/testing` through `createAuth({ mail })`.
+ */
 const stubAuthMail: AuthMailPort = {
   ...stubMail,
   sendLoginCode() {
@@ -144,32 +106,63 @@ export function createResendMail(opts: { apiKey: string; from: string }): AuthMa
 const DEFAULT_FROM = "Resonance <onboarding@resend.dev>";
 
 /**
- * Select the mail transport, per-seam by key presence (ADR-0018): live Resend when
- * `RESEND_API_KEY` is set — so live email works even while the AI seams stay faked — else
- * the in-memory fake under `RESONANCE_FAKES=1`, else the fail-closed stub.
+ * Select the mail transport, **live-by-default** (ADR-0018): the live Resend transport when
+ * `RESEND_API_KEY` is set, else the fail-closed stub — which throws on send, degrading
+ * explicitly rather than silently faking. There is no `RESONANCE_FAKES` branch: tests never
+ * call this; they inject `createFakeMail()` (from `@resonance/auth/testing`) through
+ * `createAuth({ mail })`.
  */
 export function resolveMail(): AuthMailPort {
   const apiKey = process.env.RESEND_API_KEY;
   if (apiKey) {
     return createResendMail({ apiKey, from: process.env.RESEND_FROM_EMAIL ?? DEFAULT_FROM });
   }
-  if (process.env.RESONANCE_FAKES === "1") return devFakeMail().port;
   return stubAuthMail;
 }
 
+// --- OTP observation seam (test/E2E only, inert in production) ------------------------
+//
+// A passive read-back slot for the login codes a *test-injected* fake transport captures.
+// Runtime code NEVER writes here — only the test-only `createFakeMail`
+// (`@resonance/auth/testing`) registers its captured `codes` buffer, and `peekLoginCode`
+// reads it. In production nothing constructs a fake, so nothing registers, so
+// `peekLoginCode` is inert (returns undefined) and can never leak a real code.
+//
+// The slot is pinned to `globalThis` because in Next.js dev / route-handler bundles
+// `@resonance/auth` can evaluate in more than one module scope — the Better Auth catch-all
+// that WRITES the code and the route that READS it via `peekLoginCode` — and a plain
+// module-level `const` would give each scope its own buffer. A process-wide slot guarantees
+// the write and the read land on the same array.
+//
+// This is NOT a runtime fake selector (ADR-0018): it selects nothing and dispatches no mail;
+// it only exposes codes a DI-injected fake already captured. Final disposition of this seam
+// and the `/api/test/last-otp` route is a separate, human-gated decision (seed resonance-a4a4).
+type ObservedLoginCodes = ReadonlyArray<{ email: string; otp: string; type: OtpType }>;
+const OBSERVED_CODES_KEY = "__resonance_auth_observed_login_codes__";
+
+function observedCodesStore(): Record<string, ObservedLoginCodes | undefined> {
+  return globalThis as unknown as Record<string, ObservedLoginCodes | undefined>;
+}
+
 /**
- * Dev/test-only seam: read back the most recent login code the fake transport captured for
- * `email`. It reads the SAME process-wide fake transport `resolveMail()` hands out under
- * RESONANCE_FAKES, so it observes codes dispatched through the real auth flow — the E2E harness
- * uses it to complete the passwordless front door without a mailbox.
- *
- * Returns `undefined` unless `RESONANCE_FAKES === "1"`: outside the fakes flag the fake is not
- * the active transport (Resend or the stub is), so there is never a real code to leak. Do NOT
- * wire this into any production code path.
+ * Register the login-code buffer a test-injected fake captures into, so {@link peekLoginCode}
+ * can read it back across module scopes. Called only by the test-only `createFakeMail`
+ * (`@resonance/auth/testing`); nothing on a shipped runtime path ever calls it.
+ */
+export function registerObservedLoginCodes(codes: ObservedLoginCodes): void {
+  observedCodesStore()[OBSERVED_CODES_KEY] = codes;
+}
+
+/**
+ * Dev/test-only read-back: the most recent login code observed for `email`, or `undefined`.
+ * Reads the buffer a DI-injected fake transport registered (see
+ * {@link registerObservedLoginCodes}). Returns `undefined` when no fake is registered — which
+ * is always the case in production — so this never surfaces a real code. Do NOT wire it into
+ * any production code path.
  */
 export function peekLoginCode(email: string): string | undefined {
-  if (process.env.RESONANCE_FAKES !== "1") return undefined;
-  const codes = devFakeMail().codes;
+  const codes = observedCodesStore()[OBSERVED_CODES_KEY];
+  if (!codes) return undefined;
   for (let i = codes.length - 1; i >= 0; i--) {
     const entry = codes[i];
     if (entry?.email === email) return entry.otp;

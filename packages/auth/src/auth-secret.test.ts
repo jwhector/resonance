@@ -49,25 +49,10 @@ describe("resolveAuthSecret", () => {
     );
   });
 
-  // ── Opt-in: NODE_ENV=test ───────────────────────────────────────────────
+  // ── Opt-in: NODE_ENV=test is the ONLY fallback gate (ADR-0018) ──────────
 
   it("returns dev fallback when NODE_ENV=test", () => {
     expect(resolveAuthSecret(undefined, { NODE_ENV: "test" })).toBe(FALLBACK);
-  });
-
-  // ── Opt-in: RESONANCE_FAKES=1 ──────────────────────────────────────────
-
-  it("returns dev fallback when RESONANCE_FAKES=1 and NODE_ENV is unset", () => {
-    expect(resolveAuthSecret(undefined, { RESONANCE_FAKES: "1" })).toBe(FALLBACK);
-  });
-
-  it("returns dev fallback when RESONANCE_FAKES=1 and NODE_ENV=development", () => {
-    expect(
-      resolveAuthSecret(undefined, {
-        RESONANCE_FAKES: "1",
-        NODE_ENV: "development",
-      }),
-    ).toBe(FALLBACK);
   });
 
   // ── Fail-closed cases ───────────────────────────────────────────────────
@@ -88,7 +73,7 @@ describe("resolveAuthSecret", () => {
     );
   });
 
-  it("throws when NODE_ENV=development without RESONANCE_FAKES", () => {
+  it("throws when NODE_ENV=development (no fake selector remains — ADR-0018)", () => {
     expect(() => resolveAuthSecret(undefined, { NODE_ENV: "development" })).toThrow(
       "BETTER_AUTH_SECRET is not configured",
     );
@@ -110,14 +95,5 @@ describe("resolveAuthSecret", () => {
     expect(() => resolveAuthSecret(undefined, { NODE_ENV: "Production" })).toThrow(
       "BETTER_AUTH_SECRET is not configured",
     );
-  });
-
-  it("does NOT allow fallback when RESONANCE_FAKES=0", () => {
-    expect(() =>
-      resolveAuthSecret(undefined, {
-        NODE_ENV: "development",
-        RESONANCE_FAKES: "0",
-      }),
-    ).toThrow("BETTER_AUTH_SECRET is not configured");
   });
 });
