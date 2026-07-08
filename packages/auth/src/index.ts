@@ -20,6 +20,7 @@ export { encodeRoles, decodeRoles } from "./roles";
 // dev/test-only read-back of the fake transport's captured codes (inert without RESONANCE_FAKES).
 export {
   createFakeMail,
+  createResendMail,
   resolveMail,
   peekLoginCode,
   type AuthMailPort,

@@ -6,16 +6,13 @@ external identity vendor; all auth logic is in-repo.
 
 ## Status: REAL
 
-The Better Auth instance (magic-link + emailOTP), role codec, mail seam, and session
-helper are in place and tested (Increment 1 of the Creator Interview → ProfileGen
-reference slice, ADR-0013).
+The Better Auth instance (magic-link + emailOTP), role codec, mail seam (fake **and live
+Resend**), and session helper are in place and tested. The sign-in / onboarding UI +
+routes are wired in `apps/web` (Increment 3, ADR-0013).
 
-**Not yet built (Increment 3):**
-
-- Sign-in / onboarding UI + routes — the auth instance (magic-link **and** emailOTP) is
-  ready, but there are no pages or route handlers wired yet.
-- Live Resend transport — currently behind `AuthMailPort`/`resolveMail()` (see below).
-  Live email delivery lands in Increment 3 alongside the sign-in UX.
+**Remaining to fully go live:** a verified Resend sending domain. `createResendMail`
+defaults `from` to Resend's shared `onboarding@resend.dev`, which delivers only to the
+Resend account owner's own address until you verify a domain and set `RESEND_FROM_EMAIL`.
 
 ## What's here
 
@@ -26,7 +23,7 @@ src/
 ├── session.ts    getSession(headers) → SessionUser | null  (RSC/Server Actions)
 ├── roles.ts      encodeRoles / decodeRoles (Role[] ↔ comma-encoded text column)
 ├── otp.ts        requestLoginCode(email) — thin server seam over the emailOTP send verb
-├── mail.ts       createFakeMail() + resolveMail() (AuthMailPort seam: link + code)
+├── mail.ts       createFakeMail() + createResendMail() + resolveMail() (AuthMailPort: link + code)
 └── index.ts      public re-exports
 ```
 
@@ -47,8 +44,8 @@ export { getSession }; // (headers: Headers) => Promise<SessionUser | null>
 // Role codec — encode/decode Role[] to/from the single comma-encoded text column.
 export { encodeRoles, decodeRoles };
 
-// Mail helpers — for tests and the dev fake transport, plus the mail seam type.
-export { createFakeMail, resolveMail, type AuthMailPort, type OtpType };
+// Mail helpers — the live Resend transport, the dev fake, the resolver, and the seam type.
+export { createFakeMail, createResendMail, resolveMail, type AuthMailPort, type OtpType };
 
 // emailOTP — send a passwordless 6-digit login code (coexists with magic-link).
 export { requestLoginCode }; // (email: string) => Promise<void>
@@ -83,18 +80,22 @@ Magic-link dispatches through `sendMagicLink({ email, url, token })`; the emailO
 capability dispatches the 6-digit code through `sendLoginCode({ email, otp, type })`.
 Both go through the **same transport instance** — one fake captures both. The OTP
 method lives here (not in `@resonance/core`) because it is an auth-only concern; core
-ports are earned by 2+ packages. The active transport is selected at runtime:
+ports are earned by 2+ packages. `resolveMail()` selects the transport **per-seam by key
+presence** (ADR-0016), checked in this order:
 
-| `RESONANCE_FAKES` | Transport                                                                     |
-| ----------------- | ----------------------------------------------------------------------------- |
-| `"1"`             | `createFakeMail()` — captures links + codes in memory; logs to console in dev |
-| unset / `"0"`     | `stubAuthMail` — both send paths reject (fail-closed; live Resend in Inc. 3)  |
+| Condition                  | Transport                                                                         |
+| -------------------------- | --------------------------------------------------------------------------------- |
+| `RESEND_API_KEY` set       | `createResendMail()` — **live** Resend send (branded HTML). Wins even under fakes |
+| else `RESONANCE_FAKES="1"` | `createFakeMail()` — captures links + codes in memory; logs to console in dev     |
+| else                       | `stubAuthMail` — both send paths reject (fail-closed; nothing silently no-ops)    |
 
-`createFakeMail()` returns `{ port: AuthMailPort; sent: Array<{ email, url, token }>; codes: Array<{ email, otp, type }> }` — `sent` and `codes` are the test capture hooks; assert against them to verify links / codes were dispatched.
+Putting the key check first is deliberate: you can run **live email with the AI seams
+still faked** (set `RESEND_API_KEY`, leave `RESONANCE_FAKES=1`) to verify delivery cheaply.
+Corollary: the fakes-based E2E must NOT have `RESEND_API_KEY` in its environment (keep it
+out of `.env.local`; pass it inline only for a live run), or it would send real email and
+`peekLoginCode` would find no fake code.
 
-Live Resend transport is **not wired yet** — it lands in Increment 3 alongside the
-sign-in UX. Until then `RESONANCE_FAKES="1"` is the only way to actually receive
-a magic link or code in development.
+`createFakeMail()` returns `{ port: AuthMailPort; sent: Array<{ email, url, token }>; codes: Array<{ email, otp, type }> }` — the test capture hooks. `createResendMail({ apiKey, from })` builds the live transport; errors from Resend are thrown, not swallowed.
 
 ### emailOTP alongside magic-link
 
