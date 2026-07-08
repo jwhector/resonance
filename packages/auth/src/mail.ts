@@ -123,10 +123,18 @@ export function resolveMail(): AuthMailPort {
 // --- OTP observation seam (test/E2E only, inert in production) ------------------------
 //
 // A passive read-back slot for the login codes a *test-injected* fake transport captures.
-// Runtime code NEVER writes here — only the test-only `createFakeMail`
-// (`@resonance/auth/testing`) registers its captured `codes` buffer, and `peekLoginCode`
-// reads it. In production nothing constructs a fake, so nothing registers, so
-// `peekLoginCode` is inert (returns undefined) and can never leak a real code.
+// Runtime code NEVER writes here. Registration is EXPLICIT and opt-in: the E2E harness calls
+// `observeLoginCodes(fake)` (from `@resonance/auth/testing`) when it builds its singleton fake.
+// Constructing a fake has NO side effect on this slot — so building a fake anywhere (a unit
+// test, another package) can never hijack the read-back of another fake (no action-at-a-distance).
+// `peekLoginCode` reads whatever buffer was explicitly registered; when nothing has been observed —
+// which is ALWAYS the case in production, since production never builds a fake and never invokes the
+// harness — it is inert (returns undefined) and can never leak a real code.
+//
+// Defense-in-depth: `peekLoginCode` ALSO hard-returns undefined when `NODE_ENV === "production"`,
+// independent of registration. Two unrelated reasons it cannot surface a code in prod: nothing is
+// ever registered there, AND the prod guard short-circuits the read (the isolated E2E harness only
+// ever runs with `NODE_ENV !== "production"`, so this never impairs the legitimate read-back).
 //
 // The slot is pinned to `globalThis` because in Next.js dev / route-handler bundles
 // `@resonance/auth` can evaluate in more than one module scope — the Better Auth catch-all
@@ -146,21 +154,34 @@ function observedCodesStore(): Record<string, ObservedLoginCodes | undefined> {
 
 /**
  * Register the login-code buffer a test-injected fake captures into, so {@link peekLoginCode}
- * can read it back across module scopes. Called only by the test-only `createFakeMail`
- * (`@resonance/auth/testing`); nothing on a shipped runtime path ever calls it.
+ * can read it back across module scopes. This is the low-level writer; the E2E harness calls it
+ * via the intent-named `observeLoginCodes(fake)` on `@resonance/auth/testing`. Registration is
+ * always explicit and test/harness-driven — nothing on a shipped runtime path ever calls it, and
+ * it is NOT re-exported from the package entrypoint (kept internal to the testing seam).
  */
 export function registerObservedLoginCodes(codes: ObservedLoginCodes): void {
   observedCodesStore()[OBSERVED_CODES_KEY] = codes;
 }
 
 /**
+ * Clear the observation slot. Test-only hygiene so a suite can assert the inert (nothing
+ * registered) shape deterministically. Not re-exported from the package entrypoint.
+ */
+export function clearObservedLoginCodes(): void {
+  observedCodesStore()[OBSERVED_CODES_KEY] = undefined;
+}
+
+/**
  * Dev/test-only read-back: the most recent login code observed for `email`, or `undefined`.
- * Reads the buffer a DI-injected fake transport registered (see
- * {@link registerObservedLoginCodes}). Returns `undefined` when no fake is registered — which
- * is always the case in production — so this never surfaces a real code. Do NOT wire it into
- * any production code path.
+ * Reads the buffer a fake transport was EXPLICITLY registered for via
+ * {@link registerObservedLoginCodes} (the harness calls `observeLoginCodes(fake)`). Returns
+ * `undefined` when no fake has been observed — which is always the case in production, since nothing
+ * constructs a fake or invokes the harness there — so this never surfaces a real code. As
+ * defense-in-depth it ALSO returns `undefined` whenever `NODE_ENV === "production"`, regardless of
+ * registration. Do NOT wire it into any production code path.
  */
 export function peekLoginCode(email: string): string | undefined {
+  if (process.env.NODE_ENV === "production") return undefined;
   const codes = observedCodesStore()[OBSERVED_CODES_KEY];
   if (!codes) return undefined;
   for (let i = codes.length - 1; i >= 0; i--) {

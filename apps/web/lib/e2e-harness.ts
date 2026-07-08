@@ -47,16 +47,29 @@ export async function onboardingEmbedder(): Promise<Embedder> {
  * handler that WRITES the login code and the `/api/test/last-otp` read-back observe the SAME
  * captured codes), else `undefined` → the caller uses the live `getAuth()`.
  *
- * Singleton: one shared instance. `createFakeMail()` registers its captured-codes buffer into a
- * process-wide slot on construction (last writer wins), so constructing it exactly once is
- * load-bearing for the OTP read-back.
+ * We EXPLICITLY register the fake's captured codes for read-back via `observeLoginCodes(fake)`
+ * (seed resonance-5d4e). Construction alone registers nothing, so building a fake elsewhere — or a
+ * session read routing through `getWebAuth()` — cannot silently hijack the OTP read-back; only this
+ * intentional call feeds `peekLoginCode`.
+ *
+ * Singleton pinned to `globalThis` (not a module-level `let`), because in Next.js the auth mount,
+ * the RSC/Server-Action session reads, and the `/api/test/last-otp` route can evaluate in different
+ * module scopes (mulch failure mx-b19c21). Pinning guarantees the fake is built — and
+ * `observeLoginCodes` called — exactly ONCE per process, so every scope shares the one fake and the
+ * read-back never gets clobbered by a later empty buffer.
  */
-let _harnessMail: AuthMailPort | undefined;
+const HARNESS_MAIL_KEY = "__resonance_web_harness_mail__";
+function harnessMailStore(): { [HARNESS_MAIL_KEY]?: AuthMailPort } {
+  return globalThis as unknown as { [HARNESS_MAIL_KEY]?: AuthMailPort };
+}
 export async function harnessMailOverride(): Promise<AuthMailPort | undefined> {
   if (!E2E_HARNESS) return undefined;
-  if (!_harnessMail) {
-    const { createFakeMail } = await import("@resonance/auth/testing");
-    _harnessMail = createFakeMail().port;
+  const store = harnessMailStore();
+  if (!store[HARNESS_MAIL_KEY]) {
+    const { createFakeMail, observeLoginCodes } = await import("@resonance/auth/testing");
+    const fake = createFakeMail();
+    observeLoginCodes(fake);
+    store[HARNESS_MAIL_KEY] = fake.port;
   }
-  return _harnessMail;
+  return store[HARNESS_MAIL_KEY];
 }
