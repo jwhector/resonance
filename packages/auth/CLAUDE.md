@@ -1,19 +1,20 @@
 # @resonance/auth
 
-Self-hosted identity: **Better Auth** with the magic-link plugin, persisting sessions
-and users in our Neon Postgres via `@resonance/db` (ADR-0005). No external identity
-vendor; all auth logic is in-repo.
+Self-hosted identity: **Better Auth** with the magic-link **and** emailOTP plugins,
+persisting sessions and users in our Neon Postgres via `@resonance/db` (ADR-0005). No
+external identity vendor; all auth logic is in-repo.
 
 ## Status: REAL
 
-The Better Auth instance, role codec, mail seam, and session helper are in place and
-tested (Increment 1 of the Creator Interview → ProfileGen reference slice, ADR-0013).
+The Better Auth instance (magic-link + emailOTP), role codec, mail seam, and session
+helper are in place and tested (Increment 1 of the Creator Interview → ProfileGen
+reference slice, ADR-0013).
 
 **Not yet built (Increment 3):**
 
-- Sign-in UI / magic-link routes — the auth instance is ready but there are no pages
-  or route handlers wired yet.
-- Live Resend transport — currently behind `MailPort`/`resolveMail()` (see below).
+- Sign-in / onboarding UI + routes — the auth instance (magic-link **and** emailOTP) is
+  ready, but there are no pages or route handlers wired yet.
+- Live Resend transport — currently behind `AuthMailPort`/`resolveMail()` (see below).
   Live email delivery lands in Increment 3 alongside the sign-in UX.
 
 ## What's here
@@ -21,9 +22,11 @@ tested (Increment 1 of the Creator Interview → ProfileGen reference slice, ADR
 ```
 src/
 ├── auth.ts       createAuth({ db, mail }) factory + getAuth() lazy singleton
+│                 (magic-link + emailOTP plugins)
 ├── session.ts    getSession(headers) → SessionUser | null  (RSC/Server Actions)
 ├── roles.ts      encodeRoles / decodeRoles (Role[] ↔ comma-encoded text column)
-├── mail.ts       createFakeMail() + resolveMail() (MailPort seam)
+├── otp.ts        requestLoginCode(email) — thin server seam over the emailOTP send verb
+├── mail.ts       createFakeMail() + resolveMail() (AuthMailPort seam: link + code)
 └── index.ts      public re-exports
 ```
 
@@ -44,8 +47,11 @@ export { getSession }; // (headers: Headers) => Promise<SessionUser | null>
 // Role codec — encode/decode Role[] to/from the single comma-encoded text column.
 export { encodeRoles, decodeRoles };
 
-// Mail helpers — for tests and the dev fake transport.
-export { createFakeMail, resolveMail };
+// Mail helpers — for tests and the dev fake transport, plus the mail seam type.
+export { createFakeMail, resolveMail, type AuthMailPort, type OtpType };
+
+// emailOTP — send a passwordless 6-digit login code (coexists with magic-link).
+export { requestLoginCode }; // (email: string) => Promise<void>
 ```
 
 ## Key design decisions
@@ -70,21 +76,38 @@ decodeRoles("member,creator"); // → ["member", "creator"] (Zod-validated)
 `Role` and `RoleSchema` come from `@resonance/core` and flow through here — the
 codec is the boundary where comma text is validated into typed `Role` values.
 
-### `MailPort` seam (`resolveMail()`)
+### `AuthMailPort` seam (`resolveMail()`)
 
-Magic-link emails go through `MailPort` (defined in `@resonance/core`). The active
-transport is selected at runtime:
+Auth emails go through `AuthMailPort` — a **local superset** of the core `MailPort`.
+Magic-link dispatches through `sendMagicLink({ email, url, token })`; the emailOTP
+capability dispatches the 6-digit code through `sendLoginCode({ email, otp, type })`.
+Both go through the **same transport instance** — one fake captures both. The OTP
+method lives here (not in `@resonance/core`) because it is an auth-only concern; core
+ports are earned by 2+ packages. The active transport is selected at runtime:
 
-| `RESONANCE_FAKES` | Transport                                                                       |
-| ----------------- | ------------------------------------------------------------------------------- |
-| `"1"`             | `createFakeMail()` — captures sent links in memory; logs to console in dev      |
-| unset / `"0"`     | `stubMail` from `@resonance/core` — no-op (live Resend deferred to Increment 3) |
+| `RESONANCE_FAKES` | Transport                                                                     |
+| ----------------- | ----------------------------------------------------------------------------- |
+| `"1"`             | `createFakeMail()` — captures links + codes in memory; logs to console in dev |
+| unset / `"0"`     | `stubAuthMail` — both send paths reject (fail-closed; live Resend in Inc. 3)  |
 
-`createFakeMail()` returns `{ port: MailPort; sent: Array<{ email, url, token }> }` — the `sent` array is the test capture hook; assert against it to verify magic links were dispatched.
+`createFakeMail()` returns `{ port: AuthMailPort; sent: Array<{ email, url, token }>; codes: Array<{ email, otp, type }> }` — `sent` and `codes` are the test capture hooks; assert against them to verify links / codes were dispatched.
 
 Live Resend transport is **not wired yet** — it lands in Increment 3 alongside the
 sign-in UX. Until then `RESONANCE_FAKES="1"` is the only way to actually receive
-a magic link in development.
+a magic link or code in development.
+
+### emailOTP alongside magic-link
+
+The onboarding email-verification screen offers **both** "click the magic link" and
+"enter the 6-digit code". These are **two independent Better Auth plugins** sending
+**two independent emails through the one `AuthMailPort`** — the OTP is _not_ merged into
+the magic-link email (the per-message seam has no cross-plugin composition). Better Auth
+stores/expires the code in the shared `verification` table, so **no new migration** is
+needed. `requestLoginCode(email)` is the thin server seam (Zod-validates `email`) that a
+Server Action calls to dispatch a code without reaching into Better Auth internals; the
+plugin also auto-mounts `/email-otp/send-verification-otp` and `/sign-in/email-otp` for
+the browser client. Sign-in via code uses `type: "sign-in"` and auto-creates the user
+with default `roles = "member"`, exactly like magic-link verify.
 
 ### `getSession(headers)`
 

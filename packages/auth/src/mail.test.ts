@@ -8,4 +8,13 @@ describe("fake mail", () => {
     expect(sent).toHaveLength(1);
     expect(sent[0]).toMatchObject({ email: "a@b.com", token: "t" });
   });
+
+  it("captures sent login codes through the same transport", async () => {
+    const { port, codes, sent } = createFakeMail();
+    await port.sendLoginCode({ email: "a@b.com", otp: "123456", type: "sign-in" });
+    expect(codes).toHaveLength(1);
+    expect(codes[0]).toMatchObject({ email: "a@b.com", otp: "123456", type: "sign-in" });
+    // magic-link capture is independent — the OTP path does not touch it.
+    expect(sent).toHaveLength(0);
+  });
 });

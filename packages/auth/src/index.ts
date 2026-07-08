@@ -16,5 +16,8 @@ export { getSession } from "./session";
 // Role codec helpers.
 export { encodeRoles, decodeRoles } from "./roles";
 
-// Mail transport factory + resolver.
-export { createFakeMail, resolveMail } from "./mail";
+// Mail transport factory + resolver, and the auth mail seam type.
+export { createFakeMail, resolveMail, type AuthMailPort, type OtpType } from "./mail";
+
+// emailOTP capability — send a passwordless login code (coexists with magic-link).
+export { requestLoginCode } from "./otp";
