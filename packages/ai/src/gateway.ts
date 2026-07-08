@@ -1,6 +1,7 @@
 import { createAnthropic } from "@ai-sdk/anthropic";
 import type { LanguageModel } from "ai";
 import { AgentError } from "./errors";
+import { selectProvider } from "./provider-config";
 import type { ModelId } from "./registry";
 
 /**
@@ -16,16 +17,22 @@ import type { ModelId } from "./registry";
  * 3. **Direct Anthropic** (`ANTHROPIC_API_KEY`) — the `@ai-sdk/anthropic` provider, for running
  *    without a Gateway. Serves `anthropic/*` model ids (the only tier we route directly).
  *
- * If neither key is present it **fails closed** with an actionable error — never silently fakes.
+ * The Gateway→direct→fail-closed ladder is shared with `resolveEmbedder` via `selectProvider`, so
+ * the two seams can't drift. If neither key is present it **fails closed** with an actionable
+ * error — never silently fakes.
  */
 export function resolveModel(modelId: ModelId, opts?: { model?: LanguageModel }): LanguageModel {
   if (opts?.model) return opts.model;
-  if (process.env.AI_GATEWAY_API_KEY) return modelId;
-  if (process.env.ANTHROPIC_API_KEY) return resolveDirectAnthropic(modelId);
-  throw new AgentError(
-    `resolveModel: no AI provider configured for "${modelId}". Set AI_GATEWAY_API_KEY ` +
+  return selectProvider<LanguageModel>({
+    gatewayKey: process.env.AI_GATEWAY_API_KEY,
+    // Return the `provider/model` string; the AI SDK v6 global provider routes it via the Gateway.
+    buildGateway: () => modelId,
+    directKey: process.env.ANTHROPIC_API_KEY,
+    buildDirect: () => resolveDirectAnthropic(modelId),
+    missing:
+      `resolveModel: no AI provider configured for "${modelId}". Set AI_GATEWAY_API_KEY ` +
       `(Vercel AI Gateway, preferred) or ANTHROPIC_API_KEY (direct Anthropic).`,
-  );
+  });
 }
 
 const ANTHROPIC_PREFIX = "anthropic/";

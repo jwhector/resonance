@@ -12,6 +12,11 @@ export { AgentError } from "./errors";
 // Fakes live in @resonance/ai/testing, never on this shipped entrypoint (ADR-0018).
 export { resolveModel } from "./gateway";
 
+// Fail-fast boot-time config gate — assert the model AND embedding providers are jointly
+// resolvable from env before onboarding starts, so a partial config (e.g. ANTHROPIC without
+// VOYAGE) fails up front instead of at the profile-commit step (ADR-0018). Env-presence only.
+export { assertAiConfigured } from "./provider-config";
+
 // The shared runner — streaming + structured (tool-driven) paths.
 export { runAgentStream, runAgentStructured, type RunInput } from "./runner";
 

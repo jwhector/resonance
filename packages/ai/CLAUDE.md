@@ -26,6 +26,7 @@ from the `@resonance/ai/testing` subpath — never chosen by a runtime flag.
 src/
 ├── registry.ts            AgentDefinition / AgentTool / defineAgent (the registry shape)
 ├── errors.ts              AgentError (typed runner failure)
+├── provider-config.ts     selectProvider (internal: shared Gateway→direct→fail-closed ladder) + assertAiConfigured (exported fail-fast gate)
 ├── gateway.ts             resolveModel() — live: Gateway string OR direct @ai-sdk/anthropic; injected model in tests
 ├── embeddings.ts          Embedder: resolveEmbedder — live Gateway OR direct voyage-ai-provider
 ├── runner.ts              runAgentStream (streaming) + runAgentStructured (tool-driven)
@@ -47,6 +48,9 @@ export { type ModelId, type AgentTool, type AgentDefinition, defineAgent };
 export { AgentError };
 // Model seam (ADR-0009)
 export { resolveModel };
+// Fail-fast config gate (ADR-0018) — assert model AND embedding providers are jointly resolvable
+// from env before onboarding starts (env-presence only; no live call). Call at onboarding entry.
+export { assertAiConfigured };
 // The one runner — streaming + structured (tool-driven) paths
 export { runAgentStream, runAgentStructured, type RunInput };
 // Embeddings seam (ADR-0010) — live by default; fakes live in @resonance/ai/testing
@@ -79,6 +83,10 @@ actionable `AgentError` (never silently fakes or no-ops). Tests pass a fake in v
 `@resonance/ai/testing`), so the fast inner loop stays deterministic and credential-free while the
 runtime path can't drift from the live contract.
 
+Both live seams route through **one internal ladder** — `selectProvider` in `provider-config.ts`
+(Gateway → direct provider → fail-closed `AgentError`) — so the precedence rule lives once and the
+two seams can't drift. `selectProvider` is internal (not on the `@resonance/ai` entrypoint).
+
 - **`resolveModel(modelId, opts?)`** — `opts.model` (DI, wins) → Vercel AI Gateway when
   `AI_GATEWAY_API_KEY` is set (the AI SDK v6 global provider routes the `provider/model` string)
   → direct `@ai-sdk/anthropic` when `ANTHROPIC_API_KEY` is set (serves `anthropic/*` ids) → else
@@ -90,6 +98,12 @@ runtime path can't drift from the live contract.
 - **`runAgentStream` / `runAgentStructured`** — the one runner. Streaming for the interview;
   structured (forced single tool call, executed, Zod-validated) for ProfileGen generation. Throws
   `AgentError` at the boundary — never swallows.
+- **`assertAiConfigured()`** — fail-fast boot-time gate. Checks env **presence only** (no live
+  call) that the model AND embedding providers are **jointly** resolvable — `AI_GATEWAY_API_KEY`,
+  OR both `ANTHROPIC_API_KEY` and `VOYAGE_API_KEY` — mirroring `scripts/verify-live.mjs`'s joint
+  gate. Throws one `AgentError` naming exactly what's missing. Call it once at each onboarding
+  entry point (before the interview / profile generation) so a partial config (e.g. Anthropic
+  without Voyage) fails up front instead of at the profile-commit `resolveEmbedder` step.
 
 ## Test-only fakes: `@resonance/ai/testing`
 
