@@ -25,6 +25,8 @@ const buttonVariants = cva(
         md: "h-10 px-4",
         lg: "h-12 px-6 text-base",
         icon: "h-10 w-10",
+        /** Full-width, large — the Figma `Button/Wide` used for form submits. */
+        wide: "h-12 w-full px-6 text-base",
       },
     },
     defaultVariants: {
