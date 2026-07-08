@@ -144,7 +144,7 @@ export function createResendMail(opts: { apiKey: string; from: string }): AuthMa
 const DEFAULT_FROM = "Resonance <onboarding@resend.dev>";
 
 /**
- * Select the mail transport, per-seam by key presence (ADR-0016): live Resend when
+ * Select the mail transport, per-seam by key presence (ADR-0018): live Resend when
  * `RESEND_API_KEY` is set — so live email works even while the AI seams stay faked — else
  * the in-memory fake under `RESONANCE_FAKES=1`, else the fail-closed stub.
  */

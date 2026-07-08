@@ -72,6 +72,10 @@ docs/working-with-agents.md  How to run a productive agent session against this 
    `update-architecture-diagram` recipe.
 8. **Tests are not optional.** Vitest (unit/integration) + RTL (components) +
    Playwright (E2E). New behavior ships with tests (ADR-0011).
+9. **No fakes in runtime code.** Shipped paths are **live-by-default**; fakes/mocks are
+   **injected in tests** (DI), never chosen by an env flag inside runtime code. A
+   credential-gated **live-smoke** check exercises each external service for real before
+   release, so a green build can't hide broken live wiring (ADR-0018).
 
 ## Stack at a glance
 

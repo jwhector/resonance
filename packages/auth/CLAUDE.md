@@ -81,7 +81,7 @@ capability dispatches the 6-digit code through `sendLoginCode({ email, otp, type
 Both go through the **same transport instance** — one fake captures both. The OTP
 method lives here (not in `@resonance/core`) because it is an auth-only concern; core
 ports are earned by 2+ packages. `resolveMail()` selects the transport **per-seam by key
-presence** (ADR-0016), checked in this order:
+presence** (ADR-0018), checked in this order:
 
 | Condition                  | Transport                                                                         |
 | -------------------------- | --------------------------------------------------------------------------------- |

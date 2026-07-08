@@ -76,6 +76,7 @@ Weave it at every point where design happens or design quality is enforced:
    `ml prime <domain>` surfaces the tenet where an agent would design.
 
 Note the ADR-0016 numbering history: an "ADR-0016" was once penciled for the
-`RESONANCE_FAKES` fakes-seam but never written (0016 became the agentic-workflow ADR).
-The fakes seam is still unwritten — **module-design takes 0017**; leave the fakes seam for
-a later number if it's ever ratified.
+`RESONANCE_FAKES` fakes-seam but never written (0016 became the agentic-workflow ADR;
+module-design took 0017). The testing-seam decision is **now written as ADR-0018**, which
+reverses the runtime-fakes approach: live-by-default code, fakes injected in tests, and a
+live-smoke gate.
