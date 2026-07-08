@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { assertAiConfigured } from "@resonance/ai";
 import { getWebSession } from "../../../lib/auth";
 import { InterviewClient } from "./interview-client";
 
@@ -12,6 +13,12 @@ import { InterviewClient } from "./interview-client";
 export default async function CreatorInterviewPage() {
   const user = await getWebSession(await headers());
   if (!user) redirect("/signup");
+
+  // Fail fast (seed resonance-2fdc): refuse to start the interview unless the AI providers are
+  // JOINTLY configured (model AND embedding), so a partial config (e.g. ANTHROPIC without VOYAGE)
+  // errors here rather than only at the commit-time embedding step. Presence-only check, no live
+  // call; the interview→generate→commit flow is all downstream of this one entry (ADR-0018).
+  assertAiConfigured();
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-6xl px-6 py-10">
