@@ -7,6 +7,10 @@
     ".": {
       "types": "./src/index.ts",
       "default": "./src/index.ts"
+    },
+    "./test": {
+      "types": "./src/test/index.ts",
+      "default": "./src/test/index.ts"
     }
   },
   "scripts": {
@@ -17,9 +21,11 @@
     "clean": "rm -rf dist .turbo *.tsbuildinfo"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.94",
     "@resonance/core": "workspace:*",
     "@resonance/db": "workspace:*",
     "ai": "^6.0.0",
+    "voyage-ai-provider": "^4.0.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {

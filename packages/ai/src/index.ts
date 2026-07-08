@@ -8,19 +8,19 @@ export { type ModelId, type AgentTool, type AgentDefinition, defineAgent } from 
 // Typed failure surfaced by the runner.
 export { AgentError } from "./errors";
 
-// The model seam — live Gateway / fake / injected model.
+// The model seam — live by default (Gateway or direct Anthropic), injected model in tests.
+// Fakes live in @resonance/ai/test, never on this shipped entrypoint (ADR-0018).
 export { resolveModel } from "./gateway";
 
 // The shared runner — streaming + structured (tool-driven) paths.
 export { runAgentStream, runAgentStructured, type RunInput } from "./runner";
 
-// Embeddings seam (Voyage → pgvector via @resonance/db).
+// Embeddings seam (Voyage → pgvector via @resonance/db). Live by default (Gateway or direct
+// Voyage); the fake embedder lives in @resonance/ai/test for DI (ADR-0018).
 export {
   type Embedder,
   type EmbeddableProfile,
   resolveEmbedder,
-  createLiveEmbedder,
-  createFakeEmbedder,
   profileToContent,
   EMBEDDING_MODEL,
   EMBEDDING_DIMS,
