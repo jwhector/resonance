@@ -1,6 +1,7 @@
 import { type EmbeddingModel, embed } from "ai";
 import { createVoyage } from "voyage-ai-provider";
 import { AgentError } from "./errors";
+import { selectProvider } from "./provider-config";
 
 /**
  * Voyage `voyage-3.5` produces 1024-dim vectors. This pins the `vector(1024)` column in
@@ -85,19 +86,23 @@ async function embedVoyage(model: EmbeddingModel, text: string): Promise<number[
  * 1. **Vercel AI Gateway** (`AI_GATEWAY_API_KEY`) — Voyage via the `voyage/voyage-3.5` string.
  * 2. **Direct Voyage** (`VOYAGE_API_KEY`) — the `voyage-ai-provider`, for running without a Gateway.
  *
- * If neither key is present it **fails closed** with an actionable error — never silently fakes.
+ * The Gateway→direct→fail-closed ladder is shared with `resolveModel` via `selectProvider`, so the
+ * two seams can't drift. If neither key is present it **fails closed** with an actionable error —
+ * never silently fakes.
  */
 export function resolveEmbedder(): Embedder {
-  if (process.env.AI_GATEWAY_API_KEY) {
-    return makeEmbedder(EMBEDDING_MODEL, (text) => embedVoyage(`voyage/${EMBEDDING_MODEL}`, text));
-  }
-  if (process.env.VOYAGE_API_KEY) {
-    const voyage = createVoyage({ apiKey: process.env.VOYAGE_API_KEY });
-    const model = voyage.textEmbeddingModel(EMBEDDING_MODEL);
-    return makeEmbedder(EMBEDDING_MODEL, (text) => embedVoyage(model, text));
-  }
-  throw new AgentError(
-    "resolveEmbedder: no embedding provider configured. Set AI_GATEWAY_API_KEY " +
+  return selectProvider<Embedder>({
+    gatewayKey: process.env.AI_GATEWAY_API_KEY,
+    buildGateway: () =>
+      makeEmbedder(EMBEDDING_MODEL, (text) => embedVoyage(`voyage/${EMBEDDING_MODEL}`, text)),
+    directKey: process.env.VOYAGE_API_KEY,
+    buildDirect: () => {
+      const voyage = createVoyage({ apiKey: process.env.VOYAGE_API_KEY });
+      const model = voyage.textEmbeddingModel(EMBEDDING_MODEL);
+      return makeEmbedder(EMBEDDING_MODEL, (text) => embedVoyage(model, text));
+    },
+    missing:
+      "resolveEmbedder: no embedding provider configured. Set AI_GATEWAY_API_KEY " +
       "(Vercel AI Gateway, preferred) or VOYAGE_API_KEY (direct Voyage).",
-  );
+  });
 }
