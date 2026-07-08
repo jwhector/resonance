@@ -43,10 +43,10 @@ export interface ProfileDraftPanelsProps extends Omit<
   submitting?: boolean;
 }
 
-/** Section heading shared by every panel (Figma Heading/L). */
+/** Section heading shared by every panel (Figma Heading/L — 28px Bold). */
 function SectionHeading({ id, children }: { id?: string; children: React.ReactNode }) {
   return (
-    <h2 id={id} className="text-2xl font-bold text-foreground">
+    <h2 id={id} className="text-heading-lg font-bold text-foreground">
       {children}
     </h2>
   );
@@ -69,9 +69,9 @@ export function ProfileDraftPanels({
   const nameGroupLabelId = React.useId();
 
   return (
-    <div className={cn("flex w-full flex-col gap-10", className)} {...props}>
-      {/* Intro copy — verbatim from the design. */}
-      <div className="flex flex-col gap-1 text-base text-foreground">
+    <div className={cn("flex w-full flex-col gap-6", className)} {...props}>
+      {/* Intro copy — verbatim from the design (Body/L). */}
+      <div className="flex flex-col text-body-lg text-foreground">
         <p>Here are a few creator directions based on everything you shared.</p>
         <p>
           Nothing here needs to be final — this is simply a first version you can refine and grow
@@ -88,18 +88,30 @@ export function ProfileDraftPanels({
           onValueChange={(value) => onSelectName(Number(value))}
           className="gap-6"
         >
-          {draft.nameOptions.map((option, index) => (
-            <Radio
-              key={index}
-              value={String(index)}
-              label={
-                <span className="flex flex-col gap-1">
-                  <span className="text-xl font-medium text-foreground">{option.name}</span>
-                  <span className="text-sm text-muted">{option.description}</span>
-                </span>
-              }
-            />
-          ))}
+          {draft.nameOptions.map((option, index) => {
+            const active = index === selectedNameIndex;
+            return (
+              <Radio
+                key={index}
+                value={String(index)}
+                label={
+                  <span className="flex flex-col gap-2">
+                    <span
+                      className={cn(
+                        "text-heading-md font-medium",
+                        active ? "text-foreground" : "text-muted",
+                      )}
+                    >
+                      {option.name}
+                    </span>
+                    <span className={cn("text-body-lg", active ? "text-foreground" : "text-muted")}>
+                      {option.description}
+                    </span>
+                  </span>
+                }
+              />
+            );
+          })}
         </RadioGroup>
       </section>
 
@@ -110,7 +122,7 @@ export function ProfileDraftPanels({
           aria-labelledby={headlineId}
           value={draft.headline}
           onChange={(event) => onHeadlineChange(event.target.value)}
-          className="p-4 text-base"
+          className="h-14 px-4 text-body-lg"
         />
       </section>
 
@@ -122,14 +134,14 @@ export function ProfileDraftPanels({
           rows={5}
           value={draft.bio}
           onChange={(event) => onBioChange(event.target.value)}
-          className="p-4 text-base"
+          className="p-4 text-body-lg"
         />
       </section>
 
       {/* Search Keywords — removable chips. */}
       <section className="flex flex-col gap-5">
         <SectionHeading>Search Keywords</SectionHeading>
-        <TagGroup aria-label="Search keywords">
+        <TagGroup aria-label="Search keywords" className="gap-4">
           {draft.tags.map((tag, index) => (
             <Tag
               key={`${tag}-${index}`}
@@ -146,7 +158,7 @@ export function ProfileDraftPanels({
 
       {/* Footer actions. "Good to go" commits; "Revise with Weave" is the deferred loop. */}
       <div className="flex items-center gap-4">
-        <Button type="button" onClick={onSubmit} disabled={submitting} className="px-6">
+        <Button type="button" size="lg" onClick={onSubmit} disabled={submitting} className="px-6">
           {submitting ? "Saving…" : "Good to go"}
         </Button>
         <Button type="button" variant="ghost" disabled className="text-primary">

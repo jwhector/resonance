@@ -70,7 +70,7 @@ export const typography = {
 
 export const radius = {
   sm: "6px",
-  md: "10px",
+  md: "8px", // EXTRACTED control radius (Figma inputs/buttons/tags/OTP/composer)
   lg: "16px",
   xl: "24px",
 } as const;

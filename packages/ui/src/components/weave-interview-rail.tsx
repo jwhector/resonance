@@ -39,7 +39,7 @@ function MessageBubble({ message }: { message: InterviewMessage }) {
     <div
       data-role={message.role}
       className={cn(
-        "max-w-[85%] rounded-lg px-4 py-2 text-sm whitespace-pre-wrap",
+        "max-w-[85%] rounded-lg px-4 py-2 text-body-lg whitespace-pre-wrap",
         isUser
           ? "self-end bg-primary text-on-primary"
           : "self-start bg-surface-muted text-foreground",
@@ -87,11 +87,11 @@ export function WeaveInterviewRail({
       {/* Header: Weave logo + wordmark, over a divider. */}
       <header className="flex items-center gap-3 border-b border-border px-5 py-4">
         <WeaveMark />
-        <span className="text-lg font-medium text-foreground">Weave</span>
+        <span className="text-heading-md font-medium text-foreground">Weave</span>
       </header>
 
       {/* Scrollable transcript. role="log" makes appended turns polite live-region updates. */}
-      <div role="log" className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-5">
+      <div role="log" className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-5">
         {messages.map((message, index) => (
           <MessageBubble key={index} message={message} />
         ))}

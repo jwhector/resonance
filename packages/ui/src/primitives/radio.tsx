@@ -38,12 +38,12 @@ export const Radio = React.forwardRef<
   const generatedId = React.useId();
   const inputId = id ?? generatedId;
   return (
-    <div className="flex items-start gap-2">
+    <div className="flex items-start gap-4">
       <RadioGroupPrimitive.Item
         ref={ref}
         id={inputId}
         className={cn(
-          "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border border-border-strong bg-surface",
+          "flex size-6 shrink-0 items-center justify-center rounded-full border border-border-strong bg-surface",
           "data-[state=checked]:border-primary",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
           "disabled:cursor-not-allowed disabled:opacity-50",
@@ -52,11 +52,11 @@ export const Radio = React.forwardRef<
         {...props}
       >
         <RadioGroupPrimitive.Indicator className="flex items-center justify-center">
-          <span className="size-2 rounded-full bg-primary" />
+          <span className="size-2.5 rounded-full bg-primary" />
         </RadioGroupPrimitive.Indicator>
       </RadioGroupPrimitive.Item>
       {label != null && (
-        <label htmlFor={inputId} className="select-none text-sm text-foreground">
+        <label htmlFor={inputId} className="select-none text-body-lg text-foreground">
           {label}
         </label>
       )}
