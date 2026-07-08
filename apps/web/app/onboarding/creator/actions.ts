@@ -16,6 +16,7 @@ import {
 } from "@resonance/ai";
 import { getSession } from "@resonance/auth";
 import { createDb } from "@resonance/db";
+import { E2E_HARNESS, harnessEmbedder, harnessModel } from "../../../lib/e2e-harness";
 
 /**
  * Server Actions wiring the creator-onboarding flow: `ui` (the client interview) → `ai` (draft
@@ -42,8 +43,12 @@ export async function generateDraft(input: unknown): Promise<CreatorProfileDraft
 
   // Live-by-default: no model is injected here, so the runner resolves the Gateway model
   // (`resolveModel`, ADR-0018). The `RunInput.model` DI seam stays open for tests, which pass a
-  // fake model through it — it is never taken in shipped code.
-  const { output } = await runAgentStructured(profileGenAgent, { messages });
+  // fake model through it. The one shipped exception is the isolated E2E harness (ADR-0018 §4),
+  // guarded so it can never activate in production.
+  const { output } = await runAgentStructured(profileGenAgent, {
+    messages,
+    ...(E2E_HARNESS ? { model: harnessModel() } : {}),
+  });
   return output;
 }
 
@@ -64,7 +69,9 @@ export async function commitProfile(input: unknown): Promise<void> {
       userId: user.id,
       currentRoles: user.roles,
       db: createDb(),
-      embedder: resolveEmbedder(),
+      // Live-by-default embedder (`resolveEmbedder`, ADR-0018); the isolated E2E harness injects a
+      // deterministic one instead (ADR-0018 §4), never active in production.
+      embedder: E2E_HARNESS ? harnessEmbedder() : resolveEmbedder(),
     },
     commit,
   );
