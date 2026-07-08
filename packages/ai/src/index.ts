@@ -32,10 +32,13 @@ export {
   CREATOR_INTERVIEW_MODEL,
 } from "./agents/creator-interview/creator-interview.agent";
 export { CREATOR_INTERVIEW_SYSTEM } from "./agents/creator-interview/prompt";
+// ProfileGen: generation returns an editable draft (writes nothing); commitCreatorProfile is the
+// explicit "put on profile" step the web layer calls after the user edits + picks a name. The
+// generated/committed shapes are the shared @resonance/core contract (CreatorProfileDraft /
+// CommitProfileInput) — import those from @resonance/core, not here.
+export { profileGenAgent, PROFILE_GEN_MODEL } from "./agents/profile-gen/profile-gen.agent";
 export {
-  defineProfileGenAgent,
-  PROFILE_GEN_MODEL,
-  type ProfileGenContext,
-  type SaveProfileResult,
-} from "./agents/profile-gen/profile-gen.agent";
-export { ProfileGenSchema, type GeneratedProfile } from "./agents/profile-gen/profile-gen.schema";
+  commitCreatorProfile,
+  type CommitProfileContext,
+  type CommitProfileResult,
+} from "./agents/profile-gen/commit-profile";

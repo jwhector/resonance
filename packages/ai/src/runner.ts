@@ -68,10 +68,10 @@ export function runAgentStream(
 }
 
 /**
- * Structured path — the agent must call exactly one tool, which does the real work (e.g.
- * `saveProfile` persisting + embedding). Forces the tool call, executes it, and returns its
- * validated output. Throws a typed `AgentError` on any failure — never swallows (design spec
- * § Error handling).
+ * Structured path — the agent must call exactly one tool, whose validated return value IS the
+ * agent's output (e.g. ProfileGen's `proposeProfile` returning the generated draft). Forces the
+ * tool call, executes it, and returns its output. Throws a typed `AgentError` on any failure —
+ * never swallows (design spec § Error handling).
  */
 export async function runAgentStructured<Output>(
   agent: AgentDefinition<Output>,

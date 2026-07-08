@@ -9,7 +9,7 @@ import { AgentError } from "./errors";
 export const EMBEDDING_MODEL = "voyage-3.5";
 export const EMBEDDING_DIMS = 1024;
 
-/** The minimum a profile needs to be embedded — structurally satisfied by a GeneratedProfile. */
+/** The minimum a profile needs to be embedded — a committed profile supplies these (offerings []). */
 export interface EmbeddableProfile {
   displayName: string;
   headline: string;

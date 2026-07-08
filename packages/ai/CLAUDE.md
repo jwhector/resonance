@@ -29,7 +29,8 @@ src/
 ├── runner.ts              runAgentStream (streaming) + runAgentStructured (tool-driven)
 └── agents/
     ├── creator-interview/ prompt.ts + creator-interview.agent.ts (Sonnet, streaming, no tools)
-    └── profile-gen/       prompt.ts + profile-gen.schema.ts + profile-gen.agent.ts
+    └── profile-gen/       prompt.ts + profile-gen.agent.ts (generates a draft) +
+                           commit-profile.ts (persists the committed draft)
 ```
 
 ## Public API
@@ -58,9 +59,16 @@ export {
 };
 // Concrete agents
 export { creatorInterviewAgent, CREATOR_INTERVIEW_MODEL, CREATOR_INTERVIEW_SYSTEM };
-export { defineProfileGenAgent, PROFILE_GEN_MODEL, type ProfileGenContext, type SaveProfileResult };
-export { ProfileGenSchema, type GeneratedProfile };
+// ProfileGen: generation returns an editable draft (writes nothing);
+// commitCreatorProfile is the explicit "put on profile" step (persists + embeds + role flip).
+export { profileGenAgent, PROFILE_GEN_MODEL };
+export { commitCreatorProfile, type CommitProfileContext, type CommitProfileResult };
 ```
+
+The generated/committed shapes are the **shared `@resonance/core` contract** —
+`CreatorProfileDraft` (generation output) and `CommitProfileInput` (commit payload). Import
+those from `@resonance/core`, not here (`ai` is server-only and must never ship to the client;
+the draft is also spoken by `ui`/`web`, so it lives in `core` — ADR-0003).
 
 ## Three swap seams (design for testability)
 
@@ -73,17 +81,27 @@ the whole flow deterministically with no credentials (design spec § Mock-first 
 - **`resolveEmbedder()`** — live Voyage `voyage-3.5` (1024-dim) via the Gateway;
   `RESONANCE_FAKES=1` → a deterministic fake. Both assert the 1024-dim contract (ADR-0010).
 - **`runAgentStream` / `runAgentStructured`** — the one runner. Streaming for the interview;
-  structured (forced single tool call, executed, Zod-validated) for ProfileGen. Throws
+  structured (forced single tool call, executed, Zod-validated) for ProfileGen generation. Throws
   `AgentError` at the boundary — never swallows.
 
-## The context-injection pattern (`defineProfileGenAgent`)
+## ProfileGen: generate a draft, then commit it (two steps)
 
-`saveProfile` needs the authenticated `userId`, the user's current roles, and `db` / `embedder`
-handles — none model-supplied. `defineProfileGenAgent({ userId, currentRoles, db, embedder })`
-returns an `AgentDefinition` whose tool handler closes over that server context. The registry
-`handler: (input) => Promise<…>` type stays untouched. This is the canonical pattern for any
-context-dependent tool. Its handler is what proves the registry (ADR-0013): write the profile
-row → flip the user into a creator (`setUserRoles`) → embed → write the embedding row.
+The Creator Onboarding UX generates a profile **draft**, lets the user edit it and pick a name,
+then commits it. The two halves are deliberately split so nothing is written until the user says so:
+
+- **Generation — `profileGenAgent`** is a plain agent (like `creator-interview`, no server
+  context). Its single `proposeProfile` tool has `inputSchema = CreatorProfileDraftSchema` and a
+  **pure** handler that just returns the validated `CreatorProfileDraft` — up to three candidate
+  names plus headline, bio, tags. Run it through `runAgentStructured` (forced single tool call);
+  the tool's return value is the agent's output. **It touches no db/embedder and writes nothing.**
+- **Commit — `commitCreatorProfile(ctx, input)`** is a plain exported async function (NOT an agent
+  tool). The web layer calls it after the user edits the draft and picks a name.
+  `ctx: { userId, currentRoles, db, embedder }`, `input: CommitProfileInput` (Zod-validated at the
+  boundary). It is what proves the registry's ai→db→matching path (ADR-0013) and preserves the
+  **no-interactive-transaction ordering** (ADR-0004): embed first (external, fail-safe) →
+  `createCreatorProfile` (`offerings: []`, `status: "ready"`) → `upsertProfileEmbedding` →
+  `setUserRoles([...currentRoles, "creator"])` **last** (additive, so member→creator preserves
+  membership). Returns `{ profileId }`.
 
 ## Durable workflows — deferred
 
@@ -94,9 +112,9 @@ combined storefront generation, or bulk re-embedding). Don't let that decision g
 ## Rules
 
 - Orchestration stays server-side (Server Actions / route handlers).
-- Depends on `@resonance/core` and `@resonance/db` (embeddings + the `saveProfile` tool's writes).
-- Tool handlers reach the DB/domains through their packages, never directly (`saveProfile` uses
-  `@resonance/db`'s query helpers).
+- Depends on `@resonance/core` and `@resonance/db` (embeddings + `commitCreatorProfile`'s writes).
+- DB access goes through `@resonance/db` query helpers, never directly — `commitCreatorProfile`
+  uses `createCreatorProfile` / `upsertProfileEmbedding` / `setUserRoles` (ADR-0009).
 - `ai/test` (`MockLanguageModelV3`) is used only for the fake model + unit-test mocks; this is a
   server-only package, never shipped to the client.
 
