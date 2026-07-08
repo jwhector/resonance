@@ -30,7 +30,7 @@ export const Tag = React.forwardRef<HTMLSpanElement, TagProps>(
         ref={ref}
         role="listitem"
         className={cn(
-          "inline-flex items-center gap-1.5 rounded-md border border-border-strong bg-surface px-3 py-1.5 text-xs font-medium text-foreground",
+          "inline-flex items-center gap-1 rounded-md border-2 border-foreground p-3 text-caption font-medium text-foreground",
           className,
         )}
         {...props}
@@ -42,8 +42,8 @@ export const Tag = React.forwardRef<HTMLSpanElement, TagProps>(
             aria-label={label}
             onClick={onRemove}
             className={cn(
-              "-mr-0.5 flex size-4 shrink-0 items-center justify-center rounded-sm text-muted transition-colors",
-              "hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1",
+              "-mr-0.5 flex size-3 shrink-0 items-center justify-center rounded-sm text-foreground transition-colors",
+              "hover:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1",
             )}
           >
             <svg

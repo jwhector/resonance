@@ -23,12 +23,12 @@ export const Checkbox = React.forwardRef<
   const generatedId = React.useId();
   const inputId = id ?? generatedId;
   return (
-    <div className="flex items-start gap-2">
+    <div className="flex items-start gap-4">
       <CheckboxPrimitive.Root
         ref={ref}
         id={inputId}
         className={cn(
-          "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-sm border border-border-strong bg-surface text-on-primary",
+          "flex size-6 shrink-0 items-center justify-center rounded-sm border border-border-strong bg-surface text-on-primary",
           "data-[state=checked]:border-primary data-[state=checked]:bg-primary",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
           "disabled:cursor-not-allowed disabled:opacity-50",
@@ -45,14 +45,14 @@ export const Checkbox = React.forwardRef<
             strokeLinecap="round"
             strokeLinejoin="round"
             aria-hidden="true"
-            className="size-3"
+            className="size-4"
           >
             <path d="M20 6 9 17l-5-5" />
           </svg>
         </CheckboxPrimitive.Indicator>
       </CheckboxPrimitive.Root>
       {label != null && (
-        <label htmlFor={inputId} className="select-none text-sm text-muted">
+        <label htmlFor={inputId} className="select-none text-body-lg text-foreground">
           {label}
         </label>
       )}

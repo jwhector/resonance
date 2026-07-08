@@ -44,7 +44,7 @@ export function WeaveComposer({
   return (
     <form
       className={cn(
-        "flex items-center gap-2 rounded-lg border border-border bg-surface-muted p-2",
+        "flex items-center gap-2 rounded-md border border-border bg-surface-muted p-3",
         disabled && "opacity-60",
         className,
       )}
@@ -59,7 +59,7 @@ export function WeaveComposer({
         placeholder={placeholder}
         aria-label={ariaLabel ?? placeholder}
         disabled={disabled}
-        className="border-0 bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+        className="border-0 bg-transparent text-body-lg shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
       />
       <Button
         type="submit"

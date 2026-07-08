@@ -29,31 +29,33 @@ export interface CreateAccountCardProps extends Omit<
 export function CreateAccountCard({
   className,
   onSubmit,
-  consentLabel = "I agree to the Terms of Service and Privacy Policy.",
+  consentLabel = "I agree Resonance's Term of Use, and acknowledge its Information Collection Notice and Privacy Policy",
   ...props
 }: CreateAccountCardProps) {
   const [email, setEmail] = React.useState("");
   const [consent, setConsent] = React.useState(false);
-  const emailId = React.useId();
 
   const canSubmit = email.trim().length > 0 && consent;
 
   return (
     <div
       className={cn(
-        "flex w-full max-w-sm flex-col gap-6 rounded-lg border border-border bg-surface p-8 shadow-md",
+        "flex w-full max-w-md flex-col gap-10 rounded-lg border border-border bg-surface p-8",
         className,
       )}
       {...props}
     >
-      <div className="flex flex-col items-center gap-3 text-center">
-        <div className="bg-brand-gradient size-12 rounded-xl" aria-hidden="true" />
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-bold text-foreground">Welcome to Resonance</h1>
-          <p className="text-sm text-muted">Create your account with email</p>
+      {/* Header: Resonance wordmark over the welcome copy (Figma gaps 24 / 8). */}
+      <div className="flex flex-col items-center gap-6 text-center">
+        <div className="bg-brand-gradient h-6 w-20 rounded-md" aria-hidden="true" />
+        <div className="flex flex-col gap-2">
+          <h1 className="text-heading-md font-medium text-foreground">Welcome to Resonance</h1>
+          <p className="text-body-lg text-muted">Create your account with email</p>
         </div>
       </div>
 
+      {/* Form (Figma gap 16). The email field is placeholder-labelled in the design; we
+          keep an aria-label so the control still has an accessible name. */}
       <form
         className="flex flex-col gap-4"
         onSubmit={(event) => {
@@ -61,20 +63,16 @@ export function CreateAccountCard({
           if (canSubmit) onSubmit({ email: email.trim(), consent });
         }}
       >
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor={emailId} className="text-sm font-medium text-foreground">
-            Email
-          </label>
-          <TextInput
-            id={emailId}
-            type="email"
-            required
-            autoComplete="email"
-            placeholder="you@example.com"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-          />
-        </div>
+        <TextInput
+          type="email"
+          required
+          autoComplete="email"
+          aria-label="Email"
+          placeholder="Type your email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          className="h-14 px-4 text-body-lg"
+        />
 
         <Checkbox
           checked={consent}

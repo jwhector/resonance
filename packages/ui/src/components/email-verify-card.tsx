@@ -36,21 +36,23 @@ export function EmailVerifyCard({
   return (
     <div
       className={cn(
-        "flex w-full max-w-sm flex-col items-center gap-6 rounded-lg border border-border bg-surface p-8 text-center shadow-md",
+        "flex w-full max-w-sm flex-col items-center gap-9 rounded-lg border border-border bg-surface p-8 text-center",
         className,
       )}
       {...props}
     >
-      <div className="flex size-12 items-center justify-center rounded-full bg-primary-100 text-primary">
-        <MailIcon className="size-6" />
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold text-foreground">Check your email to continue</h1>
-        <p className="text-sm text-muted">
-          We&apos;ve sent an email to <span className="font-medium text-foreground">{email}</span>.
-          Click the magic link or enter the code below:
-        </p>
+      {/* Header group: envelope glyph + copy (Figma gaps 16 / 8). */}
+      <div className="flex flex-col items-center gap-4">
+        <MailIcon className="size-8 text-foreground" />
+        <div className="flex flex-col gap-2">
+          <h1 className="text-heading-md font-medium text-foreground">
+            Check your email to continue
+          </h1>
+          <p className="text-body-lg text-muted">
+            We&apos;ve sent an email to <span className="font-medium text-foreground">{email}</span>
+            . Click the magic link or enter the code below:
+          </p>
+        </div>
       </div>
 
       <OtpInput
@@ -60,20 +62,23 @@ export function EmailVerifyCard({
         aria-label="Email verification code"
       />
 
-      <Button type="button" size="wide" disabled={!canContinue} onClick={() => onSubmit(code)}>
-        Continue
-      </Button>
+      {/* Footer group: primary action + resend (Figma gaps 16 / 8). */}
+      <div className="flex w-full flex-col items-center gap-4">
+        <Button type="button" size="wide" disabled={!canContinue} onClick={() => onSubmit(code)}>
+          Continue
+        </Button>
 
-      <p className="text-sm text-muted">
-        Didn&apos;t get the email?{" "}
-        <button
-          type="button"
-          onClick={onResend}
-          className="rounded-sm font-medium text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-        >
-          Try again
-        </button>
-      </p>
+        <div className="flex items-center gap-2 text-body-lg text-muted">
+          <span>Didn&apos;t get the email?</span>
+          <button
+            type="button"
+            onClick={onResend}
+            className="rounded-sm font-medium text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          >
+            Try again
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
