@@ -2,13 +2,14 @@ import { type Page, expect, test } from "@playwright/test";
 
 /**
  * End-to-end Creator Onboarding flow (ADR-0013): the real passwordless front door →
- * Weave interview → ProfileGen draft → commit → published profile. Runs entirely under
- * `RESONANCE_FAKES=1` (fake model / mail / embedder) against the real Neon DB, so it is
- * deterministic and credential-free.
+ * Weave interview → ProfileGen draft → commit → published profile. Runs entirely under the
+ * isolated E2E harness (`E2E_HARNESS=1`, set by `playwright.config.ts`), which selects the
+ * deterministic fake model / mail / embedder at the app's composition roots (ADR-0018 §4) — so the
+ * flow is deterministic and credential-free — against the real Neon DB.
  *
  * Robustness (ADR-0011 / plan risk R5): assert only on SETTLED state — role queries,
  * `toBeVisible`, `toHaveURL`, generous timeouts. Never assert on mid-stream tokens. The OTP is
- * pulled from the RESONANCE_FAKES-gated `/api/test/last-otp` seam, which reads the same fake-mail
+ * pulled from the `E2E_HARNESS`-gated `/api/test/last-otp` seam, which reads the same fake-mail
  * singleton Better Auth writes the code to (see `@resonance/auth` `peekLoginCode`).
  */
 

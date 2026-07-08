@@ -1,0 +1,47 @@
+name: verify:live (live-smoke)
+
+# Credential-gated live-smoke gate (ADR-0018 §3): exercises the model, embedding, email, and DB
+# wiring FOR REAL through the public @resonance/* seams, so a green release also means "live works."
+# Deliberately OUT of the PR/CI fast gate (it needs live credentials + a small token/email budget):
+# it runs nightly and on demand. Without the secrets configured it is a clean no-op — the script's
+# credential gate prints "SKIPPED" and exits 0.
+
+on:
+  schedule:
+    - cron: "0 7 * * *" # nightly ~07:00 UTC
+  workflow_dispatch: {}
+
+concurrency:
+  group: verify-live-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-live:
+    name: live-smoke (model · embedding · email · db)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: verify:live
+        run: pnpm verify:live
+        env:
+          # AI: a Gateway key covers both model + embedding; or provide the direct provider keys.
+          AI_GATEWAY_API_KEY: ${{ secrets.AI_GATEWAY_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
+          # Email: send one smoke message via Resend to a verified address.
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL }}
+          VERIFY_LIVE_EMAIL_TO: ${{ secrets.VERIFY_LIVE_EMAIL_TO }}
+          # DB: a real Neon Postgres — the check writes, reads back, and deletes one throwaway row.
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
