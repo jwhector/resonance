@@ -3,7 +3,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 // The action modules touch server-only seams — mock each package's public entrypoint so we can
 // unit-test the boundary validation + wiring without a live DB, AI Gateway, or session cookie.
-const getSession = vi.fn();
+// Session reads go through the shell's `getWebSession` (which routes through the SAME instance the
+// auth mount serves — seed resonance-eb15), so we mock `lib/auth`, not `@resonance/auth` directly.
+const getWebSession = vi.fn();
 const runAgentStructured = vi.fn();
 const commitCreatorProfile = vi.fn();
 const resolveEmbedder = vi.fn(() => ({ embedProfile: vi.fn() }));
@@ -15,7 +17,7 @@ const redirect = vi.fn((url: string) => {
 
 vi.mock("next/headers", () => ({ headers: () => headers() }));
 vi.mock("next/navigation", () => ({ redirect: (url: string) => redirect(url) }));
-vi.mock("@resonance/auth", () => ({ getSession: (h: Headers) => getSession(h) }));
+vi.mock("../../../lib/auth", () => ({ getWebSession: (h: Headers) => getWebSession(h) }));
 vi.mock("@resonance/db", () => ({ createDb: () => createDb() }));
 vi.mock("@resonance/ai", () => ({
   profileGenAgent: { id: "profile-gen" },
@@ -42,7 +44,7 @@ afterEach(() => {
 describe("generateDraft", () => {
   it("rejects an empty transcript at the Zod boundary (before any session/AI call)", async () => {
     await expect(generateDraft({ messages: [] })).rejects.toThrow();
-    expect(getSession).not.toHaveBeenCalled();
+    expect(getWebSession).not.toHaveBeenCalled();
     expect(runAgentStructured).not.toHaveBeenCalled();
   });
 
@@ -52,7 +54,7 @@ describe("generateDraft", () => {
   });
 
   it("redirects anonymous callers to /signup", async () => {
-    getSession.mockResolvedValueOnce(null);
+    getWebSession.mockResolvedValueOnce(null);
     await expect(generateDraft({ messages: [{ role: "user", content: "hi" }] })).rejects.toThrow(
       "NEXT_REDIRECT:/signup",
     );
@@ -60,7 +62,7 @@ describe("generateDraft", () => {
   });
 
   it("returns the generated draft for an authenticated creator", async () => {
-    getSession.mockResolvedValueOnce(sessionUser);
+    getWebSession.mockResolvedValueOnce(sessionUser);
     runAgentStructured.mockResolvedValueOnce({ output: draft, text: "" });
 
     const result = await generateDraft({ messages: [{ role: "user", content: "I make tools" }] });
@@ -79,12 +81,12 @@ describe("commitProfile", () => {
     await expect(
       commitProfile({ displayName: "", headline: "h", bio: "b", tags: [] }),
     ).rejects.toThrow();
-    expect(getSession).not.toHaveBeenCalled();
+    expect(getWebSession).not.toHaveBeenCalled();
     expect(commitCreatorProfile).not.toHaveBeenCalled();
   });
 
   it("throws when there is no session", async () => {
-    getSession.mockResolvedValueOnce(null);
+    getWebSession.mockResolvedValueOnce(null);
     await expect(
       commitProfile({ displayName: "Ada", headline: "h", bio: "b", tags: ["t"] }),
     ).rejects.toThrow(/not authenticated/i);
@@ -92,7 +94,7 @@ describe("commitProfile", () => {
   });
 
   it("commits with the session context and redirects to the new profile", async () => {
-    getSession.mockResolvedValueOnce(sessionUser);
+    getWebSession.mockResolvedValueOnce(sessionUser);
     commitCreatorProfile.mockResolvedValueOnce({ profileId: "profile_123" });
 
     await expect(

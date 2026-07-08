@@ -39,8 +39,10 @@ export type { SessionUser }; // { id, email, roles: Role[] }
 // Auth instance factory and app singleton.
 export { createAuth, getAuth, type Auth };
 
-// Session helper — decodes the session cookie for RSC / Server Actions.
-export { getSession }; // (headers: Headers) => Promise<SessionUser | null>
+// Session helper — decodes the session cookie for RSC / Server Actions. `auth` defaults to the
+// app singleton; pass an explicit instance to read through the same one that serves the mount
+// (apps/web does this via `getWebSession` — one instance per process, ADR-0018 §4 / eb15).
+export { getSession }; // (headers: Headers, auth?: Auth) => Promise<SessionUser | null>
 
 // Role codec — encode/decode Role[] to/from the single comma-encoded text column.
 export { encodeRoles, decodeRoles };
@@ -55,8 +57,10 @@ export { requestLoginCode }; // (email: string) => Promise<void>
 
 ```ts
 // Test-only subpath (ADR-0018) — the in-memory fake double, injected via DI in tests.
-import { createFakeMail } from "@resonance/auth/testing";
+import { createFakeMail, observeLoginCodes } from "@resonance/auth/testing";
 // createAuth({ db, mail: createFakeMail().port })
+// observeLoginCodes(fake) — EXPLICIT opt-in so `peekLoginCode` reads THIS fake's OTPs back
+// (the E2E harness calls it; construction has no side effect — no action-at-a-distance).
 ```
 
 ## Key design decisions
@@ -102,14 +106,17 @@ release (ADR-0018). `createResendMail({ apiKey, from })` builds the live transpo
 Resend are thrown, not swallowed.
 
 **`peekLoginCode(email)`** is a dev/test-only OTP read-back on the main entrypoint. It reads a
-process-wide observation buffer that the test-only `createFakeMail()` registers on construction,
-so a DI-injected fake's captured codes are observable across Next.js route-handler module scopes.
-It is **inert in production** (nothing constructs a fake there, so nothing registers). The
-deterministic OTP E2E consumes it through the **isolated `E2E_HARNESS`** harness (ADR-0018 §4):
-`apps/web` builds the auth instance with a DI-injected `createFakeMail()` under that harness, and
-the E2E-only `/api/test/last-otp` route (gated on `E2E_HARNESS`, never a general fakes flag) reads
-the captured code back. Live Resend wiring is proven separately by the credential-gated
-`verify:live` smoke gate (ADR-0018 §3).
+process-wide observation buffer that is populated **only by an EXPLICIT opt-in** —
+`observeLoginCodes(fake)` (on `@resonance/auth/testing`). Construction of a fake has **no side
+effect** on the slot, so building a fake anywhere (a unit test, another package) can never hijack
+the read-back of another fake — no action-at-a-distance (seed resonance-5d4e). It is **inert in
+production** for two independent reasons: nothing there ever builds a fake or calls
+`observeLoginCodes`, AND `peekLoginCode` hard-returns `undefined` when `NODE_ENV === "production"`
+(defense-in-depth). The deterministic OTP E2E consumes it through the **isolated `E2E_HARNESS`**
+harness (ADR-0018 §4): `apps/web` builds the auth instance with a DI-injected `createFakeMail()` and
+calls `observeLoginCodes(fake)` under that harness, and the E2E-only `/api/test/last-otp` route
+(gated on `E2E_HARNESS`, never a general fakes flag) reads the captured code back. Live Resend wiring
+is proven separately by the credential-gated `verify:live` smoke gate (ADR-0018 §3).
 
 ### emailOTP alongside magic-link
 
@@ -124,12 +131,18 @@ plugin also auto-mounts `/email-otp/send-verification-otp` and `/sign-in/email-o
 the browser client. Sign-in via code uses `type: "sign-in"` and auto-creates the user
 with default `roles = "member"`, exactly like magic-link verify.
 
-### `getSession(headers)`
+### `getSession(headers, auth?)`
 
-Thin wrapper around `auth.api.getSession`. Decodes the session cookie from incoming
-`Headers` (pass `headers()` from `next/headers` in RSC/Server Actions), extracts
-`id`, `email`, and `roles` (via `decodeRoles`), and returns a `SessionUser`.
-Returns `null` when there is no valid session.
+Thin wrapper around `auth.api.getSession`, generic over the Better Auth instance to read from
+(`auth` defaults to the app singleton `getAuth()`). Decodes the session cookie from incoming
+`Headers` (pass `headers()` from `next/headers` in RSC/Server Actions), extracts `id`, `email`,
+and `roles` (via `decodeRoles`), and returns a `SessionUser`; `null` when there is no valid session.
+
+Pass an explicit `auth` so session reads run through the **same instance that serves the mount** —
+one Better Auth instance per process, not two that merely agree because they share
+`BETTER_AUTH_SECRET` + `DATABASE_URL` (seed resonance-eb15). The `apps/web` shell does this via
+`getWebSession`, which routes reads through `getWebAuth()`; ADR-0018 §4 keeps the harness selection
+in the shell, so this package stays generic (no fakes flag here).
 
 ## Rules
 

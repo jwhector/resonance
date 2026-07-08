@@ -7,27 +7,26 @@
 
 import { type AuthMailPort, type OtpType, registerObservedLoginCodes } from "../mail";
 
+/** The in-memory fake transport plus the buffers it captures into. */
+export interface FakeMail {
+  port: AuthMailPort;
+  sent: Array<{ email: string; url: string; token: string }>;
+  codes: Array<{ email: string; otp: string; type: OtpType }>;
+}
+
 /**
  * In-memory {@link AuthMailPort} that captures everything it is asked to send. `sent`
  * collects magic links, `codes` collects OTPs — both from the ONE transport, so a single
  * fake observes the whole auth flow. Inject it via `createAuth({ mail })` in tests.
  *
- * On construction the captured `codes` buffer is also registered as the process-wide OTP
- * observation source (see {@link registerObservedLoginCodes}), so `peekLoginCode(email)` —
- * imported from the package's main entry — reads back codes captured by THIS fake even
- * across Next.js route-handler module scopes. That read-back is what the deterministic E2E
- * OTP harness relies on (seed resonance-a4a4); it is inert in production because production
- * never constructs a fake, so nothing is ever registered.
+ * Construction has NO side effects: it does NOT touch the process-wide OTP observation slot. A
+ * caller that wants `peekLoginCode(email)` to read this fake's codes back (the deterministic E2E
+ * OTP harness) must OPT IN explicitly by calling {@link observeLoginCodes} — so constructing a fake
+ * anywhere can never hijack the read-back of another fake (no action-at-a-distance).
  */
-export function createFakeMail(): {
-  port: AuthMailPort;
-  sent: Array<{ email: string; url: string; token: string }>;
-  codes: Array<{ email: string; otp: string; type: OtpType }>;
-} {
-  const sent: Array<{ email: string; url: string; token: string }> = [];
-  const codes: Array<{ email: string; otp: string; type: OtpType }> = [];
-  // Expose this fake's capture buffer to `peekLoginCode` for the DI-injected E2E read-back.
-  registerObservedLoginCodes(codes);
+export function createFakeMail(): FakeMail {
+  const sent: FakeMail["sent"] = [];
+  const codes: FakeMail["codes"] = [];
   return {
     sent,
     codes,
@@ -48,4 +47,17 @@ export function createFakeMail(): {
       },
     },
   };
+}
+
+/**
+ * Explicitly register `fake`'s captured `codes` as the process-wide OTP observation source, so
+ * `peekLoginCode(email)` (imported from the package's main entry) reads back codes THIS fake
+ * captures — even across Next.js route-handler module scopes. This is the deliberate opt-in the
+ * deterministic E2E OTP harness (`apps/web/lib/e2e-harness.ts`, seed resonance-a4a4) calls when it
+ * builds its singleton fake; last call wins. Inert in production, which never builds a fake or calls
+ * this. Kept opt-in (not a construction side-effect) so a fake built anywhere else cannot silently
+ * take over the read-back.
+ */
+export function observeLoginCodes(fake: Pick<FakeMail, "codes">): void {
+  registerObservedLoginCodes(fake.codes);
 }

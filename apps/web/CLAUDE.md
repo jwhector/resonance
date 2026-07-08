@@ -25,7 +25,8 @@ app/
 ├── api/test/last-otp/            E2E-ONLY OTP read-back — gated on E2E_HARNESS
 └── layout.tsx · page.tsx · globals.css
 lib/
-├── auth.ts            getWebAuth() — live getAuth(), or DI-injected fake mail under E2E_HARNESS
+├── auth.ts            getWebAuth() (the one instance the mount serves) + getWebSession() — all
+│                      apps/web session reads route through it, so ONE instance runs per process
 ├── e2e-harness.ts     the SINGLE, production-guarded E2E fake-selection seam (ADR-0018)
 ├── auth-client.ts · interview-messages.ts
 e2e/
@@ -45,7 +46,12 @@ and `zod`.
   [`lib/e2e-harness.ts`](lib/e2e-harness.ts) (`E2E_HARNESS=1`, hard-guarded off in production) —
   which injects the test-only fakes (`@resonance/ai/testing`, `@resonance/auth/testing`) at the
   composition roots (interview stream, `generateDraft`, `commitProfile`, and the auth mount). It
-  is **not** a general fakes flag threaded through the packages (ADR-0018 §4).
+  is **not** a general fakes flag threaded through the packages (ADR-0018 §4). The harness fake mail
+  is a `globalThis` singleton and registers its OTP buffer for read-back with an **explicit**
+  `observeLoginCodes(fake)` call (never a construction side-effect), so building a fake — or a
+  session read via `getWebSession` — can't clobber the `/api/test/last-otp` read-back (seed
+  resonance-5d4e). Session reads go through `getWebSession` → `getWebAuth`, so the mount and the
+  reads share ONE Better Auth instance per process (seed resonance-eb15).
 - Live wiring is proven by the credential-gated **`verify:live`** smoke gate (`pnpm verify:live`,
   ADR-0018 §3): one real model call + embedding + email + DB write. It **skips** (exit 0) with no
   credentials, so the fast inner loop stays free and deterministic.

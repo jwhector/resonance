@@ -9,8 +9,8 @@ import {
   type CreatorProfileDraft,
 } from "@resonance/core";
 import { commitCreatorProfile, profileGenAgent, runAgentStructured } from "@resonance/ai";
-import { getSession } from "@resonance/auth";
 import { createDb } from "@resonance/db";
+import { getWebSession } from "../../../lib/auth";
 import { onboardingEmbedder, onboardingModelOverride } from "../../../lib/e2e-harness";
 
 /**
@@ -33,7 +33,7 @@ const GenerateDraftInputSchema = z.object({
 export async function generateDraft(input: unknown): Promise<CreatorProfileDraft> {
   const { messages } = GenerateDraftInputSchema.parse(input);
 
-  const user = await getSession(await headers());
+  const user = await getWebSession(await headers());
   if (!user) redirect("/signup");
 
   // Live-by-default: no model is injected here, so the runner resolves the Gateway model
@@ -56,7 +56,7 @@ export async function generateDraft(input: unknown): Promise<CreatorProfileDraft
 export async function commitProfile(input: unknown): Promise<void> {
   const commit = CommitProfileInputSchema.parse(input);
 
-  const user = await getSession(await headers());
+  const user = await getWebSession(await headers());
   if (!user) throw new Error("Not authenticated: sign in before publishing a profile.");
 
   const { profileId } = await commitCreatorProfile(

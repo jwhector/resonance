@@ -7,7 +7,7 @@ vi.mock("resend", () => ({
   Resend: vi.fn(() => ({ emails: { send } })),
 }));
 
-import { createResendMail, resolveMail } from "./mail";
+import { createResendMail, peekLoginCode, resolveMail } from "./mail";
 
 describe("createResendMail (live Resend transport)", () => {
   beforeEach(() => {
@@ -44,6 +44,15 @@ describe("createResendMail (live Resend transport)", () => {
     await expect(
       mail.sendLoginCode({ email: "u@x.com", otp: "111111", type: "sign-in" }),
     ).rejects.toThrow(/domain not verified/);
+  });
+
+  it("does NOT feed the OTP read-back — sending a live code leaves peekLoginCode inert (resonance-5d4e)", async () => {
+    // The live transport has no registration path: only an explicitly-observed fake feeds the
+    // read-back. Sending a real code must never make peekLoginCode surface it.
+    const mail = createResendMail({ apiKey: "re_test", from: "F <onboarding@resend.dev>" });
+    await mail.sendLoginCode({ email: "live@x.com", otp: "777777", type: "sign-in" });
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(peekLoginCode("live@x.com")).toBeUndefined();
   });
 });
 

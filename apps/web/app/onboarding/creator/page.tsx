@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { getSession } from "@resonance/auth";
+import { getWebSession } from "../../../lib/auth";
 import { InterviewClient } from "./interview-client";
 
 /**
@@ -10,7 +10,7 @@ import { InterviewClient } from "./interview-client";
  * only — every rule lives in the packages it wires (ADR-0002).
  */
 export default async function CreatorInterviewPage() {
-  const user = await getSession(await headers());
+  const user = await getWebSession(await headers());
   if (!user) redirect("/signup");
 
   return (
