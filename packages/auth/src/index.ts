@@ -16,8 +16,15 @@ export { getSession } from "./session";
 // Role codec helpers.
 export { encodeRoles, decodeRoles } from "./roles";
 
-// Mail transport factory + resolver, and the auth mail seam type.
-export { createFakeMail, resolveMail, type AuthMailPort, type OtpType } from "./mail";
+// Mail transport factory + resolver, and the auth mail seam type. `peekLoginCode` is a
+// dev/test-only read-back of the fake transport's captured codes (inert without RESONANCE_FAKES).
+export {
+  createFakeMail,
+  resolveMail,
+  peekLoginCode,
+  type AuthMailPort,
+  type OtpType,
+} from "./mail";
 
 // emailOTP capability — send a passwordless login code (coexists with magic-link).
 export { requestLoginCode } from "./otp";
