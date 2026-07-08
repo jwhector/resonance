@@ -14,6 +14,7 @@
     "clean": "rm -rf .next .turbo *.tsbuildinfo"
   },
   "dependencies": {
+    "@ai-sdk/react": "3.0.220",
     "@resonance/ai": "workspace:*",
     "@resonance/auth": "workspace:*",
     "@resonance/commerce": "workspace:*",
@@ -22,6 +23,8 @@
     "@resonance/db": "workspace:*",
     "@resonance/ui": "workspace:*",
     "@tanstack/react-query": "^5.64.1",
+    "ai": "6.0.220",
+    "better-auth": "1.6.20",
     "next": "^15.1.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -32,10 +35,14 @@
     "@resonance/eslint-config": "workspace:*",
     "@resonance/tsconfig": "workspace:*",
     "@tailwindcss/postcss": "^4.0.0",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/node": "^22.10.7",
     "@types/react": "^19.0.7",
     "@types/react-dom": "^19.0.3",
     "eslint": "^9.18.0",
+    "jsdom": "^29.1.1",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.7.3",
     "vitest": "^3.0.2"
