@@ -104,10 +104,12 @@ Resend are thrown, not swallowed.
 **`peekLoginCode(email)`** is a dev/test-only OTP read-back on the main entrypoint. It reads a
 process-wide observation buffer that the test-only `createFakeMail()` registers on construction,
 so a DI-injected fake's captured codes are observable across Next.js route-handler module scopes.
-It is **inert in production** (nothing constructs a fake there, so nothing registers). Removing
-the `RESONANCE_FAKES` selector makes the current deterministic OTP E2E inert until it is
-re-pointed — final disposition of `peekLoginCode` + the `/api/test/last-otp` route is tracked by
-seed **resonance-a4a4** (a separate, human-gated decision).
+It is **inert in production** (nothing constructs a fake there, so nothing registers). The
+deterministic OTP E2E consumes it through the **isolated `E2E_HARNESS`** harness (ADR-0018 §4):
+`apps/web` builds the auth instance with a DI-injected `createFakeMail()` under that harness, and
+the E2E-only `/api/test/last-otp` route (gated on `E2E_HARNESS`, never a general fakes flag) reads
+the captured code back. Live Resend wiring is proven separately by the credential-gated
+`verify:live` smoke gate (ADR-0018 §3).
 
 ### emailOTP alongside magic-link
 

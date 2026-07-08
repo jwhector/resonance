@@ -74,13 +74,13 @@
         <mxCell id="e_neon" value="Neon Postgres&#xa;+ pgvector" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#333333;" vertex="1" parent="sw_ext">
           <mxGeometry x="40" y="42" width="170" height="74" as="geometry" />
         </mxCell>
-        <mxCell id="e_gateway" value="Vercel AI Gateway&#xa;→ Claude (chat/gen)&#xa;→ Voyage (embeddings)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="sw_ext">
+        <mxCell id="e_gateway" value="Vercel AI Gateway (default)&#xa;→ Claude · Voyage&#xa;or direct Anthropic/Voyage (by key)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="sw_ext">
           <mxGeometry x="260" y="42" width="200" height="74" as="geometry" />
         </mxCell>
         <mxCell id="e_stripe" value="Stripe Connect&#xa;(marketplace payouts)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;dashed=1;fontColor=#666666;" vertex="1" parent="sw_ext">
           <mxGeometry x="510" y="42" width="190" height="74" as="geometry" />
         </mxCell>
-        <mxCell id="e_resend" value="Resend&#xa;(email — deferred)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;dashed=1;fontColor=#666666;" vertex="1" parent="sw_ext">
+        <mxCell id="e_resend" value="Resend&#xa;(email — live)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="sw_ext">
           <mxGeometry x="750" y="42" width="170" height="74" as="geometry" />
         </mxCell>
         <mxCell id="e_blob" value="Vercel Blob&#xa;(media — deferred)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;dashed=1;fontColor=#666666;" vertex="1" parent="sw_ext">
@@ -94,7 +94,7 @@
         <mxCell id="a_claude" value="CLAUDE.md&#xa;root + per-package&#xa;(scoped context)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="sw_agentic">
           <mxGeometry x="20" y="50" width="175" height="75" as="geometry" />
         </mxCell>
-        <mxCell id="a_adr" value="docs/adr/*&#xa;decisions &amp; rationale&#xa;(ADR 0001–0015)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="sw_agentic">
+        <mxCell id="a_adr" value="docs/adr/*&#xa;decisions &amp; rationale&#xa;(ADR 0001–0018)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="sw_agentic">
           <mxGeometry x="210" y="50" width="175" height="75" as="geometry" />
         </mxCell>
         <mxCell id="a_skills" value=".claude/skills/*&#xa;recipes (how we do X)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="sw_agentic">
