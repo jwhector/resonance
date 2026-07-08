@@ -53,7 +53,8 @@ function toToolSet(tools: AgentTool[] | undefined): ToolSet | undefined {
 /**
  * Streaming path — wraps `streamText` with the agent's system prompt and the transcript.
  * Returns the AI SDK stream result; the caller (a route handler) turns it into an HTTP
- * stream. Model errors surface on the stream, not synchronously.
+ * stream. Generation/model errors surface on the returned stream; a missing-provider
+ * misconfiguration makes `resolveModel` throw synchronously (fail-closed, ADR-0018).
  */
 export function runAgentStream(
   agent: AgentDefinition,

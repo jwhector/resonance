@@ -1,7 +1,5 @@
 import { type LanguageModel } from "ai";
-import { createFakeEmbedder, createFakeOnboardingModel } from "@resonance/ai/testing";
-import { type Embedder } from "@resonance/ai";
-import { createFakeMail } from "@resonance/auth/testing";
+import { resolveEmbedder, type Embedder } from "@resonance/ai";
 import { type AuthMailPort } from "@resonance/auth";
 
 /**
@@ -13,39 +11,52 @@ import { type AuthMailPort } from "@resonance/auth";
  * ADR-0018 §4 sanctions exactly one escape hatch for that: "an explicit, isolated, clearly-named
  * E2E-only harness" — this file.
  *
- * It is HARD-GUARDED against production: {@link E2E_HARNESS} is only ever true when the app is
- * booted with `E2E_HARNESS=1` (set by `playwright.config.ts`) AND `NODE_ENV !== "production"`. So
- * even if the flag leaked into a prod deploy, the fakes below can never activate. Shipped code
- * paths consult `E2E_HARNESS` at their composition roots (`interview/route.ts`, the onboarding
- * Server Actions, and the auth mount) with a single `E2E_HARNESS ? harness : live` — nowhere else.
+ * HARD-GUARDED against production: {@link E2E_HARNESS} is only ever true when the app is booted
+ * with `E2E_HARNESS=1` (set by `playwright.config.ts`) AND `NODE_ENV !== "production"`, so the
+ * fakes can never activate in a prod deploy.
  *
- * The fake IMPLEMENTATIONS live in the package test subpaths (`@resonance/ai/testing`,
- * `@resonance/auth/testing`); this module only SELECTS them.
+ * ISOLATION: the fake implementations (`@resonance/ai/testing`, `@resonance/auth/testing`) are
+ * loaded with a DYNAMIC `import()` *inside* the harness branch, so they are NOT statically bundled
+ * into the shipped server — `ai/test` never enters the live runtime (ADR-0018). Composition roots
+ * call one intent-named accessor below; the `E2E_HARNESS` decision lives ONLY here (nowhere else
+ * re-derives the ternary).
  */
 export const E2E_HARNESS = process.env.E2E_HARNESS === "1" && process.env.NODE_ENV !== "production";
 
 /**
- * The deterministic onboarding model for the E2E: one fake that both streams the canned Weave
- * interview line (`runAgentStream`) and returns the canned `proposeProfile` draft
- * (`runAgentStructured`). Injected via the `RunInput.model` DI seam at the composition roots.
+ * Model override for the onboarding runner, spread into `RunInput.model`. Under the harness: the
+ * deterministic onboarding fake — ONE model that both streams the canned Weave line
+ * (`runAgentStream`) and returns the canned `proposeProfile` draft (`runAgentStructured`). Live
+ * path returns `{}`, so the runner resolves the real model (`resolveModel`, ADR-0018).
  */
-export function harnessModel(): LanguageModel {
-  return createFakeOnboardingModel();
+export async function onboardingModelOverride(): Promise<{ model?: LanguageModel }> {
+  if (!E2E_HARNESS) return {};
+  const { createFakeOnboardingModel } = await import("@resonance/ai/testing");
+  return { model: createFakeOnboardingModel() };
 }
 
-/** The deterministic 1024-dim fake embedder, injected via `commitCreatorProfile`'s `embedder`. */
-export function harnessEmbedder(): Embedder {
+/** Embedder for the commit path: the deterministic 1024-dim fake under the harness, else live `resolveEmbedder()`. */
+export async function onboardingEmbedder(): Promise<Embedder> {
+  if (!E2E_HARNESS) return resolveEmbedder();
+  const { createFakeEmbedder } = await import("@resonance/ai/testing");
   return createFakeEmbedder();
 }
 
-// Module-singleton fake mail. It MUST be one shared instance so the auth handler that WRITES the
-// login code (`sendLoginCode`) and the `/api/test/last-otp` read-back (`peekLoginCode`) observe the
-// SAME captured codes: `createFakeMail()` registers its `codes` buffer into a process-wide slot on
-// construction, and the last writer wins that slot — so constructing it once is load-bearing.
+/**
+ * Mail transport for the auth mount: the shared in-memory fake under the harness (so the auth
+ * handler that WRITES the login code and the `/api/test/last-otp` read-back observe the SAME
+ * captured codes), else `undefined` → the caller uses the live `getAuth()`.
+ *
+ * Singleton: one shared instance. `createFakeMail()` registers its captured-codes buffer into a
+ * process-wide slot on construction (last writer wins), so constructing it exactly once is
+ * load-bearing for the OTP read-back.
+ */
 let _harnessMail: AuthMailPort | undefined;
-
-/** The shared in-memory mail transport for the E2E auth flow. See the singleton note above. */
-export function harnessMail(): AuthMailPort {
-  if (!_harnessMail) _harnessMail = createFakeMail().port;
+export async function harnessMailOverride(): Promise<AuthMailPort | undefined> {
+  if (!E2E_HARNESS) return undefined;
+  if (!_harnessMail) {
+    const { createFakeMail } = await import("@resonance/auth/testing");
+    _harnessMail = createFakeMail().port;
+  }
   return _harnessMail;
 }

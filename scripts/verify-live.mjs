@@ -66,65 +66,59 @@ const [{ createDb, user }, ai, { resolveMail }, { eq }] = await Promise.all([
 ]);
 const { resolveEmbedder, runAgentStream, creatorInterviewAgent } = ai;
 
-// --- Run each check independently so one failure never masks another; report all, fail on any. ---
-const results = [];
+// --- Run all four checks in PARALLEL. Each is isolated (its own try/catch) so one failure never
+// masks another; Promise.all preserves input order, so the report stays deterministic. -----------
 async function check(name, fn) {
   const startedAt = Date.now();
   try {
     const detail = await fn();
-    results.push({ name, ok: true, detail: detail ?? "ok", ms: Date.now() - startedAt });
+    return { name, ok: true, detail: detail ?? "ok", ms: Date.now() - startedAt };
   } catch (err) {
-    results.push({
-      name,
-      ok: false,
-      detail: String(err?.message ?? err),
-      ms: Date.now() - startedAt,
-    });
+    return { name, ok: false, detail: String(err?.message ?? err), ms: Date.now() - startedAt };
   }
 }
 
-// 1) model — one real generation through the live `resolveModel` seam via the shared runner.
-await check("model", async () => {
-  const result = runAgentStream(creatorInterviewAgent, {
-    messages: [{ role: "user", content: "Reply with a single short word." }],
-  });
-  const text = await result.text;
-  if (!text || text.trim().length === 0) throw new Error("model returned no text");
-  return `model responded (${text.trim().length} chars)`;
-});
-
-// 2) embedding — one real embedding through the live `resolveEmbedder` seam (1024-dim contract).
-await check("embedding", async () => {
-  const vector = await resolveEmbedder().embed("verify:live embedding probe");
-  if (!Array.isArray(vector) || vector.length !== 1024) {
-    throw new Error(
-      `expected a 1024-dim vector, got ${Array.isArray(vector) ? vector.length : typeof vector}`,
-    );
-  }
-  return `embedded 1 text → ${vector.length} dims`;
-});
-
-// 3) email — one real send through the live `resolveMail` seam (Resend) to VERIFY_LIVE_EMAIL_TO.
-await check("email", async () => {
-  const to = env.VERIFY_LIVE_EMAIL_TO.trim();
-  await resolveMail().sendLoginCode({ email: to, otp: "000000", type: "sign-in" });
-  return `sent smoke email to ${to}`;
-});
-
-// 4) DB write — one real write+read+cleanup through `@resonance/db` createDb() against Neon.
-await check("db", async () => {
-  const db = createDb();
-  const id = `verify-live-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-  const email = `${id}@verify-live.invalid`;
-  await db.insert(user).values({ id, name: "verify:live smoke", email });
-  try {
-    const rows = await db.select().from(user).where(eq(user.id, id));
-    if (rows.length !== 1) throw new Error(`read-back expected 1 row, got ${rows.length}`);
-  } finally {
-    await db.delete(user).where(eq(user.id, id)); // always clean up the throwaway row
-  }
-  return "insert → read-back → delete ok";
-});
+const results = await Promise.all([
+  // 1) model — one real generation through the live `resolveModel` seam via the shared runner.
+  check("model", async () => {
+    const result = runAgentStream(creatorInterviewAgent, {
+      messages: [{ role: "user", content: "Reply with a single short word." }],
+    });
+    const text = await result.text;
+    if (!text || text.trim().length === 0) throw new Error("model returned no text");
+    return `model responded (${text.trim().length} chars)`;
+  }),
+  // 2) embedding — one real embedding through the live `resolveEmbedder` seam (1024-dim contract).
+  check("embedding", async () => {
+    const vector = await resolveEmbedder().embed("verify:live embedding probe");
+    if (!Array.isArray(vector) || vector.length !== 1024) {
+      throw new Error(
+        `expected a 1024-dim vector, got ${Array.isArray(vector) ? vector.length : typeof vector}`,
+      );
+    }
+    return `embedded 1 text → ${vector.length} dims`;
+  }),
+  // 3) email — one real send through the live `resolveMail` seam (Resend) to VERIFY_LIVE_EMAIL_TO.
+  check("email", async () => {
+    const to = env.VERIFY_LIVE_EMAIL_TO.trim();
+    await resolveMail().sendLoginCode({ email: to, otp: "000000", type: "sign-in" });
+    return `sent smoke email to ${to}`;
+  }),
+  // 4) DB write — one real write+read+cleanup through `@resonance/db` createDb() against Neon.
+  check("db", async () => {
+    const db = createDb();
+    const id = `verify-live-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    const email = `${id}@verify-live.invalid`;
+    await db.insert(user).values({ id, name: "verify:live smoke", email });
+    try {
+      const rows = await db.select().from(user).where(eq(user.id, id));
+      if (rows.length !== 1) throw new Error(`read-back expected 1 row, got ${rows.length}`);
+    } finally {
+      await db.delete(user).where(eq(user.id, id)); // always clean up the throwaway row
+    }
+    return "insert → read-back → delete ok";
+  }),
+]);
 
 tsxHandle?.unregister?.();
 

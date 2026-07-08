@@ -8,15 +8,10 @@ import {
   InterviewMessageSchema,
   type CreatorProfileDraft,
 } from "@resonance/core";
-import {
-  commitCreatorProfile,
-  profileGenAgent,
-  resolveEmbedder,
-  runAgentStructured,
-} from "@resonance/ai";
+import { commitCreatorProfile, profileGenAgent, runAgentStructured } from "@resonance/ai";
 import { getSession } from "@resonance/auth";
 import { createDb } from "@resonance/db";
-import { E2E_HARNESS, harnessEmbedder, harnessModel } from "../../../lib/e2e-harness";
+import { onboardingEmbedder, onboardingModelOverride } from "../../../lib/e2e-harness";
 
 /**
  * Server Actions wiring the creator-onboarding flow: `ui` (the client interview) → `ai` (draft
@@ -47,7 +42,7 @@ export async function generateDraft(input: unknown): Promise<CreatorProfileDraft
   // guarded so it can never activate in production.
   const { output } = await runAgentStructured(profileGenAgent, {
     messages,
-    ...(E2E_HARNESS ? { model: harnessModel() } : {}),
+    ...(await onboardingModelOverride()),
   });
   return output;
 }
@@ -69,9 +64,9 @@ export async function commitProfile(input: unknown): Promise<void> {
       userId: user.id,
       currentRoles: user.roles,
       db: createDb(),
-      // Live-by-default embedder (`resolveEmbedder`, ADR-0018); the isolated E2E harness injects a
-      // deterministic one instead (ADR-0018 §4), never active in production.
-      embedder: E2E_HARNESS ? harnessEmbedder() : resolveEmbedder(),
+      // Live-by-default embedder (`resolveEmbedder`, ADR-0018); under the isolated E2E harness this
+      // resolves the deterministic fake instead (ADR-0018 §4), never active in production.
+      embedder: await onboardingEmbedder(),
     },
     commit,
   );

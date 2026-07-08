@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { InterviewMessageSchema } from "@resonance/core";
 import { creatorInterviewAgent, runAgentStream } from "@resonance/ai";
-import { E2E_HARNESS, harnessModel } from "../../../../lib/e2e-harness";
+import { onboardingModelOverride } from "../../../../lib/e2e-harness";
 
 /**
  * Weave interview stream (POST). The client (`useChat`, via `DefaultChatTransport`) maps its
@@ -32,8 +32,9 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
+  const modelOverride = await onboardingModelOverride();
   return runAgentStream(creatorInterviewAgent, {
     messages: parsed.data.messages,
-    ...(E2E_HARNESS ? { model: harnessModel() } : {}),
+    ...modelOverride,
   }).toUIMessageStreamResponse();
 }

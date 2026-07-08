@@ -2,7 +2,7 @@
 //
 // These are NEVER imported by shipped runtime code: the live seams (`resolveModel`,
 // `resolveEmbedder`) resolve real providers and fail closed without a key. Unit tests pass these
-// fakes in explicitly — `runAgentStructured(agent, { model: createFakeModel(id) })`, or
+// fakes in explicitly — `runAgentStructured(agent, { model: createFakeOnboardingModel() })`, or
 // `commitCreatorProfile(ctx, ...)` with `embedder: createFakeEmbedder()` — so the fast inner loop
 // stays deterministic and credential-free while runtime code has no fake branch to drift. The
 // full-flow E2E injects `createFakeOnboardingModel()` through the apps/web E2E harness (ADR-0018 §4).
@@ -37,24 +37,6 @@ function interviewStream() {
 }
 
 /**
- * A deterministic, text-only stand-in language model for the streaming path. Inject it via
- * `RunInput.model` (the `resolveModel` DI seam). It cannot satisfy a forced tool call, so a
- * tool-driven agent (profile-gen) needs {@link createFakeOnboardingModel} instead.
- */
-export function createFakeModel(modelId: ModelId): LanguageModel {
-  return new MockLanguageModelV3({
-    modelId,
-    doGenerate: async () => ({
-      content: [{ type: "text" as const, text: INTERVIEW_LINE }],
-      finishReason: stopReason(),
-      usage: zeroUsage(),
-      warnings: [],
-    }),
-    doStream: async () => ({ stream: interviewStream() }),
-  });
-}
-
-/**
  * The canned profile draft the onboarding E2E asserts on (three name options + headline + tags).
  * The bio is derived from the first interview turn so the E2E can prove the transcript flows into
  * the draft. Schema-parsed so it can only ever satisfy the `proposeProfile` contract.
@@ -84,8 +66,8 @@ function cannedProfileDraft(firstUserTurn: string): CreatorProfileDraft {
  *  - `doGenerate` — ProfileGen's forced `proposeProfile` tool call (`runAgentStructured`) returns a
  *    schema-valid {@link CreatorProfileDraft} whose bio is derived from the first interview turn.
  *
- * The plain {@link createFakeModel} is text-only and cannot satisfy the forced tool call, so this
- * is the model the full-flow E2E uses. Never selected on a shipped path — the harness hard-guards
+ * A text-only fake could not satisfy the forced tool call, so this combined model is the one the
+ * full-flow E2E uses. Never selected on a shipped path — the harness hard-guards
  * it against production (`E2E_HARNESS`), so `ai/test` never enters the live runtime.
  */
 export function createFakeOnboardingModel(

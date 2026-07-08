@@ -7,7 +7,7 @@ import type { ModelId } from "./registry";
  * The model swap seam (ADR-0009). Resolves an agent's `provider/model` id to a concrete
  * `LanguageModel`. **Live by default** (ADR-0018) — there is no `RESONANCE_FAKES` branch here;
  * shipped code always resolves a real transport, and a test injects a fake via `opts.model`
- * (`@resonance/ai/testing` supplies `createFakeModel`). Provider selection, by key precedence:
+ * (unit tests pass a `MockLanguageModelV3`). Provider selection, by key precedence:
  *
  * 1. **`opts.model`** — a caller-injected model (unit tests pass a `MockLanguageModelV3`). Wins so
  *    tests never touch a live path.

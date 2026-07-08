@@ -14,6 +14,7 @@ import { getWebAuth } from "../../../../lib/auth";
  * its handler (Context7: better-auth v1.6 App Router — the Expo-style `auth.handler(request)`
  * mount, equivalent to `toNextJsHandler`, but without adding a web-side dependency for it).
  */
-const handler = (request: Request): Response | Promise<Response> => getWebAuth().handler(request);
+const handler = async (request: Request): Promise<Response> =>
+  (await getWebAuth()).handler(request);
 
 export { handler as GET, handler as POST };

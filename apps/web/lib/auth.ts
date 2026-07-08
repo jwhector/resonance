@@ -1,26 +1,25 @@
 import { type Auth, createAuth, getAuth } from "@resonance/auth";
 import { createDb } from "@resonance/db";
-import { E2E_HARNESS, harnessMail } from "./e2e-harness";
+import { harnessMailOverride } from "./e2e-harness";
 
 /**
  * The auth instance the web shell serves from `app/api/auth/[...all]/route.ts`.
  *
- * By default this is the live `getAuth()` singleton (`@resonance/auth`), whose mail resolves to
- * the live Resend transport (`resolveMail`, ADR-0018). Under the E2E harness — and never in
- * production (see {@link E2E_HARNESS}) — it is instead an isolated instance built via the
- * `createAuth({ db, mail })` DI seam with the in-memory {@link harnessMail} fake, so the
- * passwordless flow captures OTPs the `/api/test/last-otp` read-back can observe.
+ * Live `getAuth()` by default (mail → live Resend, ADR-0018). Under the E2E harness — and never in
+ * production (see `e2e-harness.ts`) — it is instead an isolated instance built via the
+ * `createAuth({ db, mail })` DI seam with the in-memory harness fake, so the passwordless flow
+ * captures OTPs the `/api/test/last-otp` read-back can observe.
  *
- * The harness instance is a lazy singleton (like `getAuth`) so importing this module never
- * requires `DATABASE_URL` at build time; the secret is resolved by `@resonance/auth` exactly as
+ * Async because the harness fake mail is dynamically imported (kept out of the shipped bundle);
+ * the harness instance is a lazy singleton (built at most once) and importing this module never
+ * requires `DATABASE_URL` at build time. The secret is resolved by `@resonance/auth` exactly as
  * the live path does (the E2E boots with a fixed `BETTER_AUTH_SECRET` from `playwright.config.ts`).
  */
 let _harnessAuth: Auth | undefined;
-function harnessAuth(): Auth {
-  if (!_harnessAuth) _harnessAuth = createAuth({ db: createDb(), mail: harnessMail() });
-  return _harnessAuth;
-}
 
-export function getWebAuth(): Auth {
-  return E2E_HARNESS ? harnessAuth() : getAuth();
+export async function getWebAuth(): Promise<Auth> {
+  const mail = await harnessMailOverride();
+  if (!mail) return getAuth();
+  if (!_harnessAuth) _harnessAuth = createAuth({ db: createDb(), mail });
+  return _harnessAuth;
 }

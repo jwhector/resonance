@@ -6,7 +6,7 @@ import { E2E_HARNESS } from "../../../../lib/e2e-harness";
  * most recent fake login code so a Playwright run can complete the passwordless front door
  * without a mailbox. It reads the SAME `@resonance/auth` fake-mail singleton the Better Auth
  * OTP send writes to (both routes share one transpiled module instance in the Next server; the
- * fake is the module-singleton `harnessMail()` in `lib/e2e-harness.ts`).
+ * fake is the singleton built by `harnessMailOverride()` in `lib/e2e-harness.ts`).
  *
  * Gated HARD on {@link E2E_HARNESS} (ADR-0018 §4): outside the isolated E2E harness — and always in
  * production — it 404s and returns nothing, and `peekLoginCode` is itself inert there (no fake is
