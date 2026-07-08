@@ -64,17 +64,23 @@ describe("profile-gen generation (returns a draft, writes nothing)", () => {
     expect(output.nameOptions[0]?.name).toBe("Ada");
   });
 
-  it("writes NOTHING — running generation persists no profile or embedding rows", async () => {
-    // Generation takes no db/embedder handle, so it cannot write. Guard that contract: run it,
-    // then confirm a fresh store is still empty (a future regression that re-added a write here
-    // would surface as rows).
-    const { db, close } = await createTestDb();
-    try {
-      await run(draft);
-      expect(await db.select().from(creatorProfiles)).toHaveLength(0);
-      expect(await db.select().from(embeddings)).toHaveLength(0);
-    } finally {
-      await close();
-    }
-  });
+  // Generous timeout: this drives the real (fake-model) runner; ~1s in isolation but can exceed the
+  // 5s default under parallel test-suite CPU contention (seed resonance-75e5).
+  it(
+    "writes NOTHING — running generation persists no profile or embedding rows",
+    { timeout: 20000 },
+    async () => {
+      // Generation takes no db/embedder handle, so it cannot write. Guard that contract: run it,
+      // then confirm a fresh store is still empty (a future regression that re-added a write here
+      // would surface as rows).
+      const { db, close } = await createTestDb();
+      try {
+        await run(draft);
+        expect(await db.select().from(creatorProfiles)).toHaveLength(0);
+        expect(await db.select().from(embeddings)).toHaveLength(0);
+      } finally {
+        await close();
+      }
+    },
+  );
 });
