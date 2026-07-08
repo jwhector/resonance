@@ -7,6 +7,10 @@
     ".": {
       "types": "./src/index.ts",
       "default": "./src/index.ts"
+    },
+    "./testing": {
+      "types": "./src/testing/fake-mail.ts",
+      "default": "./src/testing/fake-mail.ts"
     }
   },
   "scripts": {

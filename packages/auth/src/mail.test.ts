@@ -1,7 +1,17 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createFakeMail, peekLoginCode, resolveMail } from "./mail";
+import { describe, expect, it } from "vitest";
+import { peekLoginCode } from "./mail";
+import { createFakeMail } from "./testing/fake-mail";
 
-describe("fake mail", () => {
+describe("peekLoginCode production-safety", () => {
+  it("returns undefined for a code no fake ever captured", () => {
+    // In production nothing constructs a fake, so nothing registers a capture buffer —
+    // peekLoginCode can never surface a real code. An unknown email is always undefined,
+    // regardless of any fake other tests in this file may have registered.
+    expect(peekLoginCode("never-sent@x.com")).toBeUndefined();
+  });
+});
+
+describe("fake mail (test-only double, @resonance/auth/testing)", () => {
   it("captures sent magic links", async () => {
     const { port, sent } = createFakeMail();
     await port.sendMagicLink({ email: "a@b.com", url: "https://x/verify?token=t", token: "t" });
@@ -19,31 +29,16 @@ describe("fake mail", () => {
   });
 });
 
-describe("peekLoginCode (dev/test read-back of the fake transport)", () => {
-  const original = process.env.RESONANCE_FAKES;
-  beforeEach(() => {
-    process.env.RESONANCE_FAKES = "1";
-  });
-  afterEach(() => {
-    if (original === undefined) delete process.env.RESONANCE_FAKES;
-    else process.env.RESONANCE_FAKES = original;
-  });
-
-  it("returns the most recent code for an email captured by the active fake transport", async () => {
-    // resolveMail() returns the SAME devFake singleton peekLoginCode reads under RESONANCE_FAKES.
-    const port = resolveMail();
+describe("peekLoginCode (read-back of a DI-injected fake's captured OTPs)", () => {
+  it("returns the most recent code observed for an email — no env flag", async () => {
+    // A fake registers its capture buffer on construction, so peekLoginCode — the cross-scope
+    // read-back the E2E OTP harness (resonance-a4a4) uses — observes codes it captured, with
+    // NO RESONANCE_FAKES flag. In runtime the harness supplies the fake via createAuth({ mail }).
+    const { port } = createFakeMail();
     await port.sendLoginCode({ email: "peek@x.com", otp: "111111", type: "sign-in" });
     await port.sendLoginCode({ email: "peek@x.com", otp: "222222", type: "sign-in" });
 
     expect(peekLoginCode("peek@x.com")).toBe("222222");
     expect(peekLoginCode("nobody@x.com")).toBeUndefined();
-  });
-
-  it("is inert (returns undefined) when RESONANCE_FAKES is not '1'", async () => {
-    // Capture a code while fakes is on, then flip the flag off — the read-back must go silent so
-    // the seam can never surface a code in a non-fake (prod-shaped) environment.
-    await resolveMail().sendLoginCode({ email: "gated@x.com", otp: "999999", type: "sign-in" });
-    process.env.RESONANCE_FAKES = "0";
-    expect(peekLoginCode("gated@x.com")).toBeUndefined();
   });
 });

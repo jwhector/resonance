@@ -6,9 +6,9 @@ external identity vendor; all auth logic is in-repo.
 
 ## Status: REAL
 
-The Better Auth instance (magic-link + emailOTP), role codec, mail seam (fake **and live
-Resend**), and session helper are in place and tested. The sign-in / onboarding UI +
-routes are wired in `apps/web` (Increment 3, ADR-0013).
+The Better Auth instance (magic-link + emailOTP), role codec, **live-by-default** mail seam
+(live Resend; test-injected fake), and session helper are in place and tested. The sign-in /
+onboarding UI + routes are wired in `apps/web` (Increment 3, ADR-0013).
 
 **Remaining to fully go live:** a verified Resend sending domain. `createResendMail`
 defaults `from` to Resend's shared `onboarding@resend.dev`, which delivers only to the
@@ -23,7 +23,8 @@ src/
 ├── session.ts    getSession(headers) → SessionUser | null  (RSC/Server Actions)
 ├── roles.ts      encodeRoles / decodeRoles (Role[] ↔ comma-encoded text column)
 ├── otp.ts        requestLoginCode(email) — thin server seam over the emailOTP send verb
-├── mail.ts       createFakeMail() + createResendMail() + resolveMail() (AuthMailPort: link + code)
+├── mail.ts       createResendMail() + resolveMail() (live-by-default) + peekLoginCode (AuthMailPort)
+├── testing/fake-mail.ts  createFakeMail() — test-only double, exported at @resonance/auth/testing
 └── index.ts      public re-exports
 ```
 
@@ -44,11 +45,18 @@ export { getSession }; // (headers: Headers) => Promise<SessionUser | null>
 // Role codec — encode/decode Role[] to/from the single comma-encoded text column.
 export { encodeRoles, decodeRoles };
 
-// Mail helpers — the live Resend transport, the dev fake, the resolver, and the seam type.
-export { createFakeMail, createResendMail, resolveMail, type AuthMailPort, type OtpType };
+// Mail helpers — the live Resend transport, the live-by-default resolver, and the seam type.
+// `peekLoginCode` is a dev/test-only OTP read-back (inert in production).
+export { createResendMail, resolveMail, peekLoginCode, type AuthMailPort, type OtpType };
 
 // emailOTP — send a passwordless 6-digit login code (coexists with magic-link).
 export { requestLoginCode }; // (email: string) => Promise<void>
+```
+
+```ts
+// Test-only subpath (ADR-0018) — the in-memory fake double, injected via DI in tests.
+import { createFakeMail } from "@resonance/auth/testing";
+// createAuth({ db, mail: createFakeMail().port })
 ```
 
 ## Key design decisions
@@ -56,9 +64,9 @@ export { requestLoginCode }; // (email: string) => Promise<void>
 ### `createAuth({ db, mail })` injection seam
 
 The factory accepts `Db` and `MailPort` explicitly so integration tests can inject
-`TestDb` (PGlite in-memory) and `createFakeMail()` without touching real services.
-`getAuth()` is the app singleton — it calls `createAuth` lazily (not at module
-import time) so `DATABASE_URL` is not required at build time.
+`TestDb` (PGlite in-memory) and `createFakeMail()` (from `@resonance/auth/testing`) without
+touching real services. `getAuth()` is the app singleton — it calls `createAuth` lazily (not
+at module import time) so `DATABASE_URL` is not required at build time.
 
 ### `roles` as a comma-encoded `text` column
 
@@ -80,22 +88,26 @@ Magic-link dispatches through `sendMagicLink({ email, url, token })`; the emailO
 capability dispatches the 6-digit code through `sendLoginCode({ email, otp, type })`.
 Both go through the **same transport instance** — one fake captures both. The OTP
 method lives here (not in `@resonance/core`) because it is an auth-only concern; core
-ports are earned by 2+ packages. `resolveMail()` selects the transport **per-seam by key
-presence** (ADR-0018), checked in this order:
+ports are earned by 2+ packages. `resolveMail()` is **live-by-default** (ADR-0018) — there is
+**no `RESONANCE_FAKES` branch in runtime code**. It selects the transport by key presence:
 
-| Condition                  | Transport                                                                         |
-| -------------------------- | --------------------------------------------------------------------------------- |
-| `RESEND_API_KEY` set       | `createResendMail()` — **live** Resend send (branded HTML). Wins even under fakes |
-| else `RESONANCE_FAKES="1"` | `createFakeMail()` — captures links + codes in memory; logs to console in dev     |
-| else                       | `stubAuthMail` — both send paths reject (fail-closed; nothing silently no-ops)    |
+| Condition            | Transport                                                                                       |
+| -------------------- | ----------------------------------------------------------------------------------------------- |
+| `RESEND_API_KEY` set | `createResendMail()` — **live** Resend send (branded HTML)                                      |
+| else                 | `stubAuthMail` — both send paths reject (**fail-closed**; degrades explicitly, no silent no-op) |
 
-Putting the key check first is deliberate: you can run **live email with the AI seams
-still faked** (set `RESEND_API_KEY`, leave `RESONANCE_FAKES=1`) to verify delivery cheaply.
-Corollary: the fakes-based E2E must NOT have `RESEND_API_KEY` in its environment (keep it
-out of `.env.local`; pass it inline only for a live run), or it would send real email and
-`peekLoginCode` would find no fake code.
+Fakes are never selected here. Tests inject `createFakeMail()` (from `@resonance/auth/testing`)
+via `createAuth({ mail })`; a credential-gated live-smoke exercises the real Resend send before
+release (ADR-0018). `createResendMail({ apiKey, from })` builds the live transport; errors from
+Resend are thrown, not swallowed.
 
-`createFakeMail()` returns `{ port: AuthMailPort; sent: Array<{ email, url, token }>; codes: Array<{ email, otp, type }> }` — the test capture hooks. `createResendMail({ apiKey, from })` builds the live transport; errors from Resend are thrown, not swallowed.
+**`peekLoginCode(email)`** is a dev/test-only OTP read-back on the main entrypoint. It reads a
+process-wide observation buffer that the test-only `createFakeMail()` registers on construction,
+so a DI-injected fake's captured codes are observable across Next.js route-handler module scopes.
+It is **inert in production** (nothing constructs a fake there, so nothing registers). Removing
+the `RESONANCE_FAKES` selector makes the current deterministic OTP E2E inert until it is
+re-pointed — final disposition of `peekLoginCode` + the `/api/test/last-otp` route is tracked by
+seed **resonance-a4a4** (a separate, human-gated decision).
 
 ### emailOTP alongside magic-link
 
@@ -124,8 +136,10 @@ Returns `null` when there is no valid session.
 - Keep the public surface small. Never leak Better Auth internals across the
   package boundary.
 - Secrets (`BETTER_AUTH_SECRET`) come from env, validated at runtime in `createAuth`.
-- All tests use `createAuth({ db: testDb, mail: createFakeMail().port })` so they
-  never touch Neon or Resend.
+  The insecure dev fallback is gated on `NODE_ENV=test` only (no `RESONANCE_FAKES` selector);
+  production fails closed (ADR-0018).
+- All tests use `createAuth({ db: testDb, mail: createFakeMail().port })` — with
+  `createFakeMail` imported from `@resonance/auth/testing` — so they never touch Neon or Resend.
 - `zod` is a **direct** dependency of this package (not just transitively via `@resonance/core`) because TypeScript requires it to name better-auth's inferred types in declaration emit — removing it reintroduces TS2742.
 
 ## Working here (seeds + mulch)
