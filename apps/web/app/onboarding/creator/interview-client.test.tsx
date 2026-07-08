@@ -1,6 +1,6 @@
 import type { UIMessage } from "ai";
 import type { CreatorProfileDraft } from "@resonance/core";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useChat } from "@ai-sdk/react";
 import { generateDraft } from "./actions";
@@ -13,13 +13,26 @@ vi.mock("ai", () => ({ DefaultChatTransport: vi.fn() }));
 vi.mock("./actions", () => ({ generateDraft: vi.fn(), commitProfile: vi.fn() }));
 
 const sendMessage = vi.fn();
+const regenerate = vi.fn();
 
 function mockChat(messages: UIMessage[], status = "ready") {
   vi.mocked(useChat).mockReturnValue({
     messages,
     sendMessage,
+    regenerate,
     status,
   } as unknown as ReturnType<typeof useChat>);
+}
+
+/** Reach into the mocked `useChat` call to fire the `onError` callback the component wired.
+ * `onError` lives on the `ChatInit` arm of the `UseChatOptions` union, so narrow to read it. */
+function fireStreamError(error = new Error("stream failed")) {
+  const options = vi.mocked(useChat).mock.calls.at(-1)?.[0] as
+    | { onError?: (error: Error) => void }
+    | undefined;
+  act(() => {
+    options?.onError?.(error);
+  });
 }
 
 function userMsg(text: string): UIMessage {
@@ -68,5 +81,24 @@ describe("InterviewClient", () => {
     expect(generateDraft).toHaveBeenCalledWith({
       messages: [{ role: "user", content: "I make ceramic mugs" }],
     });
+  });
+
+  it("surfaces a stream failure and retries the last turn via regenerate", () => {
+    mockChat([userMsg("I make ceramic mugs")]);
+    render(<InterviewClient />);
+
+    // No error surface until the stream actually fails.
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+
+    fireStreamError();
+
+    const alert = screen.getByRole("alert");
+    expect(alert).toHaveTextContent(/couldn't respond/i);
+
+    fireEvent.click(screen.getByRole("button", { name: /try again/i }));
+    expect(regenerate).toHaveBeenCalledTimes(1);
+
+    // Retry clears the error surface.
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 });

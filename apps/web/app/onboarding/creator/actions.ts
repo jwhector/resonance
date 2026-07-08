@@ -40,15 +40,10 @@ export async function generateDraft(input: unknown): Promise<CreatorProfileDraft
   const user = await getSession(await headers());
   if (!user) redirect("/signup");
 
-  // Under RESONANCE_FAKES the shared model is text-only and can't satisfy profile-gen's forced
-  // tool call, so inject a deterministic canned model (dynamically imported so `ai/test` stays
-  // out of the production path). Production passes no model → the runner routes to the Gateway.
-  const model =
-    process.env.RESONANCE_FAKES === "1"
-      ? (await import("../../../lib/fake-profile-model")).createFakeProposeModel(messages)
-      : undefined;
-
-  const { output } = await runAgentStructured(profileGenAgent, { messages, model });
+  // Live-by-default: no model is injected here, so the runner resolves the Gateway model
+  // (`resolveModel`, ADR-0018). The `RunInput.model` DI seam stays open for tests, which pass a
+  // fake model through it — it is never taken in shipped code.
+  const { output } = await runAgentStructured(profileGenAgent, { messages });
   return output;
 }
 

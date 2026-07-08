@@ -32,7 +32,12 @@ const WELCOME: InterviewMessage = {
 };
 
 export function InterviewClient() {
-  const { messages, sendMessage, status } = useChat({
+  // A live streaming failure (e.g. the Gateway model throwing) would otherwise vanish silently
+  // and read as a no-response. `onError` surfaces it so the user SEES the failure and can retry
+  // (`regenerate` re-runs the last turn). See the stream-error surface in the rail column below.
+  const [streamError, setStreamError] = React.useState(false);
+
+  const { messages, sendMessage, status, regenerate } = useChat({
     transport: new DefaultChatTransport({
       api: "/api/onboarding/interview",
       // Send the shared contract the route validates, not raw UI messages.
@@ -40,7 +45,19 @@ export function InterviewClient() {
         body: { messages: uiMessagesToInterview(messages) },
       }),
     }),
+    onError: () => setStreamError(true),
   });
+
+  function handleSend(text: string) {
+    // A fresh turn clears any prior stream error before the new stream starts.
+    setStreamError(false);
+    sendMessage({ text });
+  }
+
+  function handleRetryStream() {
+    setStreamError(false);
+    void regenerate();
+  }
 
   const transcript = uiMessagesToInterview(messages);
   const streaming = status === "submitted" || status === "streaming";
@@ -93,14 +110,30 @@ export function InterviewClient() {
 
   return (
     <div className="grid gap-8 lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)]">
-      <div className="h-[75vh] min-h-0 lg:sticky lg:top-10">
-        <WeaveInterviewRail
-          className="h-full"
-          messages={[WELCOME, ...transcript]}
-          streaming={streaming}
-          onSend={(text) => sendMessage({ text })}
-          disabled={streaming}
-        />
+      <div className="flex flex-col gap-3 lg:sticky lg:top-10">
+        <div className="h-[75vh] min-h-0">
+          <WeaveInterviewRail
+            className="h-full"
+            messages={[WELCOME, ...transcript]}
+            streaming={streaming}
+            onSend={handleSend}
+            disabled={streaming}
+          />
+        </div>
+
+        {streamError ? (
+          <div
+            role="alert"
+            className="flex items-center justify-between gap-3 rounded-lg border border-danger bg-surface p-4"
+          >
+            <p className="text-sm text-danger">
+              Weave couldn&apos;t respond just now. Check your connection and try again.
+            </p>
+            <Button type="button" variant="outline" size="sm" onClick={handleRetryStream}>
+              Try again
+            </Button>
+          </div>
+        ) : null}
       </div>
 
       <div className="flex flex-col gap-6">

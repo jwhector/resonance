@@ -1,5 +1,5 @@
 import type { CreatorProfileDraft } from "@resonance/core";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 // The action modules touch server-only seams — mock each package's public entrypoint so we can
 // unit-test the boundary validation + wiring without a live DB, AI Gateway, or session cookie.
@@ -35,10 +35,6 @@ const draft: CreatorProfileDraft = {
 
 const sessionUser = { id: "user_1", email: "a@b.com", roles: ["member"] as const };
 
-beforeEach(() => {
-  process.env.RESONANCE_FAKES = "0";
-});
-
 afterEach(() => {
   vi.clearAllMocks();
 });
@@ -70,10 +66,10 @@ describe("generateDraft", () => {
     const result = await generateDraft({ messages: [{ role: "user", content: "I make tools" }] });
 
     expect(result).toEqual(draft);
-    // Production path passes no injected model (routes through the Gateway).
+    // Live-by-default: no injected model — the runner resolves the Gateway model itself.
     expect(runAgentStructured).toHaveBeenCalledWith(
       { id: "profile-gen" },
-      { messages: [{ role: "user", content: "I make tools" }], model: undefined },
+      { messages: [{ role: "user", content: "I make tools" }] },
     );
   });
 });
