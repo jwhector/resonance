@@ -43,7 +43,7 @@ and `zod`.
   `@resonance/ai` entrypoint, passing `ctx.embedder`), never an env flag.
 - The full-flow Playwright E2E stays deterministic through ONE isolated seam —
   [`lib/e2e-harness.ts`](lib/e2e-harness.ts) (`E2E_HARNESS=1`, hard-guarded off in production) —
-  which injects the test-only fakes (`@resonance/ai/test`, `@resonance/auth/testing`) at the
+  which injects the test-only fakes (`@resonance/ai/testing`, `@resonance/auth/testing`) at the
   composition roots (interview stream, `generateDraft`, `commitProfile`, and the auth mount). It
   is **not** a general fakes flag threaded through the packages (ADR-0018 §4).
 - Live wiring is proven by the credential-gated **`verify:live`** smoke gate (`pnpm verify:live`,

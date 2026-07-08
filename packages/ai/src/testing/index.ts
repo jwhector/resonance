@@ -1,4 +1,4 @@
-// @resonance/ai/test — test-only fakes injected via DI (ADR-0018).
+// @resonance/ai/testing — test-only fakes injected via DI (ADR-0018).
 //
 // These are NEVER imported by shipped runtime code: the live seams (`resolveModel`,
 // `resolveEmbedder`) resolve real providers and fail closed without a key. Unit tests pass these

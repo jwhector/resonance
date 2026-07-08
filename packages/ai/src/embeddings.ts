@@ -42,7 +42,7 @@ export function profileToContent(p: EmbeddableProfile): string {
 
 /**
  * Build an `Embedder` from a raw text→vector function. Shared by the live providers and — via
- * `@resonance/ai/test` — the deterministic fake, so every embedder honors the same `embedProfile`
+ * `@resonance/ai/testing` — the deterministic fake, so every embedder honors the same `embedProfile`
  * contract. Not re-exported from the package entrypoint (internal seam).
  */
 export function makeEmbedder(
@@ -80,7 +80,7 @@ async function embedVoyage(model: EmbeddingModel, text: string): Promise<number[
 /**
  * The embeddings seam (ADR-0010), **live by default** (ADR-0018). No `RESONANCE_FAKES` branch —
  * shipped code always resolves a real Voyage transport; tests inject `createFakeEmbedder` from
- * `@resonance/ai/test`. Provider selection, by key precedence:
+ * `@resonance/ai/testing`. Provider selection, by key precedence:
  *
  * 1. **Vercel AI Gateway** (`AI_GATEWAY_API_KEY`) — Voyage via the `voyage/voyage-3.5` string.
  * 2. **Direct Voyage** (`VOYAGE_API_KEY`) — the `voyage-ai-provider`, for running without a Gateway.

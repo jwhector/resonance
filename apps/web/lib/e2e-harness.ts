@@ -1,5 +1,5 @@
 import { type LanguageModel } from "ai";
-import { createFakeEmbedder, createFakeOnboardingModel } from "@resonance/ai/test";
+import { createFakeEmbedder, createFakeOnboardingModel } from "@resonance/ai/testing";
 import { type Embedder } from "@resonance/ai";
 import { createFakeMail } from "@resonance/auth/testing";
 import { type AuthMailPort } from "@resonance/auth";
@@ -19,7 +19,7 @@ import { type AuthMailPort } from "@resonance/auth";
  * paths consult `E2E_HARNESS` at their composition roots (`interview/route.ts`, the onboarding
  * Server Actions, and the auth mount) with a single `E2E_HARNESS ? harness : live` — nowhere else.
  *
- * The fake IMPLEMENTATIONS live in the package test subpaths (`@resonance/ai/test`,
+ * The fake IMPLEMENTATIONS live in the package test subpaths (`@resonance/ai/testing`,
  * `@resonance/auth/testing`); this module only SELECTS them.
  */
 export const E2E_HARNESS = process.env.E2E_HARNESS === "1" && process.env.NODE_ENV !== "production";

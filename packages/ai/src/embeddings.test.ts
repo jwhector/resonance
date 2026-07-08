@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AgentError } from "./errors";
 import { EMBEDDING_DIMS, EMBEDDING_MODEL, profileToContent, resolveEmbedder } from "./embeddings";
-import { createFakeEmbedder } from "./test";
+import { createFakeEmbedder } from "./testing";
 
 const profile = {
   displayName: "Ada",

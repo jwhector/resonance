@@ -66,6 +66,11 @@ Refines ADR-0011 (testing strategy) and ADR-0009 (the AI swap seams).
   `resolveMail` (and any proposed `resolveDb`) are refactored to DI; the deterministic
   full-flow E2E is re-pointed at live-smoke; the fake-of-a-fake is removed. Tracked as a
   plan. Existing package docs that cite the pattern as "ADR-0016" are corrected to ADR-0018.
+- **Erratum (subpath naming):** the test-only fake module is exported from each package's
+  **`./testing`** subpath (`@resonance/x/testing`) — uniform with `@resonance/db/testing`. The
+  illustrative "`ai/test`" written in Decision §2 above was shorthand, not a naming choice; the
+  ratified suffix is `/testing` (it also avoids colliding with the Vercel AI SDK's own `ai/test`
+  import). Codified in `docs/conventions.md` § Testing.
 - **Revisit trigger:** if live-smoke cost or flakiness becomes a burden, narrow its scope
   (fewer services, contract-level checks) — but do **not** reintroduce runtime fakes.
 
