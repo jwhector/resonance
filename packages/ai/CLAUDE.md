@@ -17,16 +17,19 @@ Model routing default: Haiku (cheap classification) · Sonnet (chat/interview) �
 ## Status: REAL
 
 The Gateway client, shared runner, embeddings, and the `creator-interview` + `profile-gen`
-agents landed with Increment 2 of the reference slice (ADR-0013). Built fully wired for live
-AI Gateway / Voyage but verified mock-first, so CI is green with zero credentials.
+agents landed with Increment 2 of the reference slice (ADR-0013). The seams are **live by
+default** (ADR-0018): shipped code always resolves a real provider (Gateway, or a direct
+Anthropic/Voyage fallback) and fails closed with no key. Fakes are injected in tests via DI
+from the `@resonance/ai/test` subpath — never chosen by a runtime flag.
 
 ```
 src/
 ├── registry.ts            AgentDefinition / AgentTool / defineAgent (the registry shape)
 ├── errors.ts              AgentError (typed runner failure)
-├── gateway.ts             resolveModel() — Gateway string / fake / injected model (swap seam)
-├── embeddings.ts          Embedder: resolveEmbedder / createLiveEmbedder / createFakeEmbedder
+├── gateway.ts             resolveModel() — live: Gateway string OR direct @ai-sdk/anthropic; injected model in tests
+├── embeddings.ts          Embedder: resolveEmbedder — live Gateway OR direct voyage-ai-provider
 ├── runner.ts              runAgentStream (streaming) + runAgentStructured (tool-driven)
+├── test/                  @resonance/ai/test — createFakeModel + createFakeEmbedder (DI only, never shipped)
 └── agents/
     ├── creator-interview/ prompt.ts + creator-interview.agent.ts (Sonnet, streaming, no tools)
     └── profile-gen/       prompt.ts + profile-gen.agent.ts (generates a draft) +
@@ -46,13 +49,11 @@ export { AgentError };
 export { resolveModel };
 // The one runner — streaming + structured (tool-driven) paths
 export { runAgentStream, runAgentStructured, type RunInput };
-// Embeddings seam (ADR-0010)
+// Embeddings seam (ADR-0010) — live by default; fakes live in @resonance/ai/test
 export {
   type Embedder,
   type EmbeddableProfile,
   resolveEmbedder,
-  createLiveEmbedder,
-  createFakeEmbedder,
   profileToContent,
   EMBEDDING_MODEL, // "voyage-3.5"
   EMBEDDING_DIMS, // 1024 — pins the vector column in @resonance/db
@@ -70,19 +71,32 @@ The generated/committed shapes are the **shared `@resonance/core` contract** —
 those from `@resonance/core`, not here (`ai` is server-only and must never ship to the client;
 the draft is also spoken by `ui`/`web`, so it lives in `core` — ADR-0003).
 
-## Three swap seams (design for testability)
+## Seams: live by default, fakes injected in tests (ADR-0018)
 
-Each seam hides a live service **and** a fake, chosen at runtime — this is what lets E2E run
-the whole flow deterministically with no credentials (design spec § Mock-first runtime seam):
+Each seam resolves a **real provider** in shipped code — there is no `RESONANCE_FAKES` runtime
+branch. Selection is by key precedence, and with no key the seam **fails closed** with an
+actionable `AgentError` (never silently fakes or no-ops). Tests pass a fake in via DI (from
+`@resonance/ai/test`), so the fast inner loop stays deterministic and credential-free while the
+runtime path can't drift from the live contract.
 
-- **`resolveModel(modelId, opts?)`** — live: the AI SDK v6 global provider routes the
-  `provider/model` string through the Gateway (`AI_GATEWAY_API_KEY`). `RESONANCE_FAKES=1`: a
-  canned text model. `opts.model`: a caller-injected model (unit tests pass `MockLanguageModelV3`).
-- **`resolveEmbedder()`** — live Voyage `voyage-3.5` (1024-dim) via the Gateway;
-  `RESONANCE_FAKES=1` → a deterministic fake. Both assert the 1024-dim contract (ADR-0010).
+- **`resolveModel(modelId, opts?)`** — `opts.model` (DI, wins) → Vercel AI Gateway when
+  `AI_GATEWAY_API_KEY` is set (the AI SDK v6 global provider routes the `provider/model` string)
+  → direct `@ai-sdk/anthropic` when `ANTHROPIC_API_KEY` is set (serves `anthropic/*` ids) → else
+  throws. Unit tests inject a `MockLanguageModelV3` via `opts.model`.
+- **`resolveEmbedder()`** — Voyage `voyage-3.5` (1024-dim, ADR-0010) via the Gateway when
+  `AI_GATEWAY_API_KEY` is set → direct `voyage-ai-provider` when `VOYAGE_API_KEY` is set → else
+  throws. Tests inject `createFakeEmbedder()` (from `@resonance/ai/test`) through the `Embedder`
+  DI seam (e.g. `commitCreatorProfile`'s `ctx.embedder`).
 - **`runAgentStream` / `runAgentStructured`** — the one runner. Streaming for the interview;
   structured (forced single tool call, executed, Zod-validated) for ProfileGen generation. Throws
   `AgentError` at the boundary — never swallows.
+
+## Test-only fakes: `@resonance/ai/test`
+
+`createFakeModel(modelId)` (deterministic text-only language model) and `createFakeEmbedder()`
+(deterministic 1024-dim embedder) live behind the `@resonance/ai/test` subpath export — injected
+into `RunInput.model` / an `Embedder` DI seam by unit tests. They are **never** imported by
+shipped runtime code and are not on the main `@resonance/ai` entrypoint (ADR-0018).
 
 ## ProfileGen: generate a draft, then commit it (two steps)
 
@@ -115,8 +129,9 @@ combined storefront generation, or bulk re-embedding). Don't let that decision g
 - Depends on `@resonance/core` and `@resonance/db` (embeddings + `commitCreatorProfile`'s writes).
 - DB access goes through `@resonance/db` query helpers, never directly — `commitCreatorProfile`
   uses `createCreatorProfile` / `upsertProfileEmbedding` / `setUserRoles` (ADR-0009).
-- `ai/test` (`MockLanguageModelV3`) is used only for the fake model + unit-test mocks; this is a
-  server-only package, never shipped to the client.
+- The Vercel SDK's `ai/test` (`MockLanguageModelV3`) backs the fakes in `@resonance/ai/test`; both
+  are test-only. This is a server-only package, never shipped to the client, and the fakes are
+  never imported by shipped runtime code (ADR-0018).
 
 ## Working here (seeds + mulch)
 

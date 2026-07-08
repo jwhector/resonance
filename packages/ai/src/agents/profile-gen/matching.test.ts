@@ -2,7 +2,7 @@ import { type CommitProfileInput } from "@resonance/core";
 import { findSimilarProfiles, user } from "@resonance/db";
 import { createTestDb, type TestDb } from "@resonance/db/testing";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createFakeEmbedder } from "../../embeddings";
+import { createFakeEmbedder } from "../../test";
 import { commitCreatorProfile } from "./commit-profile";
 
 /**

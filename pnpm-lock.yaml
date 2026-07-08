@@ -117,6 +117,9 @@ importers:
 
   packages/ai:
     dependencies:
+      '@ai-sdk/anthropic':
+        specifier: ^3.0.94
+        version: 3.0.94(zod@3.25.76)
       '@resonance/core':
         specifier: workspace:*
         version: link:../core
@@ -126,6 +129,9 @@ importers:
       ai:
         specifier: ^6.0.0
         version: 6.0.220(zod@3.25.76)
+      voyage-ai-provider:
+        specifier: ^4.0.0
+        version: 4.0.0(zod@3.25.76)
       zod:
         specifier: ^3.24.1
         version: 3.25.76
@@ -401,6 +407,12 @@ packages:
 
   '@adobe/css-tools@4.5.0':
     resolution: {integrity: sha512-6OzddxPio9UiWTCemp4N8cYLV2ZN1ncRnV1cVGtve7dhPOtRkleRyx32GQCYSwDYgaHU3USMm84tNsvKzRCa1Q==}
+
+  '@ai-sdk/anthropic@3.0.94':
+    resolution: {integrity: sha512-sRENM4zDL4Cd/TBifbZ/X88Vv9vK8r7G5f2DDMi69+89QjXOVtASWj7y2d3kYBPGPEGHWHkSKq/nQ+pSYWY14w==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
 
   '@ai-sdk/gateway@3.0.142':
     resolution: {integrity: sha512-Y1iwdxdebYXpoK5y/4CrcCfJGeFwEJWlEx+pMWIg/ZVWGi9KA+JXM7YBkhxcshpq/jAXx8YyQeFMyZr0TGfXZQ==}
@@ -3702,6 +3714,14 @@ packages:
       jsdom:
         optional: true
 
+  voyage-ai-provider@4.0.0:
+    resolution: {integrity: sha512-zlVJvrttY8Qm0ORaLfwDURiD2ZMMaw6g7kjLJMyknNIaLebdC0RsQ0tXCleNB9AoiQiYZyFNsD8EvzkRIGudhw==}
+    peerDependencies:
+      zod: ^3.25.76 || ^4
+    peerDependenciesMeta:
+      zod:
+        optional: true
+
   w3c-xmlserializer@5.0.0:
     resolution: {integrity: sha512-o8qghlI8NZHU1lLPrpi2+Uq7abh4GGPpYANlalzWxyWteJOCsr/P+oPBA49TOLu5FTZO4d3F9MnWJfiMo4BkmA==}
     engines: {node: '>=18'}
@@ -3768,6 +3788,12 @@ packages:
 snapshots:
 
   '@adobe/css-tools@4.5.0': {}
+
+  '@ai-sdk/anthropic@3.0.94(zod@3.25.76)':
+    dependencies:
+      '@ai-sdk/provider': 3.0.13
+      '@ai-sdk/provider-utils': 4.0.36(zod@3.25.76)
+      zod: 3.25.76
 
   '@ai-sdk/gateway@3.0.142(zod@3.25.76)':
     dependencies:
@@ -6756,6 +6782,13 @@ snapshots:
       - terser
       - tsx
       - yaml
+
+  voyage-ai-provider@4.0.0(zod@3.25.76):
+    dependencies:
+      '@ai-sdk/provider': 3.0.13
+      '@ai-sdk/provider-utils': 4.0.36(zod@3.25.76)
+    optionalDependencies:
+      zod: 3.25.76
 
   w3c-xmlserializer@5.0.0:
     dependencies:
