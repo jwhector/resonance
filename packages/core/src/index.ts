@@ -6,3 +6,11 @@ export { type StoragePort, stubStorage } from "./ports/storage";
 export { type MailPort, stubMail } from "./ports/mail";
 export { RoleSchema, type Role, type Id } from "./types";
 export { InterviewMessageSchema, type InterviewMessage } from "./interview";
+export {
+  NameOptionSchema,
+  type NameOption,
+  CreatorProfileDraftSchema,
+  type CreatorProfileDraft,
+  CommitProfileInputSchema,
+  type CommitProfileInput,
+} from "./profile-draft";
