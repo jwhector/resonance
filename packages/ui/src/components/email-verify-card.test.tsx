@@ -17,7 +17,8 @@ describe("EmailVerifyCard", () => {
     expect(
       screen.getByRole("heading", { name: "Check your email to continue" }),
     ).toBeInTheDocument();
-    expect(screen.getByText("someone@resonance.app")).toBeInTheDocument();
+    // The address is interpolated inline (not emphasized) into the body sentence.
+    expect(screen.getByText(/We've sent an email to someone@resonance\.app\./)).toBeInTheDocument();
   });
 
   it("renders a six-cell verification code group", () => {

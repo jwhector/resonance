@@ -6,7 +6,6 @@ import { Radio, RadioGroup } from "../primitives/radio";
 import { Tag, TagGroup } from "../primitives/tag";
 import { Textarea } from "../primitives/textarea";
 import { TextInput } from "../primitives/text-input";
-import { WeaveComposer } from "./weave-composer";
 
 /**
  * ProfileDraftPanels — the editable generated-profile draft (Figma
@@ -16,10 +15,10 @@ import { WeaveComposer } from "./weave-composer";
  * `@resonance/core`: the parent (apps/web) owns the draft and the selected name, and this
  * component renders + emits edits via callbacks. It does no generation and never touches
  * `@resonance/ai` (server-only). Sections render in the Figma order: intro → Creator Name
- * (radio of ≤3 options) → Headline → About → Search Keywords (removable chips) → a
- * *disabled* "Talk to Weave" composer (the refine loop is deferred) → the footer buttons.
- * Composed from `Radio`/`RadioGroup`, `TextInput`, `Textarea`, `Tag`/`TagGroup`, `Button`,
- * and `WeaveComposer`; tokens only.
+ * (radio of ≤3 options) → Headline → About → Search Keywords (removable chips) → the footer
+ * buttons. The live "Talk to Weave" composer belongs to the Weave surface shell that hosts
+ * these panels, not here. Composed from `Radio`/`RadioGroup`, `TextInput`, `Textarea`,
+ * `Tag`/`TagGroup`, and `Button`; tokens only.
  */
 export interface ProfileDraftPanelsProps extends Omit<
   React.HTMLAttributes<HTMLDivElement>,
@@ -153,10 +152,8 @@ export function ProfileDraftPanels({
         </TagGroup>
       </section>
 
-      {/* Deferred refine loop — rendered visibly disabled, not omitted. */}
-      <WeaveComposer disabled aria-label="Talk to Weave (coming soon)" />
-
-      {/* Footer actions. "Good to go" commits; "Revise with Weave" is the deferred loop. */}
+      {/* Footer actions. "Good to go" commits; "Revise with Weave" is the deferred loop. The
+          live "Talk to Weave" composer sits below, on the Weave surface shell (not here). */}
       <div className="flex items-center gap-4">
         <Button type="button" size="lg" onClick={onSubmit} disabled={submitting} className="px-6">
           {submitting ? "Saving…" : "Good to go"}

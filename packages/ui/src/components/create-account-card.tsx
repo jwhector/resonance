@@ -3,12 +3,22 @@ import { cn } from "../lib/cn";
 import { Button } from "../primitives/button";
 import { Checkbox } from "../primitives/checkbox";
 import { TextInput } from "../primitives/text-input";
+import { ResonanceMark } from "./resonance-mark";
 
 /** Values emitted when the account form is submitted. */
 export interface CreateAccountValues {
   email: string;
   consent: boolean;
 }
+
+/** The Figma consent copy, with the three legal terms underlined as links (hrefs deferred). */
+const DEFAULT_CONSENT = (
+  <>
+    I agree Resonance&apos;s <span className="underline">Term of Use</span>, and acknowledge its{" "}
+    <span className="underline">Information Collection Notice</span> and{" "}
+    <span className="underline">Privacy Policy</span>
+  </>
+);
 
 export interface CreateAccountCardProps extends Omit<
   React.HTMLAttributes<HTMLDivElement>,
@@ -21,15 +31,16 @@ export interface CreateAccountCardProps extends Omit<
 }
 
 /**
- * CreateAccountCard — the magic-link sign-up card (Figma `CreateAccount`, `1526:78839`).
+ * CreateAccountCard — the magic-link sign-up screen (Figma `CreateAccount`, `1526:78839`).
  * Presentational: it owns only local form state and calls `onSubmit` — no data
  * fetching, no auth calls. Composed from the `TextInput`, `Checkbox`, and `Button`
- * primitives; styled with tokens only.
+ * primitives; styled with tokens only. The design is cardless — a centered ~500px column
+ * on the white page (the onboarding layout provides the surface), not a bordered card.
  */
 export function CreateAccountCard({
   className,
   onSubmit,
-  consentLabel = "I agree Resonance's Term of Use, and acknowledge its Information Collection Notice and Privacy Policy",
+  consentLabel = DEFAULT_CONSENT,
   ...props
 }: CreateAccountCardProps) {
   const [email, setEmail] = React.useState("");
@@ -38,16 +49,10 @@ export function CreateAccountCard({
   const canSubmit = email.trim().length > 0 && consent;
 
   return (
-    <div
-      className={cn(
-        "flex w-full max-w-md flex-col gap-10 rounded-lg border border-border bg-surface p-8",
-        className,
-      )}
-      {...props}
-    >
-      {/* Header: Resonance wordmark over the welcome copy (Figma gaps 24 / 8). */}
+    <div className={cn("flex w-full max-w-lg flex-col gap-10", className)} {...props}>
+      {/* Header: Resonance wave mark over the welcome copy (Figma gaps 24 / 8). */}
       <div className="flex flex-col items-center gap-6 text-center">
-        <div className="bg-brand-gradient h-6 w-20 rounded-md" aria-hidden="true" />
+        <ResonanceMark className="h-6 w-20" />
         <div className="flex flex-col gap-2">
           <h1 className="text-heading-md font-medium text-foreground">Welcome to Resonance</h1>
           <p className="text-body-lg text-muted">Create your account with email</p>

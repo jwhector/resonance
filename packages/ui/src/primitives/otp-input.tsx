@@ -93,7 +93,8 @@ export function OtpInput({
             commit(nextCells, focus);
           }}
           className={cn(
-            "size-12 rounded-md border border-border bg-surface text-center text-lg font-semibold text-foreground shadow-xs transition-colors",
+            // Figma `InputList` cell: 36×40, 8px radius, 1px gray-700 border.
+            "h-10 w-9 rounded-md border border-border bg-surface text-center text-lg font-semibold text-foreground shadow-xs transition-colors",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
             "disabled:cursor-not-allowed disabled:opacity-50",
           )}

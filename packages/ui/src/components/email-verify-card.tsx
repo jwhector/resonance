@@ -21,7 +21,8 @@ export interface EmailVerifyCardProps extends Omit<
 /**
  * EmailVerifyCard — the "check your email" step (Figma `EmailVerication`, `1526:79050`).
  * Presentational: owns the local code state and calls `onSubmit`/`onResend` — no
- * network. Composed from `MailIcon`, `OtpInput`, and `Button`; tokens only.
+ * network. Composed from `MailIcon`, `OtpInput`, and `Button`; tokens only. The design is
+ * cardless — a centered ~400px column on the white page, not a bordered card.
  */
 export function EmailVerifyCard({
   className,
@@ -35,10 +36,7 @@ export function EmailVerifyCard({
 
   return (
     <div
-      className={cn(
-        "flex w-full max-w-sm flex-col items-center gap-9 rounded-lg border border-border bg-surface p-8 text-center",
-        className,
-      )}
+      className={cn("flex w-full max-w-sm flex-col items-center gap-9 text-center", className)}
       {...props}
     >
       {/* Header group: envelope glyph + copy (Figma gaps 16 / 8). */}
@@ -49,8 +47,7 @@ export function EmailVerifyCard({
             Check your email to continue
           </h1>
           <p className="text-body-lg text-muted">
-            We&apos;ve sent an email to <span className="font-medium text-foreground">{email}</span>
-            . Click the magic link or enter the code below:
+            We&apos;ve sent an email to {email}. Click the magic link or enter the code below:
           </p>
         </div>
       </div>

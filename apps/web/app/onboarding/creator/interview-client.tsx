@@ -135,7 +135,9 @@ export function InterviewClient() {
       <div className="flex min-w-0 flex-1 flex-col">
         <WeaveInterviewRail
           className="min-h-0 flex-1"
-          messages={transcript}
+          // The draft screen (Figma `1473:81622`) shows just the woven draft — the prior
+          // transcript is scrolled away — so suppress it here and let the draft lead.
+          messages={liveDraft ? [] : transcript}
           streaming={streaming}
           onSend={handleSend}
           disabled={streaming}
@@ -143,7 +145,6 @@ export function InterviewClient() {
           showStart={showStart}
           onBegin={handleBegin}
           onDeferLater={handleDeferLater}
-          showComposer={!liveDraft}
         >
           {/* Inline in the conversation: the generate CTA before a draft, the draft after. */}
           {liveDraft ? (

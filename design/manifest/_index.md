@@ -19,15 +19,15 @@ into a rule that overrides the design.
 
 ## Screens
 
-| #   | Screen             | Figma node   | Route                            | Component                                             | Citation (R1)           | Status                                                           |
-| --- | ------------------ | ------------ | -------------------------------- | ----------------------------------------------------- | ----------------------- | ---------------------------------------------------------------- |
-| 01  | What brought you?  | `1519:78312` | —                                | —                                                     | n/a                     | 🟡 orphan-design                                                 |
-| 02  | Create account     | `1526:78839` | `/signup`                        | `create-account-card`                                 | ✅ valid                | ⚠️ built · card + logo + copy delta                              |
-| 03  | Email verify (OTP) | `1526:79050` | `/verify`                        | `email-verify-card`                                   | ✅ valid                | ⚠️ built · card + state delta                                    |
-| 04  | Interview          | `1443:78282` | `/onboarding/creator`            | `app-nav` + `weave-interview-rail` + `weave-composer` | ✅ `1443:78283` (fixed) | 🟢 rebuilt to design (start state) · `resonance-6e42`            |
-| 05  | ProfileGen draft   | `1473:81622` | `/onboarding/creator` (post-gen) | `profile-draft-panels`                                | ✅ valid                | 🟡 now woven inline · panel reconcile pending (`resonance-c7c9`) |
-| 06  | Onboarded          | `1443:78273` | —                                | —                                                     | n/a                     | 🟡 orphan-design                                                 |
-| 07  | Sign in            | `1463:71449` | —                                | (signup+verify only)                                  | n/a                     | 🟡 orphan-design (likely)                                        |
+| #   | Screen             | Figma node   | Route                            | Component                                             | Citation (R1)           | Status                                                                        |
+| --- | ------------------ | ------------ | -------------------------------- | ----------------------------------------------------- | ----------------------- | ----------------------------------------------------------------------------- |
+| 01  | What brought you?  | `1519:78312` | —                                | —                                                     | n/a                     | 🟡 orphan-design                                                              |
+| 02  | Create account     | `1526:78839` | `/signup`                        | `create-account-card`                                 | ✅ valid                | 🟢 reconciled (cardless/mark/gray-disabled) · `resonance-c7c9` (label→`dba0`) |
+| 03  | Email verify (OTP) | `1526:79050` | `/verify`                        | `email-verify-card`                                   | ✅ valid                | 🟢 reconciled (cardless/OTP/gray-disabled) · `resonance-c7c9`                 |
+| 04  | Interview          | `1443:78282` | `/onboarding/creator`            | `app-nav` + `weave-interview-rail` + `weave-composer` | ✅ `1443:78283` (fixed) | 🟢 rebuilt to design (start state) · `resonance-6e42`                         |
+| 05  | ProfileGen draft   | `1473:81622` | `/onboarding/creator` (post-gen) | `profile-draft-panels`                                | ✅ valid                | 🟢 reconciled (woven inline + bottom composer) · `resonance-c7c9`             |
+| 06  | Onboarded          | `1443:78273` | —                                | —                                                     | n/a                     | 🟡 orphan-design                                                              |
+| 07  | Sign in            | `1463:71449` | —                                | (signup+verify only)                                  | n/a                     | 🟡 orphan-design (likely)                                                     |
 
 **Legend:** 🟢 built & clean · ⚠️ built with open deltas · 🔴 built, wrong model · 🟡 in Figma, not built.
 

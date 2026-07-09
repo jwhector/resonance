@@ -1,5 +1,6 @@
 import * as React from "react";
 import { cn } from "../lib/cn";
+import { ResonanceMark } from "./resonance-mark";
 
 /**
  * AppNav — the persistent 80px left application rail (Figma `Navigation/SideBar`
@@ -12,40 +13,6 @@ import { cn } from "../lib/cn";
  * Tokens only, no raw hex/px. Composed by the app shell, which owns any routing.
  */
 export type AppNavProps = React.HTMLAttributes<HTMLElement>;
-
-/** The Resonance wave mark — a spectrum-stroked triple loop. Placeholder for the real asset. */
-function WaveMark() {
-  return (
-    <span aria-label="Resonance" role="img" className="block px-1">
-      <svg
-        viewBox="0 0 48 16"
-        fill="none"
-        strokeWidth={2.5}
-        strokeLinecap="round"
-        aria-hidden="true"
-        className="w-full"
-      >
-        <defs>
-          <linearGradient
-            id="resonance-wave"
-            x1="0"
-            y1="0"
-            x2="48"
-            y2="0"
-            gradientUnits="userSpaceOnUse"
-          >
-            <stop offset="0%" stopColor="var(--color-brand-cyan)" />
-            <stop offset="25%" stopColor="var(--color-brand-indigo)" />
-            <stop offset="50%" stopColor="var(--color-brand-purple)" />
-            <stop offset="75%" stopColor="var(--color-brand-pink)" />
-            <stop offset="100%" stopColor="var(--color-brand-orange)" />
-          </linearGradient>
-        </defs>
-        <path d="M1 8c3-6 7-6 10 0s7 6 10 0 7-6 10 0 7 6 10 0" stroke="url(#resonance-wave)" />
-      </svg>
-    </span>
-  );
-}
 
 /** An inert placeholder for an unbuilt section — the icon reads, the destination is pending. */
 function NavIcon({ label, children }: { label: string; children: React.ReactNode }) {
@@ -72,7 +39,7 @@ export function AppNav({ className, ...props }: AppNavProps) {
       )}
       {...props}
     >
-      <WaveMark />
+      <ResonanceMark className="w-full px-1" />
 
       <NavIcon label="Home">
         <svg

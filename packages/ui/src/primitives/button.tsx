@@ -25,8 +25,12 @@ const buttonVariants = cva(
         md: "h-10 px-4",
         lg: "h-12 px-6 text-base",
         icon: "h-10 w-10",
-        /** Full-width, large — the Figma `Button/Wide` used for form submits. */
-        wide: "h-12 w-full px-6 text-base",
+        /**
+         * Full-width, 56px — the Figma `Button/Wide` used for onboarding submits. Its
+         * inactive state is the design's gray fill + muted label (not a faded primary),
+         * so it carries an explicit disabled treatment over the primary variant.
+         */
+        wide: "h-14 w-full px-6 text-base disabled:bg-surface-muted disabled:text-muted disabled:opacity-100",
       },
     },
     defaultVariants: {

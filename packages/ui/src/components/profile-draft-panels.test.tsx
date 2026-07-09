@@ -73,10 +73,10 @@ describe("ProfileDraftPanels", () => {
     expect(props.onTagsChange).toHaveBeenCalledWith(["Dreamwork", "Night Rituals"]);
   });
 
-  it("renders the refine composer visibly disabled (deferred loop)", () => {
+  it("renders the deferred 'Revise with Weave' action disabled, and no inline composer", () => {
     renderPanels();
-    expect(screen.getByRole("textbox", { name: /Talk to Weave/ })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Send to Weave" })).toBeDisabled();
+    // The live "Talk to Weave" composer lives on the surface shell, not in the panels.
+    expect(screen.queryByRole("textbox", { name: /Talk to Weave/ })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Revise with Weave" })).toBeDisabled();
   });
 
