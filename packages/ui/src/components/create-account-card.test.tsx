@@ -19,7 +19,7 @@ describe("CreateAccountCard", () => {
 
   it("keeps submit disabled until an email is entered and consent is given", () => {
     render(<CreateAccountCard onSubmit={noop} />);
-    const submit = screen.getByRole("button", { name: "Create account" });
+    const submit = screen.getByRole("button", { name: "Continue" });
     expect(submit).toBeDisabled();
 
     fireEvent.change(screen.getByLabelText("Email"), { target: { value: "a@b.com" } });
@@ -37,7 +37,7 @@ describe("CreateAccountCard", () => {
       target: { value: "  creator@example.com  " },
     });
     fireEvent.click(screen.getByRole("checkbox"));
-    fireEvent.click(screen.getByRole("button", { name: "Create account" }));
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 
     expect(onSubmit).toHaveBeenCalledWith({ email: "creator@example.com", consent: true });
   });
@@ -47,7 +47,7 @@ describe("CreateAccountCard", () => {
     render(<CreateAccountCard onSubmit={onSubmit} />);
 
     fireEvent.change(screen.getByLabelText("Email"), { target: { value: "a@b.com" } });
-    fireEvent.click(screen.getByRole("button", { name: "Create account" }));
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 
     expect(onSubmit).not.toHaveBeenCalled();
   });

@@ -36,7 +36,7 @@ export async function authenticate(page, { baseUrl, serverLog, email, onScreen }
 
   await page.getByLabel("Email").fill(email);
   await page.getByRole("checkbox").click();
-  await page.getByRole("button", { name: "Create account" }).click();
+  await page.getByRole("button", { name: "Continue" }).click();
 
   await page.waitForURL(/\/verify/, { timeout: 20_000 });
   await page

@@ -86,7 +86,7 @@ export function CreateAccountCard({
         />
 
         <Button type="submit" size="wide" disabled={!canSubmit}>
-          Create account
+          Continue
         </Button>
       </form>
     </div>

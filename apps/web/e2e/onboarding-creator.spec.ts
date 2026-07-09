@@ -35,7 +35,7 @@ test("creator can sign up, interview with Weave, generate + commit a profile", a
   await expect(page.getByRole("heading", { name: "Welcome to Resonance" })).toBeVisible();
   await page.getByLabel("Email").fill(email);
   await page.getByRole("checkbox").click();
-  await page.getByRole("button", { name: "Create account" }).click();
+  await page.getByRole("button", { name: "Continue" }).click();
 
   await expect(page).toHaveURL(/\/verify/, { timeout: 15_000 });
   await expect(page.getByRole("heading", { name: "Check your email to continue" })).toBeVisible();
