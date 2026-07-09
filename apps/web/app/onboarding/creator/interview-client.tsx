@@ -3,8 +3,9 @@
 import * as React from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import type { CreatorProfileDraft, InterviewMessage } from "@resonance/core";
-import { Button, ProfileDraftPanels, WeaveInterviewRail } from "@resonance/ui";
+import { useRouter } from "next/navigation";
+import type { CreatorProfileDraft } from "@resonance/core";
+import { AppNav, Button, ProfileDraftPanels, WeaveInterviewRail } from "@resonance/ui";
 import { uiMessagesToInterview } from "../../../lib/interview-messages";
 import { commitProfile, generateDraft } from "./actions";
 
@@ -23,15 +24,20 @@ import { commitProfile, generateDraft } from "./actions";
  * It never touches `@resonance/ai` directly (server-only) — only the contracts + actions.
  */
 
-/** A synthetic opener shown in the rail only — not part of the model transcript, so it is
- * never sent back to the interview route. */
-const WELCOME: InterviewMessage = {
-  role: "assistant",
-  content:
-    "Hi, I'm Weave. Tell me about what you make and who it's for, and I'll help shape your creator profile.",
+/** The Figma opener (interview screen `1443:78282`). Shown only in the start state — a
+ * display-side prompt, never part of the model transcript, so it is never sent to the route. */
+const START_PROMPT = {
+  body:
+    "Hi — I'm glad you're here.\n" +
+    "I'll help you shape a clear version of your creator presence by learning a little about your work, your story, and the people who naturally resonate with it.\n" +
+    "As we go, I'll also explain why certain questions matter so the process feels collaborative and transparent.\n" +
+    "This usually takes about 5–10 minutes, and you don't need to have everything perfectly figured out.",
+  question: "Would you like to begin?",
 };
 
 export function InterviewClient() {
+  const router = useRouter();
+
   // A live streaming failure (e.g. the Gateway model throwing) would otherwise vanish silently
   // and read as a no-response. `onError` surfaces it so the user SEES the failure and can retry
   // (`regenerate` re-runs the last turn). See the stream-error surface in the rail column below.
@@ -52,6 +58,17 @@ export function InterviewClient() {
     // A fresh turn clears any prior stream error before the new stream starts.
     setStreamError(false);
     sendMessage({ text });
+  }
+
+  // "Yes let's begin" kicks the interview off with an opening turn so Weave asks its first
+  // question; it leaves the start state the moment there is a user turn.
+  function handleBegin() {
+    handleSend("Yes, let's begin.");
+  }
+
+  // "I want do it later" backs out of onboarding to the home shell (deferred flow).
+  function handleDeferLater() {
+    router.push("/");
   }
 
   function handleRetryStream() {
@@ -108,64 +125,70 @@ export function InterviewClient() {
   // Fold the local edits back into the draft shape the controlled panels render.
   const liveDraft: CreatorProfileDraft | null = draft ? { ...draft, headline, bio, tags } : null;
 
+  // The start state (the Figma opener + begin/later controls) shows until the first user turn.
+  const showStart = !draft && !hasUserTurn && !streaming;
+
   return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)]">
-      <div className="flex flex-col gap-3 lg:sticky lg:top-10">
-        <div className="h-[75vh] min-h-0">
-          <WeaveInterviewRail
-            className="h-full"
-            messages={[WELCOME, ...transcript]}
-            streaming={streaming}
-            onSend={handleSend}
-            disabled={streaming}
-          />
-        </div>
+    <div className="flex h-screen w-full overflow-hidden">
+      <AppNav />
 
-        {streamError ? (
-          <div
-            role="alert"
-            className="flex items-center justify-between gap-3 rounded-lg border border-danger bg-surface p-4"
-          >
-            <p className="text-sm text-danger">
-              Weave couldn&apos;t respond just now. Check your connection and try again.
+      <div className="flex min-w-0 flex-1 flex-col">
+        <WeaveInterviewRail
+          className="min-h-0 flex-1"
+          messages={transcript}
+          streaming={streaming}
+          onSend={handleSend}
+          disabled={streaming}
+          startPrompt={START_PROMPT}
+          showStart={showStart}
+          onBegin={handleBegin}
+          onDeferLater={handleDeferLater}
+          showComposer={!liveDraft}
+        >
+          {/* Inline in the conversation: the generate CTA before a draft, the draft after. */}
+          {liveDraft ? (
+            <ProfileDraftPanels
+              draft={liveDraft}
+              selectedNameIndex={selectedNameIndex}
+              onSelectName={setSelectedNameIndex}
+              onHeadlineChange={setHeadline}
+              onBioChange={setBio}
+              onTagsChange={setTags}
+              onSubmit={handleCommit}
+              submitting={submitting}
+            />
+          ) : hasUserTurn ? (
+            <div className="flex flex-col items-start gap-2 pt-2">
+              <p className="text-body-md text-muted">
+                When you&apos;ve shared enough, Weave can draft your creator profile — you can edit
+                everything before publishing.
+              </p>
+              <Button type="button" onClick={handleGenerate} disabled={generating}>
+                {generating ? "Weaving your profile…" : "Weave, build my profile"}
+              </Button>
+            </div>
+          ) : null}
+
+          {streamError ? (
+            <div
+              role="alert"
+              className="flex items-center justify-between gap-3 rounded-lg border border-danger bg-surface p-4"
+            >
+              <p className="text-sm text-danger">
+                Weave couldn&apos;t respond just now. Check your connection and try again.
+              </p>
+              <Button type="button" variant="outline" size="sm" onClick={handleRetryStream}>
+                Try again
+              </Button>
+            </div>
+          ) : null}
+
+          {error ? (
+            <p role="alert" className="text-sm text-danger">
+              {error}
             </p>
-            <Button type="button" variant="outline" size="sm" onClick={handleRetryStream}>
-              Try again
-            </Button>
-          </div>
-        ) : null}
-      </div>
-
-      <div className="flex flex-col gap-6">
-        {liveDraft ? (
-          <ProfileDraftPanels
-            draft={liveDraft}
-            selectedNameIndex={selectedNameIndex}
-            onSelectName={setSelectedNameIndex}
-            onHeadlineChange={setHeadline}
-            onBioChange={setBio}
-            onTagsChange={setTags}
-            onSubmit={handleCommit}
-            submitting={submitting}
-          />
-        ) : (
-          <div className="flex flex-col items-start gap-3 rounded-lg border border-border bg-surface p-8">
-            <h2 className="text-2xl font-bold text-foreground">Ready when you are</h2>
-            <p className="text-muted">
-              Chat with Weave about your work. When you&apos;ve shared enough, generate a first
-              draft of your creator profile — you can edit everything before publishing.
-            </p>
-            <Button type="button" onClick={handleGenerate} disabled={!hasUserTurn || generating}>
-              {generating ? "Weaving your profile…" : "Weave, build my profile"}
-            </Button>
-          </div>
-        )}
-
-        {error ? (
-          <p role="alert" className="text-sm text-danger">
-            {error}
-          </p>
-        ) : null}
+          ) : null}
+        </WeaveInterviewRail>
       </div>
     </div>
   );

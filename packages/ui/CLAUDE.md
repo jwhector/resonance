@@ -30,8 +30,14 @@ The app imports `@resonance/ui/styles.css` (tokens + Tailwind) and components fr
 
 ## Figma source
 
-- Primary file key: `7FOYLdtzCTITjcPeGKwF31`. A team copy with a higher MCP call
-  budget lives at `UYlkCL7jkCVgKWiqAVlEFp` (same node ids — Figma copies preserve them).
+- Working file key: `UYlkCL7jkCVgKWiqAVlEFp` (moved into the **Pro-tier** team — the Figma MCP
+  quota is **per team, not per user**, so a Starter-team file caps fast even if you hold Pro
+  elsewhere). Original: `7FOYLdtzCTITjcPeGKwF31`. Node ids survive Figma copies/moves. If
+  `get_screenshot`/`get_metadata` drop after a cap or reconnect, use `download_assets` (savable
+  render URLs) + `get_design_context`. (mulch `architecture`)
+- **Design fidelity:** match UI to Figma via `design/manifest/` (design.png ⇄ app.png, zero
+  drift; the frame is the source of truth, never an assumption). See `design/manifest/README.md`
+  - `_index.md`; codification tracked in `resonance-042f`.
 - Design System page: node `252:288` (Brand `1509:75825`, Gray Scale `1509:75822`,
   Indicators `1509:75823`, Fonts `1429:46784`)
 - **Reading tokens:** `get_variable_defs` is selection-gated in this setup (it reads the
@@ -40,7 +46,7 @@ The app imports `@resonance/ui/styles.css` (tokens + Tailwind) and components fr
 
 ## Token fidelity — colors + type are EXTRACTED
 
-Colors and typography are **extracted and final** (from `get_design_context` on the color
+Colors and typography are **extracted** (from `get_design_context` on the color
 
 - Fonts frames above). Two things to know:
 

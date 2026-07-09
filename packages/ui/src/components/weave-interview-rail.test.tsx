@@ -72,4 +72,47 @@ describe("WeaveInterviewRail", () => {
     expect(screen.getByRole("textbox", { name: "Talk to Weave" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Send to Weave" })).toBeDisabled();
   });
+
+  const startPrompt = { body: "Hi — I'm glad you're here.", question: "Would you like to begin?" };
+
+  it("renders the start-state opener and controls in place of the transcript", () => {
+    render(
+      <WeaveInterviewRail
+        messages={[]}
+        onSend={noop}
+        showStart
+        startPrompt={startPrompt}
+        onBegin={noop}
+        onDeferLater={noop}
+      />,
+    );
+    expect(screen.getByText(/I'm glad you're here/)).toBeInTheDocument();
+    expect(screen.getByText("Would you like to begin?")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Yes let's begin" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "I want do it later" })).toBeInTheDocument();
+  });
+
+  it("fires onBegin and onDeferLater from the start-state controls", () => {
+    const onBegin = vi.fn();
+    const onDeferLater = vi.fn();
+    render(
+      <WeaveInterviewRail
+        messages={[]}
+        onSend={noop}
+        showStart
+        startPrompt={startPrompt}
+        onBegin={onBegin}
+        onDeferLater={onDeferLater}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Yes let's begin" }));
+    fireEvent.click(screen.getByRole("button", { name: "I want do it later" }));
+    expect(onBegin).toHaveBeenCalledTimes(1);
+    expect(onDeferLater).toHaveBeenCalledTimes(1);
+  });
+
+  it("hides the bottom composer when showComposer is false", () => {
+    render(<WeaveInterviewRail messages={transcript} onSend={noop} showComposer={false} />);
+    expect(screen.queryByRole("textbox", { name: "Talk to Weave" })).not.toBeInTheDocument();
+  });
 });

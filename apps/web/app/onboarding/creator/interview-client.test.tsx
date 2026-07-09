@@ -8,9 +8,12 @@ import { InterviewClient } from "./interview-client";
 
 // `useChat` owns real streaming; mock it so the wrapper's mapping + draft flow are testable in
 // jsdom. `ai` (DefaultChatTransport) and the Server Actions are mocked for the same reason.
+// `next/navigation` is mocked because App Router's `useRouter` needs a mounted router context.
 vi.mock("@ai-sdk/react", () => ({ useChat: vi.fn() }));
 vi.mock("ai", () => ({ DefaultChatTransport: vi.fn() }));
 vi.mock("./actions", () => ({ generateDraft: vi.fn(), commitProfile: vi.fn() }));
+const routerPush = vi.fn();
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: routerPush }) }));
 
 const sendMessage = vi.fn();
 const regenerate = vi.fn();
@@ -51,15 +54,35 @@ afterEach(() => {
 });
 
 describe("InterviewClient", () => {
-  it("shows the Weave welcome and disables generate until there is a user turn", () => {
+  it("shows the Figma opener and start controls, with no generate CTA, before any user turn", () => {
     mockChat([]);
     render(<InterviewClient />);
 
-    expect(screen.getByText(/Hi, I'm Weave/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /build my profile/i })).toBeDisabled();
+    expect(screen.getByText(/I'm glad you're here/i)).toBeInTheDocument();
+    expect(screen.getByText("Would you like to begin?")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Yes let's begin" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "I want do it later" })).toBeInTheDocument();
+    // The generate CTA only appears once the user has spoken.
+    expect(screen.queryByRole("button", { name: /build my profile/i })).not.toBeInTheDocument();
   });
 
-  it("renders the user transcript and enables generate once the user has spoken", () => {
+  it("kicks off the interview with an opening turn from 'Yes let's begin'", () => {
+    mockChat([]);
+    render(<InterviewClient />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Yes let's begin" }));
+    expect(sendMessage).toHaveBeenCalledWith({ text: "Yes, let's begin." });
+  });
+
+  it("backs out to the home shell from 'I want do it later'", () => {
+    mockChat([]);
+    render(<InterviewClient />);
+
+    fireEvent.click(screen.getByRole("button", { name: "I want do it later" }));
+    expect(routerPush).toHaveBeenCalledWith("/");
+  });
+
+  it("renders the user transcript and shows an enabled generate CTA once the user has spoken", () => {
     mockChat([userMsg("I make ceramic mugs")]);
     render(<InterviewClient />);
 

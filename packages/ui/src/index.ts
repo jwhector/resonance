@@ -15,6 +15,7 @@ export { Textarea, type TextareaProps } from "./primitives/textarea";
 export { Tag, TagGroup, type TagProps, type TagGroupProps } from "./primitives/tag";
 
 // Composites
+export { AppNav, type AppNavProps } from "./components/app-nav";
 export {
   CreateAccountCard,
   type CreateAccountCardProps,

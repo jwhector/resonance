@@ -21,7 +21,7 @@ export default async function CreatorInterviewPage() {
   assertAiConfigured();
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-6xl px-6 py-10">
+    <main className="h-screen w-full overflow-hidden">
       <InterviewClient />
     </main>
   );
