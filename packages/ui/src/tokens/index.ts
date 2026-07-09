@@ -30,7 +30,7 @@ export const colors = {
     orange: "#f97316",
     yellow: "#facc15",
   },
-  primary: "#a855f7",
+  primary: "#6034ff",
   primaryStrong: "#6366f1",
   onPrimary: "#ffffff",
   background: "#f2f2f2",
@@ -76,7 +76,7 @@ export const radius = {
 } as const;
 
 export const brandGradient =
-  "linear-gradient(90deg, #22d3ee 0%, #6366f1 25%, #a855f7 50%, #ec4899 70%, #f97316 88%, #facc15 100%)";
+  "linear-gradient(90deg, #22d3ee 0%, #6366f1 21.635%, #a855f7 39.423%, #ec4899 60.577%, #f97316 80.288%, #facc15 100%)";
 
 export type ColorTokens = typeof colors;
 export type GrayScale = typeof gray;

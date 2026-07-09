@@ -23,19 +23,23 @@
   --color-brand-orange: #f97316;
   --color-brand-yellow: #facc15;
 
-  /* Primary — brand purple #A855F7 (EXTRACTED). The design system ships a single
-     primary + the gradient, not a purple ramp; the 50–900 tints are derived from it. */
-  --color-primary-50: #faf5ff;
-  --color-primary-100: #f3e8ff;
-  --color-primary-200: #e9d5ff;
-  --color-primary-300: #d8b4fe;
-  --color-primary-400: #c084fc;
-  --color-primary-500: #a855f7;
-  --color-primary-600: #9333ea;
-  --color-primary-700: #7e22ce;
-  --color-primary-800: #6b21a8;
-  --color-primary-900: #581c87;
-  --color-primary: #a855f7;
+  /* Primary — Figma "Design System" Primary chip #6034FF (EXTRACTED, node 1509:75701/75712).
+     The design ships a SINGLE primary + the Spectrum gradient — there is NO purple ramp.
+     #A855F7 is the Spectrum's purple stop (--color-brand-purple), which a prior pass mistook
+     for the primary. The 50–900 tints below are DERIVED from #6034FF (indigo family) and are
+     PROVISIONAL — not in Figma. Only primary-100 + primary-800 are used; verify those two
+     against their component frames during reconcile (resonance-c7c9) before treating as final. */
+  --color-primary-50: #f2efff;
+  --color-primary-100: #e4dcff;
+  --color-primary-200: #cbbcff;
+  --color-primary-300: #a891ff;
+  --color-primary-400: #8763ff;
+  --color-primary-500: #6034ff;
+  --color-primary-600: #4f1ff0;
+  --color-primary-700: #421bc6;
+  --color-primary-800: #35189d;
+  --color-primary-900: #291676;
+  --color-primary: #6034ff;
   --color-primary-strong: #6366f1;
   --color-on-primary: #ffffff;
 
@@ -118,15 +122,16 @@
   --shadow-brand: 0 8px 24px rgba(168, 85, 247, 0.25);
 }
 
-/* Signature brand gradient (extracted stops). Use sparingly for hero/brand moments. */
+/* Signature Spectrum gradient — EXACT stops from Figma (node 1509:75812). Use sparingly for
+   hero/brand moments. Stops were previously approximated (25/50/70/88%); these are the source. */
 @utility bg-brand-gradient {
   background-image: linear-gradient(
     90deg,
     var(--color-brand-cyan) 0%,
-    var(--color-brand-indigo) 25%,
-    var(--color-brand-purple) 50%,
-    var(--color-brand-pink) 70%,
-    var(--color-brand-orange) 88%,
+    var(--color-brand-indigo) 21.635%,
+    var(--color-brand-purple) 39.423%,
+    var(--color-brand-pink) 60.577%,
+    var(--color-brand-orange) 80.288%,
     var(--color-brand-yellow) 100%
   );
 }

@@ -43,7 +43,7 @@ function emailShell(heading: string, bodyHtml: string): string {
     <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden">
       <tr><td style="height:6px;background:linear-gradient(90deg,#22d3ee,#6366f1,#a855f7,#ec4899,#f97316,#facc15)"></td></tr>
       <tr><td style="padding:32px 40px">
-        <p style="margin:0 0 4px;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#a855f7;font-weight:600">Resonance</p>
+        <p style="margin:0 0 4px;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#6034ff;font-weight:600">Resonance</p>
         <h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#2b2b2b">${heading}</h1>
         ${bodyHtml}
         <p style="margin:24px 0 0;font-size:12px;color:#a6a6a6">If you didn't request this, you can safely ignore this email.</p>
@@ -57,8 +57,8 @@ function magicLinkEmailHtml(url: string): string {
   return emailShell(
     "Sign in to Resonance",
     `<p style="margin:0 0 24px;font-size:15px;line-height:1.6">Click the button below to sign in. This link expires shortly and can be used once.</p>
-     <a href="${url}" style="display:inline-block;background:#a855f7;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 24px;border-radius:10px">Sign in</a>
-     <p style="margin:24px 0 0;font-size:13px;line-height:1.6;color:#868686">Or paste this link into your browser:<br><a href="${url}" style="color:#7e22ce;word-break:break-all">${url}</a></p>`,
+     <a href="${url}" style="display:inline-block;background:#6034ff;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 24px;border-radius:10px">Sign in</a>
+     <p style="margin:24px 0 0;font-size:13px;line-height:1.6;color:#868686">Or paste this link into your browser:<br><a href="${url}" style="color:#6034ff;word-break:break-all">${url}</a></p>`,
   );
 }
 
