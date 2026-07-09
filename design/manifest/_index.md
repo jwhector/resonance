@@ -73,5 +73,7 @@ into a rule that overrides the design.
   `get_screenshot` did not.
 - App renders captured with `apps/web/scripts/capture-app-manifest.mjs` under `E2E_HARNESS=1`.
 - Figma budget: on the Pro-team file (moved from Starter). Full-slice capture cost ≈ 16 calls.
-- Still to verify (step 6 / `resonance-cbbd`): component citations `434:1194` (composer), `1485:49379`
-  (tag), `1526:79082` (mail-icon) — not yet confirmed against a metadata dump.
+- Citations verified (`resonance-cbbd`, R1): `434:1194` (composer / `Input/Wide`), `1485:49379`
+  (`TagGroup`), `1526:79082` (`Mail`) all confirmed via fresh `get_metadata`, saved in
+  `metadata/component-citations.md`. The fabricated `1443:114245` is gone. No fabricated citations
+  remain in `@resonance/ui`. Machine-checked Code Connect (R4) is deferred — see `resonance-a011`.

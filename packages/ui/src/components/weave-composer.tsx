@@ -3,7 +3,8 @@ import { cn } from "../lib/cn";
 import { TextInput } from "../primitives/text-input";
 
 /**
- * WeaveComposer — the "Talk to Weave" message box (Figma interview surface `1443:78283`).
+ * WeaveComposer — the "Talk to Weave" message box (Figma `Input/Wide` `434:1194`, verified;
+ * hosted on the interview surface `1443:78283`).
  *
  * Shared internal composite (not part of the package's public surface): the streaming
  * interview rail uses it live, and the generated-profile panel renders it *disabled* to
