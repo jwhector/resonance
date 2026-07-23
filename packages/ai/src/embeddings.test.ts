@@ -1,10 +1,7 @@
-import { describe, expect, it } from "vitest";
-import {
-  EMBEDDING_DIMS,
-  EMBEDDING_MODEL,
-  createFakeEmbedder,
-  profileToContent,
-} from "./embeddings";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { AgentError } from "./errors";
+import { EMBEDDING_DIMS, EMBEDDING_MODEL, profileToContent, resolveEmbedder } from "./embeddings";
+import { createFakeEmbedder } from "./testing";
 
 const profile = {
   displayName: "Ada",
@@ -45,5 +42,30 @@ describe("profileToContent", () => {
     expect(content).toContain("Maker of small tools");
     expect(content).toContain("tools, craft");
     expect(content).toContain("Workshop: A hands-on session");
+  });
+});
+
+describe("resolveEmbedder (live by default, ADR-0018)", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("selects a Voyage embedder when the Gateway key is present (no network at resolve time)", () => {
+    vi.stubEnv("AI_GATEWAY_API_KEY", "gw-key");
+    vi.stubEnv("VOYAGE_API_KEY", "");
+    expect(resolveEmbedder().model).toBe(EMBEDDING_MODEL);
+  });
+
+  it("falls back to direct Voyage when only VOYAGE_API_KEY is present", () => {
+    vi.stubEnv("AI_GATEWAY_API_KEY", "");
+    vi.stubEnv("VOYAGE_API_KEY", "voyage-key");
+    expect(resolveEmbedder().model).toBe(EMBEDDING_MODEL);
+  });
+
+  it("fails closed with an actionable error when no embedding provider key is present", () => {
+    vi.stubEnv("AI_GATEWAY_API_KEY", "");
+    vi.stubEnv("VOYAGE_API_KEY", "");
+    expect(() => resolveEmbedder()).toThrow(AgentError);
+    expect(() => resolveEmbedder()).toThrow(/AI_GATEWAY_API_KEY.*VOYAGE_API_KEY/s);
   });
 });

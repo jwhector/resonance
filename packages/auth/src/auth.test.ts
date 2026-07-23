@@ -2,8 +2,8 @@
 import { createTestDb, type TestDb } from "@resonance/db/testing";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createAuth } from "./auth";
-import { createFakeMail } from "./mail";
 import { decodeRoles } from "./roles";
+import { createFakeMail } from "./testing/fake-mail";
 
 describe("magic-link auth (PGlite-backed)", () => {
   let db: TestDb;

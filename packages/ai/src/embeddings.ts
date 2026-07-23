@@ -1,15 +1,17 @@
-import { embed } from "ai";
+import { type EmbeddingModel, embed } from "ai";
+import { createVoyage } from "voyage-ai-provider";
 import { AgentError } from "./errors";
+import { selectProvider } from "./provider-config";
 
 /**
  * Voyage `voyage-3.5` produces 1024-dim vectors. This pins the `vector(1024)` column in
- * `@resonance/db` (ADR-0010) — a mismatch would fail silently at query time, so both the
- * live and fake embedders assert it.
+ * `@resonance/db` (ADR-0010) — a mismatch would fail silently at query time, so every embedder
+ * asserts it.
  */
 export const EMBEDDING_MODEL = "voyage-3.5";
 export const EMBEDDING_DIMS = 1024;
 
-/** The minimum a profile needs to be embedded — structurally satisfied by a GeneratedProfile. */
+/** The minimum a profile needs to be embedded — a committed profile supplies these (offerings []). */
 export interface EmbeddableProfile {
   displayName: string;
   headline: string;
@@ -39,7 +41,15 @@ export function profileToContent(p: EmbeddableProfile): string {
     .join("\n\n");
 }
 
-function makeEmbedder(model: string, embedText: (text: string) => Promise<number[]>): Embedder {
+/**
+ * Build an `Embedder` from a raw text→vector function. Shared by the live providers and — via
+ * `@resonance/ai/testing` — the deterministic fake, so every embedder honors the same `embedProfile`
+ * contract. Not re-exported from the package entrypoint (internal seam).
+ */
+export function makeEmbedder(
+  model: string,
+  embedText: (text: string) => Promise<number[]>,
+): Embedder {
   return {
     model,
     embed: embedText,
@@ -50,38 +60,49 @@ function makeEmbedder(model: string, embedText: (text: string) => Promise<number
   };
 }
 
-/** Live embedder: Voyage via the AI Gateway (`voyage/voyage-3.5`, `AI_GATEWAY_API_KEY`). */
-export function createLiveEmbedder(): Embedder {
-  return makeEmbedder(EMBEDDING_MODEL, async (text) => {
-    let embedding: number[];
-    try {
-      ({ embedding } = await embed({ model: `voyage/${EMBEDDING_MODEL}`, value: text }));
-    } catch (err) {
-      throw new AgentError("embeddings: Voyage request failed", { cause: err });
-    }
-    if (embedding.length !== EMBEDDING_DIMS) {
-      throw new AgentError(`embeddings: expected ${EMBEDDING_DIMS} dims, got ${embedding.length}`);
-    }
-    return embedding;
-  });
+/**
+ * Run one Voyage embedding through the AI SDK and enforce the 1024-dim contract. The `model` is
+ * either the Gateway `voyage/voyage-3.5` string or a direct `voyage-ai-provider` embedding model —
+ * both go through `embed`, so dims-checking and error-wrapping live in one place.
+ */
+async function embedVoyage(model: EmbeddingModel, text: string): Promise<number[]> {
+  let embedding: number[];
+  try {
+    ({ embedding } = await embed({ model, value: text }));
+  } catch (err) {
+    throw new AgentError("embeddings: Voyage request failed", { cause: err });
+  }
+  if (embedding.length !== EMBEDDING_DIMS) {
+    throw new AgentError(`embeddings: expected ${EMBEDDING_DIMS} dims, got ${embedding.length}`);
+  }
+  return embedding;
 }
 
-/** Deterministic 1024-dim fake — same text always yields the same unit vector. */
-export function createFakeEmbedder(): Embedder {
-  return makeEmbedder(EMBEDDING_MODEL, async (text) => {
-    const v = new Array<number>(EMBEDDING_DIMS).fill(0);
-    for (let i = 0; i < text.length; i++) {
-      const code = text.charCodeAt(i);
-      // Hash char + position into a bucket so even single-character inputs differ.
-      const idx = (code * 31 + i) % EMBEDDING_DIMS;
-      v[idx] = (v[idx] ?? 0) + code + 1;
-    }
-    const norm = Math.sqrt(v.reduce((sum, x) => sum + x * x, 0)) || 1;
-    return v.map((x) => x / norm);
-  });
-}
-
-/** Pick the embedder for the current environment — fake under RESONANCE_FAKES, else live. */
+/**
+ * The embeddings seam (ADR-0010), **live by default** (ADR-0018). No `RESONANCE_FAKES` branch —
+ * shipped code always resolves a real Voyage transport; tests inject `createFakeEmbedder` from
+ * `@resonance/ai/testing`. Provider selection, by key precedence:
+ *
+ * 1. **Vercel AI Gateway** (`AI_GATEWAY_API_KEY`) — Voyage via the `voyage/voyage-3.5` string.
+ * 2. **Direct Voyage** (`VOYAGE_API_KEY`) — the `voyage-ai-provider`, for running without a Gateway.
+ *
+ * The Gateway→direct→fail-closed ladder is shared with `resolveModel` via `selectProvider`, so the
+ * two seams can't drift. If neither key is present it **fails closed** with an actionable error —
+ * never silently fakes.
+ */
 export function resolveEmbedder(): Embedder {
-  return process.env.RESONANCE_FAKES === "1" ? createFakeEmbedder() : createLiveEmbedder();
+  return selectProvider<Embedder>({
+    gatewayKey: process.env.AI_GATEWAY_API_KEY,
+    buildGateway: () =>
+      makeEmbedder(EMBEDDING_MODEL, (text) => embedVoyage(`voyage/${EMBEDDING_MODEL}`, text)),
+    directKey: process.env.VOYAGE_API_KEY,
+    buildDirect: () => {
+      const voyage = createVoyage({ apiKey: process.env.VOYAGE_API_KEY });
+      const model = voyage.textEmbeddingModel(EMBEDDING_MODEL);
+      return makeEmbedder(EMBEDDING_MODEL, (text) => embedVoyage(model, text));
+    },
+    missing:
+      "resolveEmbedder: no embedding provider configured. Set AI_GATEWAY_API_KEY " +
+      "(Vercel AI Gateway, preferred) or VOYAGE_API_KEY (direct Voyage).",
+  });
 }

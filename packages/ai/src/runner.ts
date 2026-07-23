@@ -53,7 +53,8 @@ function toToolSet(tools: AgentTool[] | undefined): ToolSet | undefined {
 /**
  * Streaming path — wraps `streamText` with the agent's system prompt and the transcript.
  * Returns the AI SDK stream result; the caller (a route handler) turns it into an HTTP
- * stream. Model errors surface on the stream, not synchronously.
+ * stream. Generation/model errors surface on the returned stream; a missing-provider
+ * misconfiguration makes `resolveModel` throw synchronously (fail-closed, ADR-0018).
  */
 export function runAgentStream(
   agent: AgentDefinition,
@@ -68,10 +69,10 @@ export function runAgentStream(
 }
 
 /**
- * Structured path — the agent must call exactly one tool, which does the real work (e.g.
- * `saveProfile` persisting + embedding). Forces the tool call, executes it, and returns its
- * validated output. Throws a typed `AgentError` on any failure — never swallows (design spec
- * § Error handling).
+ * Structured path — the agent must call exactly one tool, whose validated return value IS the
+ * agent's output (e.g. ProfileGen's `proposeProfile` returning the generated draft). Forces the
+ * tool call, executes it, and returns its output. Throws a typed `AgentError` on any failure —
+ * never swallows (design spec § Error handling).
  */
 export async function runAgentStructured<Output>(
   agent: AgentDefinition<Output>,

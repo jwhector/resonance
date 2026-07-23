@@ -12,6 +12,9 @@ packages speak.
 - `types.ts` — `Role` (+ Zod schema), branded `Id<Brand>` helper.
 - `interview.ts` — `InterviewMessageSchema` / `InterviewMessage`: the shared chat
   contract (role + text) for the Weave interview, spoken by `ai`, `web`, and `ui`.
+- `profile-draft.ts` — `CreatorProfileDraftSchema` (+ `NameOptionSchema`,
+  `CommitProfileInputSchema`): the shared generated-draft contract for the profile the
+  interview produces — `ai` generates it, `ui` edits it, `web` validates the commit.
 
 ## Rules
 

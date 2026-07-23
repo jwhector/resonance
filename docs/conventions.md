@@ -138,6 +138,13 @@ Co-locate schemas with the domain type. Infer the TS type from the schema
 - Unit/integration: **Vitest**, co-located `*.test.ts` next to source.
 - Components: **React Testing Library** (`*.test.tsx`).
 - E2E: **Playwright** in `apps/web/e2e`.
+- **Test-only fakes live behind a package's `./testing` subpath** (`@resonance/x/testing`), never
+  the main entrypoint, and are supplied via **DI** — never selected by a runtime env flag
+  (ADR-0018). Use the `/testing` suffix **uniformly** (`@resonance/db/testing`,
+  `@resonance/auth/testing`, `@resonance/ai/testing`); do **not** use `/test` — it collides with
+  the Vercel AI SDK's own `ai/test` import. The one sanctioned exception to "no runtime fake
+  selection" is a single, isolated, clearly-named **E2E-only harness**
+  (`apps/web/lib/e2e-harness.ts`, gated on `E2E_HARNESS`) — ADR-0018 §4.
 - Write the test with the behavior. Bug fixes start with a failing test.
 
 ## Commits & ADRs

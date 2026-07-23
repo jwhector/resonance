@@ -4,10 +4,10 @@
  * (e.g. `--color-primary` → `bg-primary`/`text-primary`). Components reference these
  * utilities, never raw hex values (ADR-0012).
  *
- * Values marked PROVISIONAL come from a brand-palette extraction; the Figma
- * Professional-plan quota blocked deep variable reads. Refine against Figma variables
- * when quota allows — see packages/ui/CLAUDE.md. The brand primary (#A855F7) and the
- * gradient stops are extracted and final.
+ * Colors and typography are EXTRACTED from the Figma "Design System" page
+ * (get_design_context on the Gray Scale `1509:75822`, Indicators `1509:75823`, and
+ * Fonts `1429:46784` frames). Radius + elevation are design-consistent defaults — the
+ * Figma design system ships no explicit radius/shadow token frame. See packages/ui/CLAUDE.md.
  */
 @import "tailwindcss";
 
@@ -23,70 +23,115 @@
   --color-brand-orange: #f97316;
   --color-brand-yellow: #facc15;
 
-  /* Primary ramp (anchored on extracted #A855F7; ramp PROVISIONAL) */
-  --color-primary-50: #faf5ff;
-  --color-primary-100: #f3e8ff;
-  --color-primary-200: #e9d5ff;
-  --color-primary-300: #d8b4fe;
-  --color-primary-400: #c084fc;
-  --color-primary-500: #a855f7;
-  --color-primary-600: #9333ea;
-  --color-primary-700: #7e22ce;
-  --color-primary-800: #6b21a8;
-  --color-primary-900: #581c87;
-  --color-primary: #a855f7;
+  /* Primary — Figma "Design System" Primary chip #6034FF (EXTRACTED, node 1509:75701/75712).
+     The design ships a SINGLE primary + the Spectrum gradient — there is NO purple ramp.
+     #A855F7 is the Spectrum's purple stop (--color-brand-purple), which a prior pass mistook
+     for the primary. The 50–900 tints below are DERIVED from #6034FF (indigo family) and are
+     PROVISIONAL — not in Figma. Only primary-100 + primary-800 are used; verify those two
+     against their component frames during reconcile (resonance-c7c9) before treating as final. */
+  --color-primary-50: #f2efff;
+  --color-primary-100: #e4dcff;
+  --color-primary-200: #cbbcff;
+  --color-primary-300: #a891ff;
+  --color-primary-400: #8763ff;
+  --color-primary-500: #6034ff;
+  --color-primary-600: #4f1ff0;
+  --color-primary-700: #421bc6;
+  --color-primary-800: #35189d;
+  --color-primary-900: #291676;
+  --color-primary: #6034ff;
   --color-primary-strong: #6366f1;
   --color-on-primary: #ffffff;
 
-  /* Neutrals — PROVISIONAL (slate ramp) */
-  --color-background: #ffffff;
-  --color-background-subtle: #f8fafc;
-  --color-surface: #ffffff;
-  --color-surface-muted: #f1f5f9;
-  --color-foreground: #0f172a;
-  --color-muted: #475569;
-  --color-subtle: #94a3b8;
-  --color-border: #e2e8f0;
-  --color-border-strong: #cbd5e1;
+  /* Neutral ramp — EXTRACTED from Figma. NOTE the inverted naming: gray-0 = black …
+     gray-900 = white (light theme with dark text). */
+  --color-gray-0: #000000;
+  --color-gray-50: #0a0a0a;
+  --color-gray-100: #141414;
+  --color-gray-200: #1e1e1e;
+  --color-gray-300: #2b2b2b;
+  --color-gray-400: #404040;
+  --color-gray-500: #868686;
+  --color-gray-600: #a6a6a6;
+  --color-gray-700: #cdcdcd;
+  --color-gray-750: #e6e6e6;
+  --color-gray-800: #f2f2f2;
+  --color-gray-900: #ffffff;
 
-  /* Semantic — PROVISIONAL (warning/info aligned to extracted brand stops) */
-  --color-success: #22c55e;
-  --color-success-subtle: #dcfce7;
-  --color-warning: #f97316;
-  --color-warning-subtle: #ffedd5;
-  --color-danger: #ef4444;
-  --color-danger-subtle: #fee2e2;
-  --color-info: #6366f1;
-  --color-info-subtle: #e0e7ff;
+  /* Neutral semantic roles — mapped from the ramp's Figma annotations
+     (Text=gray-300, Subtext=gray-600, Border=gray-700, Background=gray-800). */
+  --color-background: #f2f2f2; /* gray-800 (Background) */
+  --color-background-subtle: #e6e6e6; /* gray-750 */
+  --color-surface: #ffffff; /* gray-900 — cards/inputs sit white on the gray page */
+  --color-surface-muted: #f2f2f2; /* gray-800 */
+  --color-foreground: #2b2b2b; /* gray-300 (Text) */
+  --color-muted: #a6a6a6; /* gray-600 (Subtext) */
+  --color-subtle: #868686; /* gray-500 */
+  --color-border: #cdcdcd; /* gray-700 (Border) */
+  --color-border-strong: #a6a6a6; /* gray-600 */
 
-  /* Typography — family PROVISIONAL (Inter); type-scale names extracted */
+  /* Semantic / status — EXTRACTED from Figma "Indicators". *-subtle tints are derived. */
+  --color-success: #58b17a; /* accent-green */
+  --color-success-subtle: #e6f3eb;
+  --color-warning: #ffb347; /* accent-gold */
+  --color-warning-subtle: #fff1de;
+  --color-danger: #ff4d4d; /* accent-red */
+  --color-danger-subtle: #ffe5e5;
+  --color-info: #3a7bff; /* accent-blue */
+  --color-info-subtle: #e5eeff;
+  --color-accent-violet: #7c5cff; /* accent-violet */
+
+  /* Typography — family + type scale EXTRACTED from the Figma Fonts frame.
+     Weights in use: Regular 400, Medium 500, Bold 700. */
   --font-sans:
-    "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
-    sans-serif;
+    "Helvetica Neue", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
 
-  /* Border radius — PROVISIONAL */
+  --text-display-lg: 3.75rem; /* 60px */
+  --text-display-lg--line-height: 4rem; /* 64px */
+  --text-display-md: 2.5rem; /* 40px */
+  --text-display-md--line-height: 3rem; /* 48px */
+  --text-heading-lg: 1.75rem; /* 28px */
+  --text-heading-lg--line-height: 2.25rem; /* 36px */
+  --text-heading-md: 1.375rem; /* 22px */
+  --text-heading-md--line-height: 1.875rem; /* 30px */
+  --text-heading-sm: 1rem; /* 16px */
+  --text-heading-sm--line-height: 1.5rem; /* 24px */
+  --text-body-lg: 1rem; /* 16px */
+  --text-body-lg--line-height: 1.5rem; /* 24px */
+  --text-body-md: 0.875rem; /* 14px */
+  --text-body-md--line-height: 1.375rem; /* 22px */
+  --text-caption: 0.75rem; /* 12px */
+  --text-caption--line-height: 1.125rem; /* 18px */
+  --text-label: 0.625rem; /* 10px */
+  --text-label--line-height: 1rem; /* 16px */
+
+  /* Border radius. `md` is the EXTRACTED control radius — every Figma control (inputs,
+     buttons, OTP digits, tags, the Weave composer) is an 8px corner (get_design_context
+     on the onboarding frames). sm/lg/xl remain design-consistent defaults; lg (16px)
+     matches the Figma panel/topbar corner. */
   --radius-sm: 6px;
-  --radius-md: 10px;
+  --radius-md: 8px;
   --radius-lg: 16px;
   --radius-xl: 24px;
 
-  /* Elevation — PROVISIONAL (soft, brand-tinted CTA shadow) */
-  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.05);
-  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.06);
-  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
-  --shadow-lg: 0 12px 24px rgba(15, 23, 42, 0.1);
-  --shadow-brand: 0 8px 24px rgba(168, 85, 247, 0.25);
+  /* Elevation — design-consistent defaults; brand-tinted CTA shadow. */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.1);
+  --shadow-brand: 0 8px 24px rgba(96, 52, 255, 0.25); /* brand indigo #6034ff */
 }
 
-/* Signature brand gradient (extracted stops). Use sparingly for hero/brand moments. */
+/* Signature Spectrum gradient — EXACT stops from Figma (node 1509:75812). Use sparingly for
+   hero/brand moments. Stops were previously approximated (25/50/70/88%); these are the source. */
 @utility bg-brand-gradient {
   background-image: linear-gradient(
     90deg,
     var(--color-brand-cyan) 0%,
-    var(--color-brand-indigo) 25%,
-    var(--color-brand-purple) 50%,
-    var(--color-brand-pink) 70%,
-    var(--color-brand-orange) 88%,
+    var(--color-brand-indigo) 21.635%,
+    var(--color-brand-purple) 39.423%,
+    var(--color-brand-pink) 60.577%,
+    var(--color-brand-orange) 80.288%,
     var(--color-brand-yellow) 100%
   );
 }

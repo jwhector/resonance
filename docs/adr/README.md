@@ -25,6 +25,8 @@ These were seeded from the founding design interview (2026-06-16).
 | [0015](0015-architecture-diagram-living-documentation.md)              | Architecture diagram as living documentation                                   | Accepted |
 | [0016](0016-agentic-workflow-orchestration-and-knowledge-ownership.md) | Agentic workflow: firstmate orchestration + knowledge ownership                | Accepted |
 | [0017](0017-design-deep-modules.md)                                    | Design deep modules — small interface, lots hidden; the entrypoint is the seam | Accepted |
+| [0018](0018-testing-seams-live-by-default.md)                          | Testing seams — live-by-default code, fakes injected in tests, live-smoke gate | Accepted |
+| [0019](0019-design-fidelity-visual-manifest.md)                        | Design fidelity via the visual manifest — artifact-anchored parity (R1–R4)     | Accepted |
 
 ## Writing a new ADR
 

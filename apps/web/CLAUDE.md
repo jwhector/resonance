@@ -5,26 +5,56 @@ the `@resonance/*` packages and renders them — it holds **no domain logic** (A
 Logic that feels like it belongs here almost always belongs in a package, so it stays
 extraction-ready.
 
-## Status: SCAFFOLD
+## Status: reference slice live
 
-Only the scaffold home page (`app/page.tsx`, `app/layout.tsx`) and an e2e smoke test
-(`e2e/home.spec.ts`) exist. The reference-slice **Creator Interview → ProfileGen**
-route (Server Actions wiring `ui` ↔ `ai` ↔ `db` behind creator auth) is the next thing
-built here — see ADR-0013 and the `web`-labelled seed.
+The **Creator Interview → ProfileGen** slice (ADR-0013) is built — the shell wires
+`ui` ↔ `ai` ↔ `db` behind creator auth: passwordless sign-in → Weave interview → ProfileGen
+draft → commit → published profile. Commerce/community routes are still unbuilt; the scaffold
+home page remains.
 
 ## What's here
 
 ```
 app/
-├── layout.tsx        root layout
-├── page.tsx          scaffold home page
-└── globals.css       Tailwind entry + token wiring
+├── (onboarding)/signup, verify   passwordless front door (form + Better Auth)
+├── onboarding/creator/           Weave interview client + ProfileGen Server Actions
+│                                 (page.tsx · interview-client.tsx · actions.ts)
+├── creator/[id]/                 published creator profile
+├── api/onboarding/interview/     streaming interview route (live model, ADR-0009)
+├── api/auth/[...all]/            Better Auth mount (via lib/auth.ts getWebAuth)
+├── api/test/last-otp/            E2E-ONLY OTP read-back — gated on E2E_HARNESS
+└── layout.tsx · page.tsx · globals.css
+lib/
+├── auth.ts            getWebAuth() (the one instance the mount serves) + getWebSession() — all
+│                      apps/web session reads route through it, so ONE instance runs per process
+├── e2e-harness.ts     the SINGLE, production-guarded E2E fake-selection seam (ADR-0018)
+├── auth-client.ts · interview-messages.ts
 e2e/
-└── home.spec.ts      Playwright smoke test
+├── onboarding-creator.spec.ts    full-flow Playwright (runs under E2E_HARNESS)
+└── home.spec.ts                  scaffold smoke test
 ```
 
 Depends on every `@resonance/*` package plus `next`, `react`, `@tanstack/react-query`,
 and `zod`.
+
+## Testing (ADR-0018)
+
+- The shell consumes the `@resonance/*` **live-by-default** seams; there is **no
+  `RESONANCE_FAKES` branch** in shipped code. Unit/RTL tests inject fakes via DI (mocking the
+  `@resonance/ai` entrypoint, passing `ctx.embedder`), never an env flag.
+- The full-flow Playwright E2E stays deterministic through ONE isolated seam —
+  [`lib/e2e-harness.ts`](lib/e2e-harness.ts) (`E2E_HARNESS=1`, hard-guarded off in production) —
+  which injects the test-only fakes (`@resonance/ai/testing`, `@resonance/auth/testing`) at the
+  composition roots (interview stream, `generateDraft`, `commitProfile`, and the auth mount). It
+  is **not** a general fakes flag threaded through the packages (ADR-0018 §4). The harness fake mail
+  is a `globalThis` singleton and registers its OTP buffer for read-back with an **explicit**
+  `observeLoginCodes(fake)` call (never a construction side-effect), so building a fake — or a
+  session read via `getWebSession` — can't clobber the `/api/test/last-otp` read-back (seed
+  resonance-5d4e). Session reads go through `getWebSession` → `getWebAuth`, so the mount and the
+  reads share ONE Better Auth instance per process (seed resonance-eb15).
+- Live wiring is proven by the credential-gated **`verify:live`** smoke gate (`pnpm verify:live`,
+  ADR-0018 §3): one real model call + embedding + email + DB write. It **skips** (exit 0) with no
+  credentials, so the fast inner loop stays free and deterministic.
 
 ## Rules
 

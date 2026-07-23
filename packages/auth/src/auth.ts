@@ -5,13 +5,20 @@
 
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { magicLink } from "better-auth/plugins";
-import type { MailPort } from "@resonance/core";
+import { emailOTP, magicLink } from "better-auth/plugins";
 import { createDb, type Db } from "@resonance/db";
-import { resolveMail } from "./mail";
+import { resolveMail, type AuthMailPort } from "./mail";
 import { resolveAuthSecret } from "./auth-secret";
 
-export function createAuth(opts: { db: Db; mail: MailPort; secret?: string; baseURL?: string }) {
+/** Length of the emailOTP login code shown on the onboarding verification screen. */
+const OTP_LENGTH = 6;
+
+export function createAuth(opts: {
+  db: Db;
+  mail: AuthMailPort;
+  secret?: string;
+  baseURL?: string;
+}) {
   const resolvedSecret = resolveAuthSecret(opts.secret);
   return betterAuth({
     secret: resolvedSecret,
@@ -21,6 +28,17 @@ export function createAuth(opts: { db: Db; mail: MailPort; secret?: string; base
       magicLink({
         sendMagicLink: async ({ email, url, token }) => {
           await opts.mail.sendMagicLink({ email, url, token });
+        },
+      }),
+      // Passwordless 6-digit code — coexists with magic-link on the onboarding
+      // email-verification screen. The code is emailed through the SAME mail seam
+      // magic-link uses (a separate message, not merged into the link email), so
+      // tests assert on the fake and dev logs it. Better Auth stores/expires the
+      // code in the shared `verification` table (no new migration).
+      emailOTP({
+        otpLength: OTP_LENGTH,
+        sendVerificationOTP: async ({ email, otp, type }) => {
+          await opts.mail.sendLoginCode({ email, otp, type });
         },
       }),
     ],

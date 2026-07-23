@@ -7,7 +7,7 @@
 // `session.user.id` (same field, different key name).
 
 import type { Role } from "@resonance/core";
-import { getAuth } from "./auth";
+import { type Auth, getAuth } from "./auth";
 import { decodeRoles } from "./roles";
 
 /** The authenticated principal exposed to the rest of the app. */
@@ -18,14 +18,25 @@ export interface SessionUser {
 }
 
 /**
- * Resolve the current session from incoming request headers.
- * Returns `null` when no valid session cookie / token is present.
+ * Resolve the current session from incoming request headers, reading it through `auth` — the
+ * Better Auth instance to consult (defaults to the app singleton {@link getAuth}). Returns `null`
+ * when no valid session cookie / token is present.
+ *
+ * Pass an explicit instance so session reads run through the SAME instance that serves the auth
+ * mount — one Better Auth instance per process, not two that merely agree because they share
+ * `BETTER_AUTH_SECRET` + `DATABASE_URL` (seed resonance-eb15). In `apps/web` that unification lives
+ * in the shell as `getWebSession` (ADR-0018 §4 keeps harness selection out of this package); this
+ * function stays generic over any instance.
  *
  * Usage (RSC / Server Action / route handler):
- *   const user = await getSession(headers());
+ *   const user = await getSession(headers());              // app singleton
+ *   const user = await getSession(headers(), someAuth);    // a specific instance
  */
-export async function getSession(headers: Headers): Promise<SessionUser | null> {
-  const session = await getAuth().api.getSession({ headers });
+export async function getSession(
+  headers: Headers,
+  auth: Auth = getAuth(),
+): Promise<SessionUser | null> {
+  const session = await auth.api.getSession({ headers });
   if (!session) return null;
 
   const rolesRaw = (session.user as { roles?: string }).roles;

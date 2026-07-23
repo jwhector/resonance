@@ -72,6 +72,16 @@ docs/working-with-agents.md  How to run a productive agent session against this 
    `update-architecture-diagram` recipe.
 8. **Tests are not optional.** Vitest (unit/integration) + RTL (components) +
    Playwright (E2E). New behavior ships with tests (ADR-0011).
+9. **No fakes in runtime code.** Shipped paths are **live-by-default**; fakes/mocks are
+   **injected in tests** (DI), never chosen by an env flag inside runtime code. A
+   credential-gated **live-smoke** check exercises each external service for real before
+   release, so a green build can't hide broken live wiring (ADR-0018).
+10. **Match the design; prove it with an artifact.** The Figma frame is the source of truth —
+    read it, don't invent. UI parity is a **diff of two images** (`design/manifest/`
+    `design.png` ⇄ `app.png`), never a prose claim: state it only as "matches `design.png`
+    except [deltas]", keep unverified values `PROVISIONAL`, and cite only node ids present in a
+    `metadata/` dump (ADR-0019). Build UI with the `add-ui-component-from-figma` recipe and
+    verify with the pixel-diff loop.
 
 ## Stack at a glance
 
