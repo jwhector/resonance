@@ -60,3 +60,9 @@ jobs:
         run: pnpm --filter web exec playwright install --with-deps chromium
       - name: E2E tests
         run: pnpm test:e2e
+        env:
+          # The E2E boots under the harness (fake model/embedder/mail) but runs against the real
+          # Neon DB so Better Auth can persist users/sessions — `playwright.config.ts` inherits
+          # DATABASE_URL from the environment. Without it the auth mount throws at request time
+          # ("DATABASE_URL is required to create the production database client").
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
