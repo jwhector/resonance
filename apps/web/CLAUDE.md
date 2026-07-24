@@ -16,6 +16,7 @@ home page remains.
 
 ```
 app/
+├── (onboarding)/start           intent fork ("What brought you?", IntentPickerCard) → /signup or home
 ├── (onboarding)/signup, verify   passwordless front door (form + Better Auth)
 ├── onboarding/creator/           Weave interview client + ProfileGen Server Actions
 │                                 (page.tsx · interview-client.tsx · actions.ts)
