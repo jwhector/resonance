@@ -8,9 +8,11 @@ import { createFakeMail } from "./testing/fake-mail";
 describe("magic-link auth (PGlite-backed)", () => {
   let db: TestDb;
   let close: () => Promise<void>;
+  // Generous hookTimeout: PGlite WASM cold-init + migrations is ~1s in isolation but can exceed the
+  // 10s default under parallel test-suite CPU contention in CI (seed resonance-75e5).
   beforeEach(async () => {
     ({ db, close } = await createTestDb());
-  });
+  }, 30000);
   afterEach(async () => {
     await close();
   });
