@@ -56,10 +56,12 @@ function recordingDb(db: TestDb, order: string[]): TestDb {
 describe("commitCreatorProfile (PGlite + fake embedder)", () => {
   let db: TestDb;
   let close: () => Promise<void>;
+  // Generous hookTimeout: PGlite WASM cold-init + migrations is ~1s in isolation but can exceed the
+  // 10s default under parallel test-suite CPU contention in CI (seed resonance-75e5).
   beforeEach(async () => {
     ({ db, close } = await createTestDb());
     await db.insert(user).values({ id: "u1", name: "Ada", email: "ada@x.com" });
-  });
+  }, 30000);
   afterEach(async () => {
     await close();
   });

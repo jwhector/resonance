@@ -23,6 +23,12 @@ export {
 } from "./components/create-account-card";
 export { EmailVerifyCard, type EmailVerifyCardProps } from "./components/email-verify-card";
 export {
+  IntentPickerCard,
+  INTENT_OPTIONS,
+  type IntentPickerCardProps,
+  type OnboardingIntent,
+} from "./components/intent-picker-card";
+export {
   WeaveInterviewRail,
   type WeaveInterviewRailProps,
 } from "./components/weave-interview-rail";

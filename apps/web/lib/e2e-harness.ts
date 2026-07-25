@@ -35,6 +35,17 @@ export async function onboardingModelOverride(): Promise<{ model?: LanguageModel
   return { model: createFakeOnboardingModel() };
 }
 
+/**
+ * Whether the onboarding entry (`/onboarding/creator`) should run the live-provider fail-fast
+ * (`assertAiConfigured`). Under the harness the model AND embedder are injected fakes (see
+ * `onboardingModelOverride` / `onboardingEmbedder`), so no real AI credentials exist or are
+ * needed — running the presence check there would spuriously throw and break the E2E. Live path
+ * keeps the guard so a partial prod config still fails fast (seed resonance-2fdc).
+ */
+export function onboardingAiCheckEnabled(): boolean {
+  return !E2E_HARNESS;
+}
+
 /** Embedder for the commit path: the deterministic 1024-dim fake under the harness, else live `resolveEmbedder()`. */
 export async function onboardingEmbedder(): Promise<Embedder> {
   if (!E2E_HARNESS) return resolveEmbedder();
