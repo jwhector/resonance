@@ -1,13 +1,16 @@
 import { ResonanceError } from "./errors";
 
 /**
- * The one place the embedding width is written down.
+ * The intended single home for the embedding width.
  *
  * Voyage `voyage-3.5` produces 1024-dim vectors and the `embeddings.embedding` column is
- * `vector(1024)` (ADR-0010). Until now that number lived twice — a constant in
- * `@resonance/ai` and a literal in `@resonance/db`'s schema — and `db` cannot import `ai`
- * (the dependency runs the other way), so the two could only agree by coincidence. It is a
- * fact two packages need ⇒ it belongs in `core` (ADR-0003).
+ * `vector(1024)` (ADR-0010). `@resonance/db` cannot import `@resonance/ai` (the dependency
+ * runs the other way), so the width could previously only be agreed by coincidence — hence
+ * it is a fact two packages need ⇒ it belongs in `core` (ADR-0003). Today the width is still
+ * ALSO declared in `@resonance/ai` (`EMBEDDING_DIMS` in `packages/ai/src/embeddings.ts`) and
+ * hard-coded as `vector(1024)` in `packages/db/src/schema/creator.ts`; converging those two
+ * onto this constant is follow-up work owned by those packages' own steps (seed
+ * resonance-52cd), deliberately out of this step's blast radius.
  */
 export const EMBEDDING_DIMS = 1024;
 

@@ -16,9 +16,11 @@ packages speak.
   `CommitProfileInputSchema`): the shared generated-draft contract for the profile the
   interview produces — `ai` generates it, `ui` edits it, `web` validates the commit.
 - `embedding.ts` — `EMBEDDING_DIMS` (1024, ADR-0010) + `assertEmbeddingDims` /
-  `EmbeddingDimensionError`. The one home for the vector width, because `db` (the
-  `vector(1024)` column) cannot import `ai` (the embedder) — the dependency runs the other
-  way. Guard before any vector reaches SQL: a mismatch matches nothing instead of erroring.
+  `EmbeddingDimensionError`. Where the shared vector-width constant now lives, because `db`
+  (the `vector(1024)` column) cannot import `ai` (the embedder) — the dependency runs the
+  other way. `@resonance/ai` and `@resonance/db` still carry their own copies pending the
+  follow-up migration (seed resonance-52cd). Guard before any vector reaches SQL: a mismatch
+  matches nothing instead of erroring.
 - `discovery.ts` — the **discovery contract**, i.e. the swappable ranking **seam**
   (ADR-0017). `DiscoveryQuerySchema` / `CreatorDiscoveryQuerySchema` (validation boundary
   for the search box + tab), `CreatorResultSchema` / `CreatorResultPageSchema` (the designed
