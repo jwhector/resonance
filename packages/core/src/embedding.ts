@@ -10,7 +10,7 @@ import { ResonanceError } from "./errors";
  * ALSO declared in `@resonance/ai` (`EMBEDDING_DIMS` in `packages/ai/src/embeddings.ts`) and
  * hard-coded as `vector(1024)` in `packages/db/src/schema/creator.ts`; converging those two
  * onto this constant is follow-up work owned by those packages' own steps (seed
- * resonance-52cd), deliberately out of this step's blast radius.
+ * resonance-e0e6), deliberately out of this step's blast radius.
  */
 export const EMBEDDING_DIMS = 1024;
 

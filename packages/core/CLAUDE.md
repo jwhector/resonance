@@ -19,7 +19,7 @@ packages speak.
   `EmbeddingDimensionError`. Where the shared vector-width constant now lives, because `db`
   (the `vector(1024)` column) cannot import `ai` (the embedder) — the dependency runs the
   other way. `@resonance/ai` and `@resonance/db` still carry their own copies pending the
-  follow-up migration (seed resonance-52cd). Guard before any vector reaches SQL: a mismatch
+  follow-up migration (seed resonance-e0e6). Guard before any vector reaches SQL: a mismatch
   matches nothing instead of erroring.
 - `discovery.ts` — the **discovery contract**, i.e. the swappable ranking **seam**
   (ADR-0017). `DiscoveryQuerySchema` / `CreatorDiscoveryQuerySchema` (validation boundary
