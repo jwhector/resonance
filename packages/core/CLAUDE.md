@@ -15,6 +15,18 @@ packages speak.
 - `profile-draft.ts` — `CreatorProfileDraftSchema` (+ `NameOptionSchema`,
   `CommitProfileInputSchema`): the shared generated-draft contract for the profile the
   interview produces — `ai` generates it, `ui` edits it, `web` validates the commit.
+- `embedding.ts` — `EMBEDDING_DIMS` (1024, ADR-0010) + `assertEmbeddingDims` /
+  `EmbeddingDimensionError`. The one home for the vector width, because `db` (the
+  `vector(1024)` column) cannot import `ai` (the embedder) — the dependency runs the other
+  way. Guard before any vector reaches SQL: a mismatch matches nothing instead of erroring.
+- `discovery.ts` — the **discovery contract**, i.e. the swappable ranking **seam**
+  (ADR-0017). `DiscoveryQuerySchema` / `CreatorDiscoveryQuerySchema` (validation boundary
+  for the search box + tab), `CreatorResultSchema` / `CreatorResultPageSchema` (the designed
+  result row + its cursor-paginated envelope), `FollowStateSchema`, `ResultKindSchema` (the
+  four designed tabs), and `DiscoveryPort` — one method over a large implementation
+  (embed → status-filtered ANN → tags → threshold → paging → follow state) that lives in
+  `db`. `web` and `ui` depend on this interface and never on SQL; the port's invariants are
+  documented on the interface and exercised by a fake adapter in `discovery.test.ts`.
 
 ## Rules
 
