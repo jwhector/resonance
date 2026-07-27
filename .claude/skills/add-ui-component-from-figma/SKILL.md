@@ -30,14 +30,15 @@ This recipe runs inside the agentic loop (root CLAUDE.md → _Agentic workflow_,
 
 ## Steps
 
-1. **Read the design — cheap→expensive, and save the artifacts.** Walk the Figma budget
-   funnel (ADR-0019): `get_metadata(fileKey[, node])` to map the frame and **prove the node
-   id exists** (save the dump under `design/manifest/metadata/` — R1), then
-   `get_screenshot` (save the render as the component's/screen's `design.png` — this is the
-   contract), and only then `get_design_context` on that one frame for resolved
-   hexes/spacing/type (save as `design.md`). **Do not explore with `get_design_context`.**
-   The file/page/node ids are in `packages/ui/CLAUDE.md` and `design/manifest/_index.md`.
-   - **If Figma is rate-limited:** you may build against `packages/ui` tokens + a saved
+1. **Read the design — save the artifacts.** Capture the frame following the authoritative
+   procedure in
+   [`design/manifest/README.md` § Capture notes](../../../design/manifest/README.md) — the REST
+   funnel is dead (`403`); capture runs through the Figma Desktop Bridge. Save the node-inventory
+   dump under `design/manifest/metadata/` and **prove the node id resolves in-session** (R1), the
+   render as the component's/screen's `design.png` (this is the contract), and the resolved
+   hexes/spacing/type as `design.md`. The file/page/node ids are in `design/manifest/_index.md`
+   and `design/manifest/PROVENANCE.md`.
+   - **If you cannot capture from Figma:** you may build against `packages/ui` tokens + a saved
      `design.png`, but every unverified value stays **`PROVISIONAL`** in code and
      `status: provisional` in `_index.md` (R3). It is **not** "reconciled" until Step 8
      clears it against the artifact — do not launder a guess into "done."

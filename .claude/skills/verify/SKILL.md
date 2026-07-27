@@ -61,6 +61,6 @@ State what you drove and what you observed. If a step was skipped or a delta acc
 
 ## Reference
 
-- [design/manifest/README.md](../../../design/manifest/README.md) — the R1–R4 protocol + budget funnel
+- [design/manifest/README.md](../../../design/manifest/README.md) — the R1–R4 protocol + Capture notes (Desktop Bridge)
 - [ADR-0019](../../../docs/adr/0019-design-fidelity-visual-manifest.md) — design fidelity via the visual manifest
 - [add-ui-component-from-figma](../add-ui-component-from-figma/SKILL.md) — building the component (Step 8 = this loop)
