@@ -17,18 +17,25 @@ src/
 ├── types.ts                    type Db — union type for Neon (prod) + PGlite (test)
 ├── schema/
 │   ├── auth.ts                 Better Auth tables: user, session, account, verification
+│   ├── community.ts            follows (user → user follow graph)
 │   ├── creator.ts              creator_profiles, embeddings (+ Zod schemas)
-│   └── index.ts                re-exports both schema files
+│   └── index.ts                re-exports the schema files
 ├── queries/
+│   ├── discovery.ts            searchCreatorProfiles — THE deep ANN read (see below)
+│   ├── follows.ts              followCreator, unfollowCreator, getFollowStates
 │   ├── profiles.ts             createCreatorProfile, getCreatorProfileById,
-│   │                           upsertProfileEmbedding, findSimilarProfiles
+│   │                           getCreatorProfileByUserId, upsertProfileEmbedding,
+│   │                           findSimilarProfiles (thin wrapper — see below)
 │   └── users.ts                setUserRoles — single write path for user.roles
+├── adapters/
+│   └── discovery-adapter.ts    createDiscoveryAdapter — core's DiscoveryPort, live impl
 └── testing/
     └── create-test-db.ts       createTestDb() — PGlite in-memory harness (dev/test only)
-migrations/
+drizzle/
     0000_enable_pgvector.sql    Hand-written: enables pgvector extension (runs first)
     0001_pink_stone_men.sql     drizzle-kit generated: auth + creator_profiles + embeddings
     0002_yellow_changeling.sql  drizzle-kit generated: unique index on creator_profiles.user_id
+    0003_green_ultimo.sql       drizzle-kit generated: follows table + discovery indexes
 ```
 
 ## Public API
@@ -46,12 +53,57 @@ export { createDb } from "./client"; // production client factory
 export {
   createCreatorProfile,
   getCreatorProfileById,
+  getCreatorProfileByUserId, // by OWNER, not by profile uuid — sessions/follows carry user ids
   upsertProfileEmbedding,
   findSimilarProfiles,
   type CreatorProfileRow,
 } from "./queries/profiles";
 export { setUserRoles } from "./queries/users"; // overwrite user.roles (single write path)
+
+// Discovery (Slice A)
+export {
+  searchCreatorProfiles,
+  type CreatorSearchArgs,
+  type CreatorSearchPage,
+} from "./queries/discovery";
+export {
+  createDiscoveryAdapter,
+  type DiscoveryAdapterDeps,
+  type QueryEmbedder,
+} from "./adapters/discovery-adapter";
+export {
+  followCreator,
+  unfollowCreator,
+  getFollowStates,
+  type FollowEdge,
+} from "./queries/follows";
 ```
+
+### Discovery — one query, seven invariants
+
+`searchCreatorProfiles(db, args)` is the **only** ANN read over creator profiles. It owns
+every rule that makes discovery correct: the `status = 'ready'` filter, the
+`assertEmbeddingDims` guard, conjunctive `tags @>` containment, the similarity floor,
+`similarity DESC, id ASC` ordering, keyset pagination, and per-viewer follow state. Do not
+write a second one — add an argument.
+
+Two things depend on that being singular:
+
+- **`findSimilarProfiles(db, embedding, limit = 10)` is a thin wrapper over it, and its
+  signature is frozen.** `scripts/verify-live.mjs` proves a committed profile landed by
+  reading it back through this exact call (ADR-0018 live-smoke, mulch `mx-880c8a`) — a
+  credential-gated path CI normally skips, so a rename breaks the release gate silently.
+  Treat that script as part of this package's public surface and grep it before touching
+  the module.
+- **`createDiscoveryAdapter({ db, embed })` is the live `DiscoveryPort`** (ADR-0017). The
+  `embed` function is **injected**, never imported: the dependency runs `ai → db`, so this
+  package must not know Voyage exists. Wire it in the app layer with
+  `(text) => resolveEmbedder().embed(text)`.
+
+A wrong-width vector does **not** error inside pgvector — it silently matches nothing,
+which reads as "no results" rather than "misconfigured embedder" (ADR-0010). That is why
+the width is asserted at the seam before any SQL runs, and why a test feeds a short vector
+and asserts the _throw_.
 
 The PGlite test harness is exported ONLY from the `@resonance/db/testing` subpath
 (keeps PGlite out of production bundles) — it is not part of the main entrypoint.
@@ -81,6 +133,28 @@ upserts on conflict (idempotent under model retry / profile regeneration).
 Accompanying Zod schemas: `OfferingSchema`, `ProfileStatusSchema`,
 `CreatorProfileInputSchema`.
 
+Two more indexes serve discovery's `WHERE` clauses: `creator_profiles_status_idx`
+(btree on `status`) and `creator_profiles_tags_idx` (GIN `jsonb_path_ops` on `tags`,
+the opclass for the `@>` containment the tag filter issues).
+
+**`status` is a visibility rule, not a flag.** `"draft"` means the owner has not
+published; every discovery read filters `status = 'ready'`. Direct lookups
+(`getCreatorProfileById` / `ByUserId`) deliberately do **not** filter — the owner must
+be able to see their own draft.
+
+### `follows` (`schema/community.ts`)
+
+`followerId` / `followingId` (both `text` FK → `user.id`, `ON DELETE CASCADE`) +
+`createdAt`. Composite PK `(follower_id, following_id)` is the row's whole identity: it
+makes `followCreator` idempotent via `onConflictDoNothing` and indexes the
+"does A follow B" direction. `follows_following_idx` serves the reverse (follower counts).
+
+The edge is **user → user, not user → profile**: a creator profile is a regenerable
+projection of a user (`createCreatorProfile` upserts on `user_id`), and following is a
+member-to-member capability the moment the community slice grows. Self-follows throw
+`ResonanceError("follow_self")` rather than hitting a CHECK constraint, so the web layer
+gets a typed error instead of an opaque driver one.
+
 ### `embeddings` (`schema/creator.ts`)
 
 Generic, polymorphic vector store. Columns: `sourceType` (open-ended enum),
@@ -97,7 +171,9 @@ tool embeds the generated profile via `@resonance/ai` and writes the row through
 _Future evolution_ in the design spec.
 
 **Embedding dimensions are pinned to 1024** — matching Voyage `voyage-3.5`, the
-model used by `@resonance/ai`.
+model used by `@resonance/ai`. The column takes its width from `EMBEDDING_DIMS` in
+`@resonance/core`, not a literal, so the column, the embedder, and the query-time guard
+cannot drift apart. Changing the width means changing it there (and writing a migration).
 
 ## Migrations
 
