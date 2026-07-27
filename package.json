@@ -15,6 +15,7 @@
     "test": "turbo run test",
     "test:e2e": "turbo run test:e2e",
     "verify:live": "node scripts/verify-live.mjs",
+    "db:seed": "node scripts/seed-dev.mjs",
     "check:workspace": "node scripts/check-workspace-integrity.mjs",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,css}\"",
