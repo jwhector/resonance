@@ -46,8 +46,31 @@ export function onboardingAiCheckEnabled(): boolean {
   return !E2E_HARNESS;
 }
 
-/** Embedder for the commit path: the deterministic 1024-dim fake under the harness, else live `resolveEmbedder()`. */
+/**
+ * Embedder for the profile-commit path: the deterministic 1024-dim fake under the harness, else
+ * live `resolveEmbedder()`.
+ */
 export async function onboardingEmbedder(): Promise<Embedder> {
+  return webEmbedder();
+}
+
+/**
+ * Embedder for the discovery **query** path (`/discover`'s search action, which injects
+ * `(text) => embedder.embed(text)` into `@resonance/db`'s `createDiscoveryAdapter`).
+ *
+ * Named for its own composition root rather than shared by reference, because the two roots
+ * embed different things — a whole profile at commit time, a raw query string at search time —
+ * and only reading the same harness decision makes the E2E work at all: the ranked search only
+ * finds the profile the E2E just committed if the query vector and the profile vector come from
+ * the SAME embedder. The `createFakeEmbedder` hash is text-derived and deterministic, so under
+ * the harness they do.
+ */
+export async function discoveryEmbedder(): Promise<Embedder> {
+  return webEmbedder();
+}
+
+/** The one place the harness/live embedder decision is made; both accessors above read it. */
+async function webEmbedder(): Promise<Embedder> {
   if (!E2E_HARNESS) return resolveEmbedder();
   const { createFakeEmbedder } = await import("@resonance/ai/testing");
   return createFakeEmbedder();

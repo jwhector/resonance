@@ -5,22 +5,30 @@ the `@resonance/*` packages and renders them — it holds **no domain logic** (A
 Logic that feels like it belongs here almost always belongs in a package, so it stays
 extraction-ready.
 
-## Status: reference slice live
+## Status: two slices live
 
-The **Creator Interview → ProfileGen** slice (ADR-0013) is built — the shell wires
-`ui` ↔ `ai` ↔ `db` behind creator auth: passwordless sign-in → Weave interview → ProfileGen
-draft → commit → published profile. Commerce/community routes are still unbuilt; the scaffold
-home page remains.
+- **Creator Interview → ProfileGen** (ADR-0013) — the shell wires `ui` ↔ `ai` ↔ `db` behind
+  creator auth: passwordless sign-in → Weave interview → ProfileGen draft → commit →
+  published profile.
+- **Member discovery core** (`pl-bbca`) — `/discover`: session-optional ranked creator search
+  over `@resonance/core`'s `DiscoveryPort`, plus follow/unfollow. Creators is the only tab with
+  a data source; the other three render designed empty states.
+
+Commerce/community routes are still unbuilt; the scaffold home page remains.
 
 ## What's here
 
 ```
 app/
-├── (onboarding)/start           intent fork ("What brought you?", IntentPickerCard) → /signup or home
+├── (onboarding)/start           intent fork ("What brought you?", IntentPickerCard) → /signup or /discover
 ├── (onboarding)/signup, verify   passwordless front door (form + Better Auth)
-├── onboarding/creator/           Weave interview client + ProfileGen Server Actions
+├── (app)/layout.tsx              THE SHARED APP SHELL — the 80px `AppNav` rail, once, for
+│                                 every in-app route. Adds no URL segment.
+├── (app)/discover/               member discovery: page.tsx (RSC, URL state) ·
+│                                 discover-client.tsx · actions.ts · contracts.ts
+├── (app)/onboarding/creator/     Weave interview client + ProfileGen Server Actions
 │                                 (page.tsx · interview-client.tsx · actions.ts)
-├── creator/[id]/                 published creator profile
+├── (app)/creator/[id]/           published creator profile (name, headline, bio, offerings, tags)
 ├── api/onboarding/interview/     streaming interview route (live model, ADR-0009)
 ├── api/auth/[...all]/            Better Auth mount (via lib/auth.ts getWebAuth)
 ├── api/test/last-otp/            E2E-ONLY OTP read-back — gated on E2E_HARNESS
@@ -69,6 +77,14 @@ and `zod`.
   only. Never ship a provider key or run an agent on the client (golden rule 4).
 - **RSC + Server Actions by default; TanStack Query only where interactive** (ADR-0008).
 - New behavior ships with tests — RTL for components, Playwright for flows (ADR-0011).
+- **Viewer identity comes from the session, never from the payload.** Server Actions that act
+  for a user resolve them with `getWebSession` and keep them out of the Zod-parsed input — see
+  `(app)/discover/actions.ts`, where `DiscoveryPort.searchCreators(query, viewer)` takes them as
+  separate parameters so there is no identity field on the query to spoof.
+- **A new in-app route goes under `app/(app)/`**, so it inherits the shared `AppNav` shell
+  rather than re-composing it. Screens with their own full-page chrome (the `(onboarding)`
+  group) stay outside. Any route that reads a live DB sets `force-dynamic` and calls
+  `createDb()` lazily inside the handler.
 
 ## Working here (seeds + mulch)
 

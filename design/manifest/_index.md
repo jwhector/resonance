@@ -103,9 +103,12 @@ made about any of them until step 6 (`resonance-3f15`) captures the app side.
   standalone panel; the interview is one full-bleed surface. Verify each against its frame — don't assume.
 - **Persistent shell chrome.** The authenticated screens share a persistent **~80px left
   app-nav + Weave sidebar** chrome. Built as `@resonance/ui` `AppNav` (80px rail) + the
-  full-bleed `WeaveInterviewRail`, composed by the interview screen (`resonance-6e42`). Still
-  wired only into `/onboarding/creator`; promoting `AppNav` into a shared authed layout across
-  the other authenticated routes remains open.
+  full-bleed `WeaveInterviewRail`, composed by the interview screen (`resonance-6e42`).
+  **`AppNav` is now a shared layout** — `apps/web/app/(app)/layout.tsx` (`resonance-c7db`) — so
+  `/onboarding/creator`, `/creator/[id]` and `/discover` all carry the rail. Still open: the
+  design's separate 40px `Weave/Sidebar` column (x=81, w=40) is not built as a component; on
+  `/discover` it is reserved as a plain gutter so the content column lands at the ratified
+  x=514, and the rail's own section icons remain inert placeholders (`resonance-cbbb`).
 - **Literal hexes vs tokens.** Headings/body sometimes use literal `#1e1e1e` / `#0a0a0a` /
   `#000` instead of the mapped `--gray-*` tokens; the "Weave" wordmark maps to `--gray-50`
   on onboarded vs `--gray-300` on the draft. One normalization decision.
