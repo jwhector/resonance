@@ -13,9 +13,9 @@ like-minded people — helping users find and support what **resonates** with th
 Two roles share one platform:
 
 - **Creators** — onboard via an AI interview, get an AI-generated profile / visual
-  identity / offerings, publish offerings, fulfill orders and services.
+identity / offerings, publish offerings, fulfill orders and services.
 - **Members** — pick interests, discover creators/offerings via conversational
-  search, follow, post, buy. A member can convert into a creator.
+search, follow, post, buy. A member can convert into a creator.
 
 The AI assistant woven through the product is branded **Weave**.
 
@@ -47,41 +47,46 @@ docs/working-with-agents.md  How to run a productive agent session against this 
 > first — it covers how to scope a session, use the recipes/MCP/conventions, and keep
 > the framework (ADRs + diagram + CLAUDE.md files) in sync as work lands.
 
+
+
 ## Golden rules
 
 1. **Respect package boundaries.** Import from a package's public entrypoint
-   (`@resonance/x`), never its internals. pnpm + lint enforce this. If you need
+  (`@resonance/x`), never its internals. pnpm + lint enforce this. If you need
    something cross-cutting, it belongs in `@resonance/core`.
 2. **Design deep modules.** A lot of behaviour behind a small interface, at a clean
-   seam — the package's public entrypoint is its seam. Prefer a small interface over a
+  seam — the package's public entrypoint is its seam. Prefer a small interface over a
    shallow pass-through (ADR-0017, conventions.md § Module design).
-3. **Logic lives in packages, not in `apps/web`.** The app composes and renders;
-   it does not contain domain rules. This keeps logic extraction-ready (ADR-0002).
+3. **Logic lives in packages, not in** `apps/web`**.** The app composes and renders;
+  it does not contain domain rules. This keeps logic extraction-ready (ADR-0002).
 4. **Validate at every boundary with Zod.** Server Action inputs, AI tool inputs,
-   external API payloads. Types are not validation.
+  external API payloads. Types are not validation.
 5. **Secrets and AI orchestration stay server-side** (RSC / Server Actions / route
-   handlers). Never ship a provider key to the client.
+  handlers). Never ship a provider key to the client.
 6. **Follow the recipes.** Recurring tasks (new domain package, new AI agent, new UI
-   component from Figma, new DB migration) have a skill in `.claude/skills/`. Use it
+  component from Figma, new DB migration) have a skill in `.claude/skills/`. Use it
    so the codebase stays uniform and agents can replicate the pattern.
 7. **Record decisions as ADRs, and keep the diagram true.** A non-obvious
-   architectural choice gets an ADR in `docs/adr/`. If it changes the system's shape
+  architectural choice gets an ADR in `docs/adr/`. If it changes the system's shape
    (a package, service, dependency, or data flow), update
    `docs/architecture/resonance-architecture.drawio` **in the same change** — the
    diagram is a source of truth, not decoration (ADR-0015). Use the
    `update-architecture-diagram` recipe.
 8. **Tests are not optional.** Vitest (unit/integration) + RTL (components) +
-   Playwright (E2E). New behavior ships with tests (ADR-0011).
+  Playwright (E2E). New behavior ships with tests (ADR-0011).
 9. **No fakes in runtime code.** Shipped paths are **live-by-default**; fakes/mocks are
-   **injected in tests** (DI), never chosen by an env flag inside runtime code. A
+  **injected in tests** (DI), never chosen by an env flag inside runtime code. A
    credential-gated **live-smoke** check exercises each external service for real before
    release, so a green build can't hide broken live wiring (ADR-0018).
 10. **Match the design; prove it with an artifact.** The Figma frame is the source of truth —
-    read it, don't invent. UI parity is a **diff of two images** (`design/manifest/`
+  read it, don't invent. UI parity is a **diff of two images** (`design/manifest/`
     `design.png` ⇄ `app.png`), never a prose claim: state it only as "matches `design.png`
     except [deltas]", keep unverified values `PROVISIONAL`, and cite only node ids present in a
     `metadata/` dump (ADR-0019). Build UI with the `add-ui-component-from-figma` recipe and
     verify with the pixel-diff loop.
+11. **Do not excessively comment about session-scoped discoveries.** Findings and discoveries surfaced during sessions that are left as in-code comments full of inscrutable jargon are confusing. When writing comments, focus on evergreen, plain-english description.
+
+
 
 ## Stack at a glance
 
@@ -99,8 +104,10 @@ Full rationale for each: `docs/adr/`.
 - `pnpm typecheck && pnpm lint && pnpm test` — what CI gates on
 - Local edits trigger format/lint/typecheck via Claude Code hooks (`.claude/settings.json`)
 - MCP servers are wired in `.mcp.json`: **Figma** (design source of truth),
-  **Context7** (live library docs — prefer over memory for API usage), **Neon**
-  (inspect dev DB), **Playwright** (drive/verify the app).
+**Context7** (live library docs — prefer over memory for API usage), **Neon**
+(inspect dev DB), **Playwright** (drive/verify the app).
+
+
 
 ## Current status
 
@@ -110,34 +117,32 @@ is a stub, its `CLAUDE.md` says so and lists what's real vs. pending.
 
 ## Agentic workflow
 
-Work runs as one loop (**ADR-0016**): **seed → `ml prime` → worktree → firstmate
-crewmate → no-mistakes gate → lavish review → `ml record`**. The seed id threads the
+Work runs as one loop (**ADR-0016**): **seed →** `ml prime` **→ worktree → firstmate
+crewmate → no-mistakes gate → lavish review →** `ml record`. The seed id threads the
 whole loop and returns to mulch as an evidence anchor. **Full reference:**
 [docs/agentic-workflow.md](docs/agentic-workflow.md). To run an entire slice end-to-end
-(plan → conditional parallel build → your review), invoke the **`/feature`** skill.
+(plan → conditional parallel build → your review), invoke the `/feature` skill.
 
 - **Orchestration — firstmate, one crewmate per package.** Boundaries are the
-  parallelization boundary (ADR-0003): each package's work is an isolated crewmate in
-  its own treehouse worktree. `gnhf` is **parked** (not the default).
+parallelization boundary (ADR-0003): each package's work is an isolated crewmate in
+its own treehouse worktree. `gnhf` is **parked** (not the default).
 - **Knowledge ownership — one fact, one home, by temperature.** **mulch** (hot, primed)
-  = agent-discovered learnings + a `reference` index into the ADRs · **CLAUDE.md** (warm,
-  always loaded) = stable rules + pointers · **ADRs** (cold, on-demand) = ratified
-  decision + _why_ · **seeds** = work. An ADR holds the _why_, not the operative rule;
-  don't restate a fact across stores — link. Full rule: ADR-0016.
+= agent-discovered learnings + a `reference` index into the ADRs · **CLAUDE.md** (warm,
+always loaded) = stable rules + pointers · **ADRs** (cold, on-demand) = ratified
+decision + *why* · **seeds** = work. An ADR holds the *why*, not the operative rule;
+don't restate a fact across stores — link. Full rule: ADR-0016.
 - **Gates layer, don't stack.** The on-save hook does format/lint/typecheck (fast,
-  local); the **no-mistakes** push gate and CI run `pnpm typecheck && pnpm lint &&
-pnpm test`, scoped to Turbo-affected packages. Don't run the suite twice per change.
+local); the **no-mistakes** push gate and CI run `pnpm typecheck && pnpm lint && pnpm test`, scoped to Turbo-affected packages. Don't run the suite twice per change.
 - **Review — use lavish** for anything visual (plans, the architecture diagram,
-  Figma-derived UI), not ad-hoc HTML.
+Figma-derived UI), not ad-hoc HTML.
 
-Current backlog: the ProfileGen slice is decomposed into a seeds plan — `sd plan show
-pl-97aa`; run `sd ready` to claim the next unblocked step.
+Current backlog: the ProfileGen slice is decomposed into a seeds plan — `sd plan show pl-97aa`; run `sd ready` to claim the next unblocked step.
 
-<!-- mulch:start -->
+
 
 ## Project Expertise (Mulch)
 
-<!-- mulch-onboard:v0.10.7 -->
+
 
 This project uses [Mulch](https://github.com/jayminwest/mulch) v0.10.7 for structured expertise management.
 
@@ -192,14 +197,15 @@ ml sync                                                                     # va
 
 Skip if no insight surfaced. Unrecorded learnings are lost; ritual filler records are also noise.
 
-<!-- mulch:end -->
 
-<!-- seeds:start -->
+
+
 
 ## Issue Tracking (Seeds)
 
-<!-- seeds-onboard:v0.5.14 -->
-<!-- seeds-onboard-schema:7 -->
+
+
+
 
 This project uses [Seeds](https://github.com/jayminwest/seeds) v0.5.14 for git-native issue tracking.
 
@@ -221,6 +227,8 @@ This injects session context: rules, command reference, and workflows. Pass `--f
 - `sd dep add <id> <depends-on>` — Add dependency between issues
 - `sd sync` — Sync with git (run before pushing)
 
+
+
 ### Planning
 
 Use `sd plan` when work is large or ambiguous enough that an LLM benefits from structured decomposition. Submit spawns one child seed per step; `step.blocks` uses forward semantics (step i with `blocks: [j]` means step i blocks step j, and step j gets step i's id in its `blockedBy`).
@@ -233,9 +241,11 @@ Use `sd plan` when work is large or ambiguous enough that an LLM benefits from s
 - `sd plan outcome <pl-id> --result success|partial|failure` — Record outcome (storage-only)
 - `sd plan review <pl-id> --by <name>` — Record reviewer (informational)
 
+
+
 ### Before You Finish
 
 1. Close completed issues: `sd close <id>`
 2. File issues for remaining work: `sd create --title "..."`
 3. Sync and push: `sd sync && git push`
-<!-- seeds:end -->
+

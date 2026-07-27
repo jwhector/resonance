@@ -56,7 +56,7 @@ async function currentViewer(): Promise<DiscoveryViewer> {
  *
  * The viewer is a *separate* concern from the query, and deliberately not a parameter of this
  * action: `input` is whatever the client sent and is parsed by `CreatorDiscoveryQuerySchema`
- * (golden rule 4), while the viewer is derived server-side from the session cookie. There is no
+ * (conventions.md § Golden Rules), while the viewer is derived server-side from the session cookie. There is no
  * identity field on the query for a caller to spoof, and adding one — even "for convenience" —
  * would make the search box an identity-assertion channel. `CreatorDiscoveryQuerySchema` also
  * strips unknown keys, so a payload carrying `userId` or `viewer` loses it at this line.
@@ -66,7 +66,7 @@ async function currentViewer(): Promise<DiscoveryViewer> {
  * draw the designed Follow control without claiming the member does not follow anyone.
  *
  * Failures propagate as `ResonanceError`s — an empty page always means "no matches", never
- * "something broke" (invariant 7).
+ * "something broke".
  */
 export async function searchCreators(input: unknown): Promise<CreatorResultPage> {
   const query = CreatorDiscoveryQuerySchema.parse(input);
