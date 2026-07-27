@@ -27,9 +27,10 @@ the original is edited — see [../../PROVENANCE.md](../../PROVENANCE.md) and `r
 Node inventory: [../../metadata/member-search-frames.md](../../metadata/member-search-frames.md).
 
 - **Frame:** 1512×982, bg `#ffffff`
-- **Code status:** `orphan-design` at capture time — `/discover` does not exist yet.
+- **Code status:** `orphan-design` at capture time — `/discover` did not exist yet.
   **No parity claim is made or implied by this file.** Parity is a diff of two images
-  (ADR-0019 R2) and there is no `app.png`; step 6 of `pl-bbca` (`resonance-3f15`) produces it.
+  (ADR-0019 R2); it lives in [`parity.md`](parity.md), captured by step 6 of `pl-bbca`
+  (`resonance-3f15`).
 
 ## Layout
 
@@ -125,8 +126,8 @@ The frame draws **13 rows**, alternating Follow/Following purely as sample data.
 ## Enumerated parity deltas (ADR-0019)
 
 Deltas known **before** a line of code is written, from data the schema cannot supply.
-They belong in `/discover`'s eventual parity statement — "matches `design.png` except […]" —
-and nowhere else.
+They belong in `/discover`'s parity statement — "matches `design.png` except […]" — and
+nowhere else; that statement now lives in [`parity.md`](parity.md).
 
 ### 1. Avatar imagery — initials placeholder
 

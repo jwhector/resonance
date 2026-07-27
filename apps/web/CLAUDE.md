@@ -40,7 +40,9 @@ lib/
 ├── auth-client.ts · interview-messages.ts
 e2e/
 ├── onboarding-creator.spec.ts    full-flow Playwright (runs under E2E_HARNESS)
-└── home.spec.ts                  scaffold smoke test
+├── discovery.spec.ts             member discovery front door + follow/unfollow (E2E_HARNESS)
+├── home.spec.ts                  scaffold smoke test
+└── lib/discovery-fixtures.ts     seeds ready/draft creator profiles into the real Neon DB
 ```
 
 Depends on every `@resonance/*` package plus `next`, `react`, `@tanstack/react-query`,
