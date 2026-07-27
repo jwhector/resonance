@@ -79,12 +79,16 @@ const [
   { createDb, user, creatorProfiles, embeddings, findSimilarProfiles },
   ai,
   { resolveMail },
-  { eq },
+  { eq, sql },
+  { readFile },
 ] = await Promise.all([
   import("@resonance/db"),
   import("@resonance/ai"),
   import("@resonance/auth"),
   import("drizzle-orm"),
+  // Imported here rather than at module scope so the credential gate + SKIP path above stay
+  // dependency-free (mulch `testing` / mx-ea6373).
+  import("node:fs/promises"),
 ]);
 const {
   resolveEmbedder,
@@ -214,6 +218,46 @@ const results = await Promise.all([
       if (profile) await db.delete(embeddings).where(eq(embeddings.sourceId, profile.id));
       await db.delete(user).where(eq(user.id, userId));
     }
+  }),
+  // 6) migrations — SCHEMA DRIFT. Every other check exercises code against whatever schema the
+  //    target database happens to have; none of them notice that the database is BEHIND the
+  //    committed migrations. Slice A shipped `follows` (0003) to main and left dev unmigrated, so
+  //    anonymous discovery worked while every AUTHENTICATED search 500'd — the sub-select that
+  //    touches `follows` is only emitted when a viewer is present. Nothing caught it for six steps.
+  //    Compare drizzle's journal (the committed truth) against `drizzle.__drizzle_migrations` (what
+  //    the database has actually run) and name the gap. Detection only — applying is a deliberate
+  //    human action, because drizzle-kit renders renames as DROP + ADD and applying that unattended
+  //    is silent data loss.
+  check("migrations", async () => {
+    const journal = JSON.parse(
+      await readFile(new URL("../packages/db/drizzle/meta/_journal.json", import.meta.url), "utf8"),
+    );
+    const committed = journal.entries ?? [];
+    if (committed.length === 0) throw new Error("drizzle journal has no entries — wrong path?");
+
+    const db = createDb();
+    let applied;
+    try {
+      const rows = await db.execute(
+        sql`select created_at from drizzle.__drizzle_migrations order by created_at`,
+      );
+      applied = new Set((rows.rows ?? rows).map((r) => String(r.created_at)));
+    } catch (err) {
+      throw new Error(
+        `could not read drizzle.__drizzle_migrations (has this database ever been migrated?): ${
+          err?.message ?? err
+        }`,
+      );
+    }
+
+    const missing = committed.filter((e) => !applied.has(String(e.when))).map((e) => e.tag);
+    if (missing.length > 0) {
+      throw new Error(
+        `database is BEHIND by ${missing.length} migration(s): ${missing.join(", ")} — ` +
+          `run \`pnpm --dir packages/db db:migrate\` (review the SQL first; drizzle renders renames as DROP + ADD)`,
+      );
+    }
+    return `${committed.length} committed, ${committed.length} applied — in sync`;
   }),
 ]);
 
