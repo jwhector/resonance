@@ -9,6 +9,7 @@ import {
   uuid,
   vector,
 } from "drizzle-orm/pg-core";
+import { EMBEDDING_DIMS } from "@resonance/core";
 import { z } from "zod";
 import { user } from "./auth";
 
@@ -46,9 +47,17 @@ export const creatorProfiles = pgTable(
       .$onUpdate(() => new Date())
       .notNull(),
   },
-  // One creator profile per user: makes createCreatorProfile idempotent (upsert on conflict),
-  // so a model retry or profile regeneration updates the same row instead of duplicating it.
-  (t) => [uniqueIndex("creator_profiles_user_id_uq").on(t.userId)],
+  (t) => [
+    // One creator profile per user: makes createCreatorProfile idempotent (upsert on conflict),
+    // so a model retry or profile regeneration updates the same row instead of duplicating it.
+    uniqueIndex("creator_profiles_user_id_uq").on(t.userId),
+    // Every discovery read filters `status = 'ready'` (drafts are never visible), so status is a
+    // WHERE column on the hot path.
+    index("creator_profiles_status_idx").on(t.status),
+    // Tag filtering uses jsonb containment (`tags @> '[...]'`). jsonb_path_ops is the narrower,
+    // faster GIN opclass and supports exactly the `@>` operator the tag filter issues.
+    index("creator_profiles_tags_idx").using("gin", t.tags.op("jsonb_path_ops")),
+  ],
 );
 
 // Generic, polymorphic vector store. sourceType is open-ended; only "creator_profile"
@@ -65,7 +74,9 @@ export const embeddings = pgTable(
     sourceId: uuid("source_id").notNull(),
     model: text("model").notNull(),
     content: text("content").notNull(),
-    embedding: vector("embedding", { dimensions: 1024 }).notNull(),
+    // Width comes from @resonance/core so the column, the embedder, and the query-time guard
+    // cannot drift apart (seed resonance-e0e6). Changing it there changes it here.
+    embedding: vector("embedding", { dimensions: EMBEDDING_DIMS }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [
