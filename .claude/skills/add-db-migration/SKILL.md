@@ -46,7 +46,7 @@ This recipe runs inside the agentic loop (root CLAUDE.md → _Agentic workflow_,
    pnpm --filter @resonance/db db:generate    # drizzle-kit generate
    ```
 
-   Review the generated SQL in `packages/db/migrations/`. Commit schema + migration
+   Review the generated SQL in `packages/db/drizzle/`. Commit schema + migration
    together.
 
 4. **Apply locally** against your dev Neon branch:
