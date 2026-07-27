@@ -68,6 +68,14 @@ function discoverHref(kind: ResultKind, query: string): Route {
 export function DiscoverClient({ query, kind, results, signedIn }: DiscoverClientProps) {
   const router = useRouter();
   const [text, setText] = React.useState(query);
+  // `query` is URL state that can change under a soft navigation (back/forward, or a shared
+  // `/discover?q=…` opened while mounted) without remounting us. Resync the draft when the prop
+  // itself changes — not on every render — so a query typed midway on the same URL survives.
+  const [syncedQuery, setSyncedQuery] = React.useState(query);
+  if (query !== syncedQuery) {
+    setSyncedQuery(query);
+    setText(query);
+  }
   /** Follow states this session has changed, layered over the server's. Keyed by creator user id. */
   const [followOverrides, setFollowOverrides] = React.useState<Record<string, FollowState>>({});
   const [pendingUserIds, setPendingUserIds] = React.useState<readonly string[]>([]);

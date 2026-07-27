@@ -50,6 +50,22 @@ describe("DiscoverClient — search and tab state live in the URL", () => {
 
     expect(routerPush).toHaveBeenCalledWith("/discover?q=tinctures&tab=products");
   });
+
+  it("resyncs the field when the query prop changes under a soft navigation", () => {
+    const { rerender } = render(
+      <DiscoverClient query="tinctures" kind="creators" results={[]} signedIn={false} />,
+    );
+
+    // A searchParams-only navigation (back/forward, shared link) re-renders us with a new `query`
+    // but does not remount — the field and the next tab click must both follow the new URL.
+    rerender(<DiscoverClient query="salves" kind="creators" results={[]} signedIn={false} />);
+
+    expect(screen.getByRole("searchbox")).toHaveValue("salves");
+
+    fireEvent.click(screen.getByRole("tab", { name: "Products" }));
+
+    expect(routerPush).toHaveBeenCalledWith("/discover?q=salves&tab=products");
+  });
 });
 
 describe("DiscoverClient — the three empty surfaces stay distinct", () => {
