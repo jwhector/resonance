@@ -14,3 +14,26 @@ export {
   CommitProfileInputSchema,
   type CommitProfileInput,
 } from "./profile-draft";
+export { EMBEDDING_DIMS, EmbeddingDimensionError, assertEmbeddingDims } from "./embedding";
+// The discovery contract — the swappable ranking seam (ADR-0017). `web` and `ui` depend on
+// this and never on `@resonance/db`'s SQL; `db` supplies the adapter behind it.
+export {
+  RESULT_KINDS,
+  ResultKindSchema,
+  type ResultKind,
+  FOLLOW_STATES,
+  FollowStateSchema,
+  type FollowState,
+  DISCOVERY_DEFAULT_LIMIT,
+  DISCOVERY_MAX_LIMIT,
+  DiscoveryQuerySchema,
+  type DiscoveryQuery,
+  CreatorDiscoveryQuerySchema,
+  type CreatorDiscoveryQuery,
+  CreatorResultSchema,
+  type CreatorResult,
+  CreatorResultPageSchema,
+  type CreatorResultPage,
+  type DiscoveryViewer,
+  type DiscoveryPort,
+} from "./discovery";
