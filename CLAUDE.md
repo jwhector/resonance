@@ -55,7 +55,7 @@ docs/working-with-agents.md  How to run a productive agent session against this 
 2. **Design deep modules.** A lot of behaviour behind a small interface, at a clean
    seam — the package's public entrypoint is its seam. Prefer a small interface over a
    shallow pass-through (ADR-0017, conventions.md § Module design).
-3. **Logic lives in packages, not in `apps/web`.** The app composes and renders;
+3. **Logic lives in packages, not in** `apps/web`**.** The app composes and renders;
    it does not contain domain rules. This keeps logic extraction-ready (ADR-0002).
 4. **Validate at every boundary with Zod.** Server Action inputs, AI tool inputs,
    external API payloads. Types are not validation.
@@ -82,6 +82,7 @@ docs/working-with-agents.md  How to run a productive agent session against this 
     except [deltas]", keep unverified values `PROVISIONAL`, and cite only node ids present in a
     `metadata/` dump (ADR-0019). Build UI with the `add-ui-component-from-figma` recipe and
     verify with the pixel-diff loop.
+11. **Do not excessively comment about session-scoped discoveries.** Findings and discoveries surfaced during sessions that are left as in-code comments full of inscrutable jargon are confusing. When writing comments, focus on evergreen, plain-english description.
 
 ## Stack at a glance
 
@@ -110,11 +111,11 @@ is a stub, its `CLAUDE.md` says so and lists what's real vs. pending.
 
 ## Agentic workflow
 
-Work runs as one loop (**ADR-0016**): **seed → `ml prime` → worktree → firstmate
-crewmate → no-mistakes gate → lavish review → `ml record`**. The seed id threads the
+Work runs as one loop (**ADR-0016**): **seed →** `ml prime` **→ worktree → firstmate
+crewmate → no-mistakes gate → lavish review →** `ml record`. The seed id threads the
 whole loop and returns to mulch as an evidence anchor. **Full reference:**
 [docs/agentic-workflow.md](docs/agentic-workflow.md). To run an entire slice end-to-end
-(plan → conditional parallel build → your review), invoke the **`/feature`** skill.
+(plan → conditional parallel build → your review), invoke the `/feature` skill.
 
 - **Orchestration — firstmate, one crewmate per package.** Boundaries are the
   parallelization boundary (ADR-0003): each package's work is an isolated crewmate in
@@ -125,19 +126,13 @@ whole loop and returns to mulch as an evidence anchor. **Full reference:**
   decision + _why_ · **seeds** = work. An ADR holds the _why_, not the operative rule;
   don't restate a fact across stores — link. Full rule: ADR-0016.
 - **Gates layer, don't stack.** The on-save hook does format/lint/typecheck (fast,
-  local); the **no-mistakes** push gate and CI run `pnpm typecheck && pnpm lint &&
-pnpm test`, scoped to Turbo-affected packages. Don't run the suite twice per change.
+  local); the **no-mistakes** push gate and CI run `pnpm typecheck && pnpm lint && pnpm test`, scoped to Turbo-affected packages. Don't run the suite twice per change.
 - **Review — use lavish** for anything visual (plans, the architecture diagram,
   Figma-derived UI), not ad-hoc HTML.
 
-Current backlog: the ProfileGen slice is decomposed into a seeds plan — `sd plan show
-pl-97aa`; run `sd ready` to claim the next unblocked step.
-
-<!-- mulch:start -->
+Current backlog: the ProfileGen slice is decomposed into a seeds plan — `sd plan show pl-97aa`; run `sd ready` to claim the next unblocked step.
 
 ## Project Expertise (Mulch)
-
-<!-- mulch-onboard:v0.10.7 -->
 
 This project uses [Mulch](https://github.com/jayminwest/mulch) v0.10.7 for structured expertise management.
 
@@ -192,14 +187,7 @@ ml sync                                                                     # va
 
 Skip if no insight surfaced. Unrecorded learnings are lost; ritual filler records are also noise.
 
-<!-- mulch:end -->
-
-<!-- seeds:start -->
-
 ## Issue Tracking (Seeds)
-
-<!-- seeds-onboard:v0.5.14 -->
-<!-- seeds-onboard-schema:7 -->
 
 This project uses [Seeds](https://github.com/jayminwest/seeds) v0.5.14 for git-native issue tracking.
 
@@ -238,4 +226,3 @@ Use `sd plan` when work is large or ambiguous enough that an LLM benefits from s
 1. Close completed issues: `sd close <id>`
 2. File issues for remaining work: `sd create --title "..."`
 3. Sync and push: `sd sync && git push`
-<!-- seeds:end -->

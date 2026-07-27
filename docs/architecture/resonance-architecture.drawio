@@ -42,13 +42,13 @@
         <mxCell id="sw_pkgs" value="packages/* — framework-agnostic domain &amp; platform logic (the monorepo core; pnpm-enforced boundaries)" style="swimlane;startSize=30;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1F3A5F;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="40" y="410" width="1160" height="200" as="geometry" />
         </mxCell>
-        <mxCell id="p_core" value="@resonance/core&#xa;types · Zod · ports" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="sw_pkgs">
+        <mxCell id="p_core" value="@resonance/core&#xa;types · Zod · ports&#xa;DiscoveryPort seam" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="sw_pkgs">
           <mxGeometry x="20" y="55" width="150" height="75" as="geometry" />
         </mxCell>
         <mxCell id="p_ui" value="@resonance/ui&#xa;shadcn + Figma tokens" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="sw_pkgs">
           <mxGeometry x="185" y="55" width="150" height="75" as="geometry" />
         </mxCell>
-        <mxCell id="p_db" value="@resonance/db&#xa;Drizzle · migrations" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="sw_pkgs">
+        <mxCell id="p_db" value="@resonance/db&#xa;Drizzle · migrations&#xa;discovery ANN · follows" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="sw_pkgs">
           <mxGeometry x="350" y="55" width="150" height="75" as="geometry" />
         </mxCell>
         <mxCell id="p_ai" value="@resonance/ai&#xa;agent+tool registry&#xa;embeddings" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="sw_pkgs">
@@ -63,8 +63,8 @@
         <mxCell id="p_community" value="@resonance/community&#xa;posts · feed&#xa;(stubbed)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;dashed=1;fontColor=#666666;" vertex="1" parent="sw_pkgs">
           <mxGeometry x="1000" y="55" width="140" height="75" as="geometry" />
         </mxCell>
-        <mxCell id="p_note" value="All packages depend on @resonance/core. Domain packages read/write through @resonance/db. No package imports another package's internals (ADR-0003)." style="text;html=1;align=left;verticalAlign=middle;fontSize=10;fontColor=#1F3A5F;fontStyle=2;" vertex="1" parent="sw_pkgs">
-          <mxGeometry x="20" y="140" width="1120" height="40" as="geometry" />
+        <mxCell id="p_note" value="All packages depend on @resonance/core. Domain packages read/write through @resonance/db. No package imports another package's internals (ADR-0003).&#xa;Cross-package collaborators are INJECTED by the app, not imported: apps/web wires ai's embed() into db's createDiscoveryAdapter, so db never depends on ai." style="text;html=1;align=left;verticalAlign=middle;fontSize=10;fontColor=#1F3A5F;fontStyle=2;" vertex="1" parent="sw_pkgs">
+          <mxGeometry x="20" y="138" width="1120" height="46" as="geometry" />
         </mxCell>
 
         <!-- Tier 4: external -->
@@ -94,7 +94,7 @@
         <mxCell id="a_claude" value="CLAUDE.md&#xa;root + per-package&#xa;(scoped context)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="sw_agentic">
           <mxGeometry x="20" y="50" width="175" height="75" as="geometry" />
         </mxCell>
-        <mxCell id="a_adr" value="docs/adr/*&#xa;decisions &amp; rationale&#xa;(ADR 0001–0018)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="sw_agentic">
+        <mxCell id="a_adr" value="docs/adr/*&#xa;decisions &amp; rationale&#xa;(ADR 0001–0019)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="sw_agentic">
           <mxGeometry x="210" y="50" width="175" height="75" as="geometry" />
         </mxCell>
         <mxCell id="a_skills" value=".claude/skills/*&#xa;recipes (how we do X)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="sw_agentic">
@@ -129,9 +129,12 @@
         <mxCell id="ed6" value="Connect (stubbed)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#999999;" edge="1" parent="1" source="p_commerce" target="e_stripe">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="ed7" value="magic link (deferred)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#999999;fontColor=#666666;" edge="1" parent="1" source="p_auth" target="e_resend">
-          <mxGeometry relative="1" as="geometry" />
+        <mxCell id="ed7" value="magic link + OTP (live)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#d79b00;verticalAlign=bottom;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="p_auth" target="e_resend">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" y="18" />
+          </mxGeometry>
         </mxCell>
+
         <mxCell id="ed8" value="documents &amp; guides every layer above" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;startArrow=classic;endArrow=none;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;strokeColor=#82b366;fontColor=#2D5016;fontStyle=2;" edge="1" parent="1" source="sw_agentic" target="sw_ext">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>

@@ -8,8 +8,7 @@ import { DiscoverClient } from "./discover-client";
  * `/discover` — member discovery: search, embedding-ranked creators, follow.
  *
  * Built against `design/manifest/screens/12-search-creators/design.md` (Figma
- * `Member/Search/Result/Creators` `1443:78153`). **No parity claim is made here** — parity is a
- * diff of two images (ADR-0019) and the `app.png` capture belongs to `resonance-3f15`.
+ * `Member/Search/Result/Creators` `1443:78153`).
  *
  * **Session-optional by design.** A signed-out member gets the same ranked results; only the
  * follow state differs (`DiscoveryPort` invariant 5 makes every row `"unknown"` without a
@@ -56,12 +55,7 @@ export default async function DiscoverPage({
   const signedIn = (await getWebSession(await headers())) !== null;
 
   return (
-    // The 604px content column, centred in the area right of the app rail. The design's 40px
-    // `Weave/Sidebar` gutter is the `pl-10`; with the layout's 80px `AppNav` that puts the column
-    // at x=514 on the 1512px frame — the centred value shared by the three sibling Search frames,
-    // and a ratified 13px deviation from THIS frame's scaffolding x=527 (design.md § delta 2).
     <main className="flex flex-1 justify-center overflow-y-auto pl-10">
-      {/* `w-151` = 604px, `gap-10` = the frame's 40px stack gap, `pt-10` = its y=40 start. */}
       <div className="flex w-151 shrink-0 flex-col gap-10 pt-10 pb-16">
         <DiscoverClient
           query={searchable?.success ? searchable.data.text : ""}
