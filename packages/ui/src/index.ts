@@ -36,3 +36,20 @@ export {
   ProfileDraftPanels,
   type ProfileDraftPanelsProps,
 } from "./components/profile-draft-panels";
+
+// Member discovery — the `Member/Search/Result/*` chrome (design/manifest/screens/12-search-creators)
+export { SearchBar, type SearchBarProps } from "./components/search-bar";
+export { ResultTabs, RESULT_TAB_ORDER, type ResultTabsProps } from "./components/result-tabs";
+export {
+  CreatorResultRow,
+  initialsFor,
+  type CreatorResultRowProps,
+} from "./components/creator-result-row";
+export { CreatorResultList, type CreatorResultListProps } from "./components/creator-result-list";
+export {
+  ComingSoonState,
+  NoResultsState,
+  type ComingSoonKind,
+  type ComingSoonStateProps,
+  type NoResultsStateProps,
+} from "./components/discovery-empty-states";
