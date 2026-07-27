@@ -26,6 +26,11 @@ The app imports `@resonance/ui/styles.css` (tokens + Tailwind) and components fr
   traps / ARIA. Composites build on primitives — don't reach below them.
 - **Follow the Button pattern** for new primitives: `cva` variants + `asChild` via
   Radix `Slot` + `cn()`. Export from `src/index.ts`.
+- **Adding a `--text-*` token means editing `lib/cn.ts` too.** tailwind-merge only knows
+  Tailwind's stock font sizes and classifies every other `text-*` as a _colour_, so an
+  unregistered size is silently dropped whenever a text colour merges alongside it — and the
+  colour is dropped when the order reverses. `cn.ts` carries the scale in `FONT_SIZES`; keep it
+  in sync with `theme.css` or the token will look applied and render at the inherited size.
 - Build UI from the design with the `add-ui-component-from-figma` recipe.
 
 ## Figma source

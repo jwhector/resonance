@@ -69,6 +69,12 @@
   --color-subtle: #868686; /* gray-500 */
   --color-border: #cdcdcd; /* gray-700 (Border) */
   --color-border-strong: #a6a6a6; /* gray-600 */
+  /* The plate behind an unloaded/absent image slot. EXTRACTED from the Figma
+     `ProfileImg/Square/48` plate fill (`1443:78153` → `ProfileImg`, design/manifest/
+     screens/12-search-creators). It is deliberately NOT on the neutral ramp — it sits
+     between gray-700 (#cdcdcd) and gray-750 (#e6e6e6) — so it gets its own role token
+     rather than being rounded to a neighbour. */
+  --color-image-placeholder: #d9d9d9;
 
   /* Semantic / status — EXTRACTED from Figma "Indicators". *-subtle tints are derived. */
   --color-success: #58b17a; /* accent-green */

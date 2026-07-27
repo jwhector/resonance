@@ -42,6 +42,8 @@ export const colors = {
   subtle: "#868686",
   border: "#cdcdcd",
   borderStrong: "#a6a6a6",
+  /** Plate behind an absent image slot — EXTRACTED from Figma `ProfileImg/Square/48`. */
+  imagePlaceholder: "#d9d9d9",
   success: "#58b17a",
   warning: "#ffb347",
   danger: "#ff4d4d",
