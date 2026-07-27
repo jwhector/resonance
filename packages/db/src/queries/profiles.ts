@@ -1,4 +1,4 @@
-import { cosineDistance, desc, eq, sql } from "drizzle-orm";
+import { and, cosineDistance, desc, eq, sql } from "drizzle-orm";
 import { ResonanceError } from "@resonance/core";
 import { creatorProfiles, embeddings, type CreatorProfileInput } from "../schema/creator";
 import type { Db } from "../types";
@@ -59,6 +59,13 @@ export async function upsertProfileEmbedding(
     });
 }
 
+/**
+ * ANN search over committed creator profiles, ranked by cosine similarity.
+ *
+ * **Only `status = "ready"` profiles are visible.** A draft is a profile mid-generation that
+ * its owner has not published; surfacing one in discovery leaks unfinished work to strangers.
+ * The filter lives in the query rather than in each caller so no read path can forget it.
+ */
 export async function findSimilarProfiles(
   db: Db,
   embedding: number[],
@@ -76,7 +83,7 @@ export async function findSimilarProfiles(
       .from(embeddings)
       // innerJoin intentionally excludes profiles that have no embedding row yet
       .innerJoin(creatorProfiles, eq(creatorProfiles.id, embeddings.sourceId))
-      .where(eq(embeddings.sourceType, "creator_profile"))
+      .where(and(eq(embeddings.sourceType, "creator_profile"), eq(creatorProfiles.status, "ready")))
       .orderBy(desc(similarity))
       .limit(limit)
   );

@@ -138,4 +138,45 @@ describe("profile queries", () => {
     expect(match).toBeDefined();
     expect(match!.similarity).toBeCloseTo(1.0, 5);
   });
+
+  // Regression (seed resonance-663d): draft profiles leaked into every ANN read because the
+  // query filtered only on sourceType. A draft is unpublished work; discovery must not show it.
+  // This test fails against the pre-filter query and passes against the status='ready' one.
+  it("never returns draft-status profiles, even when they are the closest match", async () => {
+    const draft = await createCreatorProfile(db, {
+      userId: "u1",
+      displayName: "Draft",
+      headline: "h",
+      bio: "b",
+      tags: [],
+      offerings: [],
+      status: "draft",
+    });
+    const ready = await createCreatorProfile(db, {
+      userId: "u2",
+      displayName: "Ready",
+      headline: "h",
+      bio: "b",
+      tags: [],
+      offerings: [],
+      status: "ready",
+    });
+    // The draft is an EXACT match for the query vector, the ready profile an orthogonal one —
+    // so a leak would put the draft first and be impossible to mistake for ranking noise.
+    await upsertProfileEmbedding(db, {
+      profileId: draft.id,
+      model: "voyage-3.5",
+      content: "d",
+      embedding: unit(0),
+    });
+    await upsertProfileEmbedding(db, {
+      profileId: ready.id,
+      model: "voyage-3.5",
+      content: "r",
+      embedding: unit(1),
+    });
+
+    const results = await findSimilarProfiles(db, unit(0), 10);
+    expect(results.map((r) => r.id)).toEqual([ready.id]);
+  });
 });
