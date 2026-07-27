@@ -277,6 +277,58 @@ describe("searchCreatorProfiles — the DiscoveryPort contract", () => {
     expect(none.results).toHaveLength(3);
   });
 
+  // Latent-hazard guard, not a today bug: only voyage-3.5 writes creator_profile vectors right
+  // now. But the embeddings unique index is (source_type, source_id, model), so a second model
+  // would join one creator to two rows — and two rows sharing a profile id defeat the `id`
+  // pagination tiebreaker, silently skipping or repeating creators across pages.
+  it("returns one row per creator even when a profile is embedded under several models", async () => {
+    const profile = await seed("u0", 0.4);
+    await upsertProfileEmbedding(db, {
+      profileId: profile.id,
+      model: "some-future-model",
+      content: "c",
+      embedding: vec(0.95),
+    });
+    await seed("u1", 0.7);
+
+    const { results, nextCursor } = await searchCreatorProfiles(db, { embedding: probe() });
+
+    expect(results.filter((r) => r.profileId === profile.id)).toHaveLength(1);
+    // The best-matching model wins, so the profile ranks on its strongest embedding.
+    expect(results[0]!.profileId).toBe(profile.id);
+    expect(results[0]!.similarity).toBeCloseTo(0.95, 5);
+    expect(nextCursor).toBeNull();
+  });
+
+  it("keeps pagination total-ordered across multi-model creators", async () => {
+    const a = await seed("u0", 0.9);
+    const b = await seed("u1", 0.8);
+    const c = await seed("u2", 0.7);
+    // Give every creator a second, weaker embedding — a duplicate-row bug would surface here as
+    // a repeated or skipped id during the traversal.
+    for (const p of [a, b, c]) {
+      await upsertProfileEmbedding(db, {
+        profileId: p.id,
+        model: "some-future-model",
+        content: "c",
+        embedding: vec(0.1),
+      });
+    }
+
+    const seen: string[] = [];
+    let cursor: string | null = null;
+    do {
+      const page: Awaited<ReturnType<typeof searchCreatorProfiles>> = await searchCreatorProfiles(
+        db,
+        { embedding: probe(), limit: 2, cursor },
+      );
+      seen.push(...page.results.map((r) => r.profileId));
+      cursor = page.nextCursor;
+    } while (cursor !== null);
+
+    expect(seen).toEqual([a.id, b.id, c.id]);
+  });
+
   it("excludes profiles that have no embedding row yet", async () => {
     await createCreatorProfile(db, {
       userId: "u0",

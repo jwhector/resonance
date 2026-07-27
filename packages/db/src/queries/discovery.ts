@@ -104,7 +104,12 @@ export async function searchCreatorProfiles(
   const viewerId = args.viewerId ?? null;
   const tags = args.tags ?? [];
 
-  const similarity = sql<number>`1 - (${cosineDistance(embeddings.embedding, [...args.embedding])})`;
+  // `max(...)`, and the GROUP BY below, make ONE ROW PER CREATOR a structural guarantee rather
+  // than an accident of there being one embedding model today. The embeddings unique index is
+  // (source_type, source_id, model), so a creator embedded under a second model would otherwise
+  // join to two rows — and two rows sharing a profile id defeat the `id` pagination tiebreaker,
+  // silently skipping or repeating creators across pages. Best-matching model wins.
+  const similarity = sql<number>`max(1 - (${cosineDistance(embeddings.embedding, [...args.embedding])}))`;
 
   // A correlated EXISTS rather than a LEFT JOIN: it cannot duplicate result rows, it costs
   // nothing when there is no viewer, and it is served by the follows composite primary key.
@@ -116,6 +121,8 @@ export async function searchCreatorProfiles(
         ) then 'following' else 'not_following' end`
     : sql`'unknown'`;
 
+  // Row filters go in WHERE; anything comparing against `similarity` must go in HAVING, because
+  // similarity is now an aggregate over the group.
   const where: SQL[] = [
     eq(embeddings.sourceType, "creator_profile"),
     // Drafts are unpublished work and never discoverable.
@@ -124,12 +131,14 @@ export async function searchCreatorProfiles(
   if (tags.length > 0) {
     where.push(sql`${creatorProfiles.tags} @> ${JSON.stringify([...tags])}::jsonb`);
   }
+
+  const having: SQL[] = [];
   if (args.threshold !== undefined) {
-    where.push(sql`${similarity} >= ${args.threshold}`);
+    having.push(sql`${similarity} >= ${args.threshold}`);
   }
   if (args.cursor) {
     const { similarity: s, profileId } = decodeCursor(args.cursor);
-    where.push(
+    having.push(
       sql`(${similarity} < ${s} or (${similarity} = ${s} and ${creatorProfiles.id} > ${profileId}::uuid))`,
     );
   }
@@ -150,6 +159,10 @@ export async function searchCreatorProfiles(
     // innerJoin intentionally excludes profiles that have no embedding row yet
     .innerJoin(creatorProfiles, eq(creatorProfiles.id, embeddings.sourceId))
     .where(and(...where))
+    // Grouping by the primary key alone is enough: every other selected creator_profiles column
+    // is functionally dependent on it, which Postgres recognises.
+    .groupBy(creatorProfiles.id)
+    .having(having.length > 0 ? and(...having) : undefined)
     .orderBy(desc(similarity), asc(creatorProfiles.id))
     .limit(limit + 1);
 
