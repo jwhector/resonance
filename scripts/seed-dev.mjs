@@ -40,7 +40,7 @@ if (!process.env.DATABASE_URL) {
   );
   process.exit(1);
 }
-if (!HARNESS && !process.env.AI_GATEWAY_API_KEY && !process.env.VOYAGE_API_KEY) {
+if (!CLEAN && !HARNESS && !process.env.AI_GATEWAY_API_KEY && !process.env.VOYAGE_API_KEY) {
   console.error(
     "db:seed needs an embedding provider (AI_GATEWAY_API_KEY or VOYAGE_API_KEY),\n" +
       "or run it credential-free with the deterministic fake embedder:\n" +
@@ -225,10 +225,13 @@ if (CLEAN) {
       ),
     );
   }
-  await db.delete(user).where(inArray(user.id, userIds));
+  const deletedUsers = await db
+    .delete(user)
+    .where(inArray(user.id, userIds))
+    .returning({ id: user.id });
   tsxHandle?.unregister?.();
   console.log(
-    `db:seed --clean removed ${profiles.length} seeded profile(s) and ${userIds.length} user(s).`,
+    `db:seed --clean removed ${profiles.length} seeded profile(s) and ${deletedUsers.length} user(s).`,
   );
   process.exit(0);
 }
