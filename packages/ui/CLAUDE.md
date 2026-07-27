@@ -30,11 +30,13 @@ The app imports `@resonance/ui/styles.css` (tokens + Tailwind) and components fr
 
 ## Figma source
 
-- Working file key: `UYlkCL7jkCVgKWiqAVlEFp` (moved into the **Pro-tier** team — the Figma MCP
-  quota is **per team, not per user**, so a Starter-team file caps fast even if you hold Pro
-  elsewhere). Original: `7FOYLdtzCTITjcPeGKwF31`. Node ids survive Figma copies/moves. If
-  `get_screenshot`/`get_metadata` drop after a cap or reconnect, use `download_assets` (savable
-  render URLs) + `get_design_context`. (mulch `architecture`)
+- **Which file to trust, and how to capture, live in the manifest — not here.** The source
+  file is owned by [`design/manifest/PROVENANCE.md`](../../design/manifest/PROVENANCE.md) and the
+  capture procedure by [`design/manifest/README.md` § Capture notes](../../design/manifest/README.md).
+  Short version: the REST path (`get_screenshot`/`get_metadata`/`download_assets`/`get_design_context`)
+  returns **`403`** and is dead — capture through the **Figma Desktop Bridge** (`figma_execute` +
+  `node.exportAsync`). Node ids survive Figma copies/moves, which is the hazard PROVENANCE
+  documents, not a convenience.
 - **Design fidelity:** match UI to Figma via `design/manifest/` (design.png ⇄ app.png, zero
   drift; the frame is the source of truth, never an assumption). See `design/manifest/README.md`
   - `_index.md`; codification tracked in `resonance-042f`.

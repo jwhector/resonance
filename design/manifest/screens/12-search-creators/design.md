@@ -135,8 +135,7 @@ photo. **Decision (approved in `pl-bbca` planning):** ship an **initials placeho
 48×48 / radius-8 slot and carry this as an enumerated delta rather than inventing a column
 mid-slice or dropping the thumbnail and deviating structurally.
 
-> `/discover` matches `design.png` except **[avatar imagery: initials placeholder rendered in
-> > the 48×48 radius-8 slot in place of the designed photo]**.
+> `/discover` matches `design.png` except **[avatar imagery: initials placeholder rendered in the 48×48 radius-8 slot in place of the designed photo]**.
 
 Keep the geometry exact — 48×48, radius 8, `#d9d9d9` plate — so closing the delta is a fill
 swap, not a relayout. Real imagery is filed as **`resonance-0407`**; that seed removes this
