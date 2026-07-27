@@ -5,8 +5,8 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { useRouter } from "next/navigation";
 import type { CreatorProfileDraft } from "@resonance/core";
-import { AppNav, Button, ProfileDraftPanels, WeaveInterviewRail } from "@resonance/ui";
-import { uiMessagesToInterview } from "../../../lib/interview-messages";
+import { Button, ProfileDraftPanels, WeaveInterviewRail } from "@resonance/ui";
+import { uiMessagesToInterview } from "../../../../lib/interview-messages";
 import { commitProfile, generateDraft } from "./actions";
 
 /**
@@ -128,69 +128,65 @@ export function InterviewClient() {
   // The start state (the Figma opener + begin/later controls) shows until the first user turn.
   const showStart = !draft && !hasUserTurn && !streaming;
 
+  // The 80px app rail is no longer composed here: it belongs to the shared `(app)` layout, so
+  // this component is just the interview surface that fills the space beside it.
   return (
-    <div className="flex h-screen w-full overflow-hidden">
-      <AppNav />
+    <WeaveInterviewRail
+      className="min-h-0 flex-1"
+      // The draft screen (Figma `1473:81622`) shows just the woven draft — the prior
+      // transcript is scrolled away — so suppress it here and let the draft lead.
+      messages={liveDraft ? [] : transcript}
+      streaming={streaming}
+      onSend={handleSend}
+      disabled={streaming}
+      startPrompt={START_PROMPT}
+      showStart={showStart}
+      onBegin={handleBegin}
+      onDeferLater={handleDeferLater}
+    >
+      {/* Inline in the conversation: the generate CTA before a draft, the draft after. */}
+      {liveDraft ? (
+        <ProfileDraftPanels
+          draft={liveDraft}
+          selectedNameIndex={selectedNameIndex}
+          onSelectName={setSelectedNameIndex}
+          onHeadlineChange={setHeadline}
+          onBioChange={setBio}
+          onTagsChange={setTags}
+          onSubmit={handleCommit}
+          submitting={submitting}
+        />
+      ) : hasUserTurn ? (
+        <div className="flex flex-col items-start gap-2 pt-2">
+          <p className="text-body-md text-muted">
+            When you&apos;ve shared enough, Weave can draft your creator profile — you can edit
+            everything before publishing.
+          </p>
+          <Button type="button" onClick={handleGenerate} disabled={generating}>
+            {generating ? "Weaving your profile…" : "Weave, build my profile"}
+          </Button>
+        </div>
+      ) : null}
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <WeaveInterviewRail
-          className="min-h-0 flex-1"
-          // The draft screen (Figma `1473:81622`) shows just the woven draft — the prior
-          // transcript is scrolled away — so suppress it here and let the draft lead.
-          messages={liveDraft ? [] : transcript}
-          streaming={streaming}
-          onSend={handleSend}
-          disabled={streaming}
-          startPrompt={START_PROMPT}
-          showStart={showStart}
-          onBegin={handleBegin}
-          onDeferLater={handleDeferLater}
+      {streamError ? (
+        <div
+          role="alert"
+          className="flex items-center justify-between gap-3 rounded-lg border border-danger bg-surface p-4"
         >
-          {/* Inline in the conversation: the generate CTA before a draft, the draft after. */}
-          {liveDraft ? (
-            <ProfileDraftPanels
-              draft={liveDraft}
-              selectedNameIndex={selectedNameIndex}
-              onSelectName={setSelectedNameIndex}
-              onHeadlineChange={setHeadline}
-              onBioChange={setBio}
-              onTagsChange={setTags}
-              onSubmit={handleCommit}
-              submitting={submitting}
-            />
-          ) : hasUserTurn ? (
-            <div className="flex flex-col items-start gap-2 pt-2">
-              <p className="text-body-md text-muted">
-                When you&apos;ve shared enough, Weave can draft your creator profile — you can edit
-                everything before publishing.
-              </p>
-              <Button type="button" onClick={handleGenerate} disabled={generating}>
-                {generating ? "Weaving your profile…" : "Weave, build my profile"}
-              </Button>
-            </div>
-          ) : null}
+          <p className="text-sm text-danger">
+            Weave couldn&apos;t respond just now. Check your connection and try again.
+          </p>
+          <Button type="button" variant="outline" size="sm" onClick={handleRetryStream}>
+            Try again
+          </Button>
+        </div>
+      ) : null}
 
-          {streamError ? (
-            <div
-              role="alert"
-              className="flex items-center justify-between gap-3 rounded-lg border border-danger bg-surface p-4"
-            >
-              <p className="text-sm text-danger">
-                Weave couldn&apos;t respond just now. Check your connection and try again.
-              </p>
-              <Button type="button" variant="outline" size="sm" onClick={handleRetryStream}>
-                Try again
-              </Button>
-            </div>
-          ) : null}
-
-          {error ? (
-            <p role="alert" className="text-sm text-danger">
-              {error}
-            </p>
-          ) : null}
-        </WeaveInterviewRail>
-      </div>
-    </div>
+      {error ? (
+        <p role="alert" className="text-sm text-danger">
+          {error}
+        </p>
+      ) : null}
+    </WeaveInterviewRail>
   );
 }

@@ -27,10 +27,11 @@ describe("IntentForm", () => {
     expect(routerPush).toHaveBeenCalledWith("/signup");
   });
 
-  it("routes the member (explore) intent to the home placeholder", () => {
+  it("routes the member (explore) intent to /discover, not through sign-up", () => {
     render(<IntentForm />);
     fireEvent.click(screen.getByRole("radio", { name: "I'm exploring/ buying" }));
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
-    expect(routerPush).toHaveBeenCalledWith("/");
+    // `/discover` is session-optional, so the member front door needs no account (pl-bbca).
+    expect(routerPush).toHaveBeenCalledWith("/discover");
   });
 });

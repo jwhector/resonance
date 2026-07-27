@@ -17,7 +17,7 @@ const redirect = vi.fn((url: string) => {
 
 vi.mock("next/headers", () => ({ headers: () => headers() }));
 vi.mock("next/navigation", () => ({ redirect: (url: string) => redirect(url) }));
-vi.mock("../../../lib/auth", () => ({ getWebSession: (h: Headers) => getWebSession(h) }));
+vi.mock("../../../../lib/auth", () => ({ getWebSession: (h: Headers) => getWebSession(h) }));
 vi.mock("@resonance/db", () => ({ createDb: () => createDb() }));
 vi.mock("@resonance/ai", () => ({
   profileGenAgent: { id: "profile-gen" },

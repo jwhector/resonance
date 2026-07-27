@@ -1,8 +1,8 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { assertAiConfigured } from "@resonance/ai";
-import { getWebSession } from "../../../lib/auth";
-import { onboardingAiCheckEnabled } from "../../../lib/e2e-harness";
+import { getWebSession } from "../../../../lib/auth";
+import { onboardingAiCheckEnabled } from "../../../../lib/e2e-harness";
 import { InterviewClient } from "./interview-client";
 
 /**
@@ -10,6 +10,10 @@ import { InterviewClient } from "./interview-client";
  * the session server-side and bounces anonymous visitors to `/signup`. All interactivity
  * (streaming chat, draft editing, commit) lives in the client wrapper it renders. Composition
  * only — every rule lives in the packages it wires (ADR-0002).
+ *
+ * The 80px app rail comes from the shared `(app)` layout, so `<main>` here is just the surface
+ * beside it: a full-height flex column (`min-h-0` so the rail's inner scroll region can shrink)
+ * rather than the `h-screen` box it was when this screen owned the whole row.
  */
 export default async function CreatorInterviewPage() {
   const user = await getWebSession(await headers());
@@ -24,7 +28,7 @@ export default async function CreatorInterviewPage() {
   if (onboardingAiCheckEnabled()) assertAiConfigured();
 
   return (
-    <main className="h-screen w-full overflow-hidden">
+    <main className="flex min-h-0 w-full flex-1 flex-col overflow-hidden">
       <InterviewClient />
     </main>
   );

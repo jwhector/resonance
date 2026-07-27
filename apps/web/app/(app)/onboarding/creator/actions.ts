@@ -10,8 +10,8 @@ import {
 } from "@resonance/core";
 import { commitCreatorProfile, profileGenAgent, runAgentStructured } from "@resonance/ai";
 import { createDb } from "@resonance/db";
-import { getWebSession } from "../../../lib/auth";
-import { onboardingEmbedder, onboardingModelOverride } from "../../../lib/e2e-harness";
+import { getWebSession } from "../../../../lib/auth";
+import { onboardingEmbedder, onboardingModelOverride } from "../../../../lib/e2e-harness";
 
 /**
  * Server Actions wiring the creator-onboarding flow: `ui` (the client interview) → `ai` (draft
