@@ -44,15 +44,12 @@ export default async function DiscoverPage({
   // rendered as the idle surface. The action then re-parses as the real trust boundary, because it
   // is also callable directly by a client and cannot inherit this one's verdict (golden rule 4).
   //
-  // The `q === undefined` guard is deliberate and must stay explicit. `text` is now optional on
-  // the schema, so a URL with no `q` parses cleanly as a *personalized* query (rank for this
-  // viewer) rather than failing. That is the eventual behaviour of this page, but wiring it is
-  // resonance-3a7d's job — until then this route keeps its current contract: no query means the
-  // idle surface, and nothing is asked of the port.
+  // `text` is now optional, but that only permits an *absent* field — not an empty string. Both
+  // `?q=` and a bare `/discover` still arrive here as `text: ""` and still fail `.min(1)`, so this
+  // route keeps its idle surface unchanged. Wiring the personalized (absent-text) branch is
+  // resonance-3a7d's job.
   const searchable =
-    kind === "creators" && q !== undefined
-      ? CreatorDiscoveryQuerySchema.safeParse({ text: q })
-      : null;
+    kind === "creators" ? CreatorDiscoveryQuerySchema.safeParse({ text: q }) : null;
 
   const results: readonly CreatorResult[] = searchable?.success
     ? (await searchCreators(searchable.data)).results
