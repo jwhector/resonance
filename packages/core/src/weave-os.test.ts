@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   BehaviorRuleSchema,
+  BoundsSchema,
   CORPUS_FILE_LAYERS,
   CORPUS_FILE_TYPES,
   ConversationHeuristicSchema,
@@ -10,6 +11,7 @@ import {
   CorpusSourceSchema,
   CorpusValueSchema,
   EvolutionPolicySchema,
+  FlowOutputSchema,
   InteractionPrincipleSchema,
   InterviewFlowFileSchema,
   WeaveLimitationSchema,
@@ -382,6 +384,18 @@ describe("interview flow file", () => {
     expect(supporting?.public).toBe(false);
     expect(supporting?.showDuringReview).toBe(true);
     expect(supporting?.usedForGeneration).toBe(false);
+  });
+
+  it("keeps a one-sided bound but rejects one whose minimum exceeds its maximum", () => {
+    expect(BoundsSchema.parse({ maximum: 280 })).toEqual({ maximum: 280 });
+    expect(BoundsSchema.parse({ minimum: 3 })).toEqual({ minimum: 3 });
+    expect(() => BoundsSchema.parse({ minimum: 100, maximum: 50 })).toThrow();
+  });
+
+  it("rejects a recommended candidate that points past the number generated", () => {
+    const output = { id: "profile_headline", candidateCount: 3, recommendedCandidate: 1 };
+    expect(FlowOutputSchema.parse(output).recommendedCandidate).toBe(1);
+    expect(() => FlowOutputSchema.parse({ ...output, recommendedCandidate: 4 })).toThrow();
   });
 
   it("carries every unmodelled authored block rather than dropping it", () => {

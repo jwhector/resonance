@@ -403,10 +403,18 @@ export const FlowActionSchema = z.object({
 export type FlowAction = z.infer<typeof FlowActionSchema>;
 
 /** An inclusive bound. Both ends are optional so a one-sided constraint stays expressible. */
-export const BoundsSchema = z.object({
-  minimum: z.number().int().nonnegative().optional(),
-  maximum: z.number().int().nonnegative().optional(),
-});
+export const BoundsSchema = z
+  .object({
+    minimum: z.number().int().nonnegative().optional(),
+    maximum: z.number().int().nonnegative().optional(),
+  })
+  .refine(
+    (bounds) =>
+      bounds.minimum === undefined ||
+      bounds.maximum === undefined ||
+      bounds.minimum <= bounds.maximum,
+    { message: "minimum must not be greater than maximum" },
+  );
 export type Bounds = z.infer<typeof BoundsSchema>;
 
 /**
@@ -435,24 +443,32 @@ export type OutputConstraints = z.infer<typeof OutputConstraintsSchema>;
  * may correct it. A supporting output is typically not public but is all three of the
  * others.
  */
-export const FlowOutputSchema = z.object({
-  id: CorpusIdSchema,
-  /** How many candidates to generate, when the flow asks for a choice. */
-  candidateCount: z.number().int().positive().optional(),
-  /** Which candidate to present as recommended, 1-based. */
-  recommendedCandidate: z.number().int().positive().optional(),
-  /** Conditions under which the output is generated at all. Empty means always. */
-  generateWhen: z.array(z.string().min(1)).default([]),
-  /** Which captured material the output is generated from. */
-  sources: z.array(z.string().min(1)).default([]),
-  /** Sub-fields, when the output is structured rather than a single value. */
-  fields: z.record(z.string().min(1), CorpusFieldSchema).default({}),
-  constraints: OutputConstraintsSchema.default({}),
-  public: z.boolean().default(true),
-  usedForGeneration: z.boolean().default(false),
-  showDuringReview: z.boolean().default(true),
-  creatorCanCorrect: z.boolean().default(true),
-});
+export const FlowOutputSchema = z
+  .object({
+    id: CorpusIdSchema,
+    /** How many candidates to generate, when the flow asks for a choice. */
+    candidateCount: z.number().int().positive().optional(),
+    /** Which candidate to present as recommended, 1-based. */
+    recommendedCandidate: z.number().int().positive().optional(),
+    /** Conditions under which the output is generated at all. Empty means always. */
+    generateWhen: z.array(z.string().min(1)).default([]),
+    /** Which captured material the output is generated from. */
+    sources: z.array(z.string().min(1)).default([]),
+    /** Sub-fields, when the output is structured rather than a single value. */
+    fields: z.record(z.string().min(1), CorpusFieldSchema).default({}),
+    constraints: OutputConstraintsSchema.default({}),
+    public: z.boolean().default(true),
+    usedForGeneration: z.boolean().default(false),
+    showDuringReview: z.boolean().default(true),
+    creatorCanCorrect: z.boolean().default(true),
+  })
+  .refine(
+    (output) =>
+      output.candidateCount === undefined ||
+      output.recommendedCandidate === undefined ||
+      output.recommendedCandidate <= output.candidateCount,
+    { message: "recommendedCandidate must not point past the last candidate" },
+  );
 export type FlowOutput = z.infer<typeof FlowOutputSchema>;
 
 /**
