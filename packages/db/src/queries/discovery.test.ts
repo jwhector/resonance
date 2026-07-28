@@ -393,5 +393,21 @@ describe("searchCreatorProfiles — the DiscoveryPort contract", () => {
         port.searchCreators(CreatorDiscoveryQuerySchema.parse({ text: "mugs" }), null),
       ).rejects.toBeInstanceOf(EmbeddingDimensionError);
     });
+
+    // Invariant 8 (Slice B, resonance-b149). Interest storage lands in resonance-e2d0; until
+    // then no member has interests, so the contract's fallback is also the truthful answer.
+    it("returns an empty page for a personalized query, without embedding anything", async () => {
+      await seed("u0", 0.9);
+      // This embedder throws for ANY text, so reaching it at all fails the test — which is
+      // how we pin that `undefined` never gets handed to the embedder.
+      const port = createDiscoveryAdapter({ db, embed: fakeEmbed({}) });
+
+      for (const viewer of [null, { userId: "u5" }]) {
+        const page = await port.searchCreators(CreatorDiscoveryQuerySchema.parse({}), viewer);
+        expect(page.kind).toBe("creators");
+        expect(page.results).toEqual([]);
+        expect(page.nextCursor).toBeNull();
+      }
+    });
   });
 });

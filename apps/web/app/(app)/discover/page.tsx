@@ -43,8 +43,16 @@ export default async function DiscoverPage({
   // or a 300-character paste is a *page state*, not a crash, so it is decided with `safeParse` and
   // rendered as the idle surface. The action then re-parses as the real trust boundary, because it
   // is also callable directly by a client and cannot inherit this one's verdict (golden rule 4).
+  //
+  // The `q === undefined` guard is deliberate and must stay explicit. `text` is now optional on
+  // the schema, so a URL with no `q` parses cleanly as a *personalized* query (rank for this
+  // viewer) rather than failing. That is the eventual behaviour of this page, but wiring it is
+  // resonance-3a7d's job — until then this route keeps its current contract: no query means the
+  // idle surface, and nothing is asked of the port.
   const searchable =
-    kind === "creators" ? CreatorDiscoveryQuerySchema.safeParse({ text: q }) : null;
+    kind === "creators" && q !== undefined
+      ? CreatorDiscoveryQuerySchema.safeParse({ text: q })
+      : null;
 
   const results: readonly CreatorResult[] = searchable?.success
     ? (await searchCreators(searchable.data)).results
@@ -58,7 +66,7 @@ export default async function DiscoverPage({
     <main className="flex flex-1 justify-center overflow-y-auto pl-10">
       <div className="flex w-151 shrink-0 flex-col gap-10 pt-10 pb-16">
         <DiscoverClient
-          query={searchable?.success ? searchable.data.text : ""}
+          query={searchable?.success ? (searchable.data.text ?? "") : ""}
           kind={kind}
           results={results}
           signedIn={signedIn}
