@@ -10,7 +10,7 @@ import { CorpusIdSchema, OsReleaseIdSchema } from "./weave-os";
  * `ObservationPort` is a two-method **interface** at the `@resonance/core` **seam**. Behind
  * it sits a large **implementation** owned by `@resonance/db`: batch insert of observation
  * rows, insert of an evaluation with its sixteen score rows and its limitation verdicts,
- * all in one transaction, all keyed to the OS release that produced them. None of that
+ * each write atomic, all keyed to the OS release that produced them. None of that
  * leaks through the interface. Callers learn two methods and three data shapes; they get
  * durable, attributable evidence.
  *

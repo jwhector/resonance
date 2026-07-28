@@ -51,7 +51,7 @@ packages speak.
   (ADR-0017), built on the same construction as `discovery.ts`. `ObservationSchema`,
   `EvaluationSchema` (schema-enforced complete coverage of all 16 dimensions),
   `LimitationVerdictSchema` (boolean, because a limitation is an invariant and "mostly
-  held" is a breach), and `ObservationPort` — two methods over a batched, transactional
+  held" is a breach), and `ObservationPort` — two methods over a batched, atomic
   implementation in `db`. Every record carries an `osReleaseId`, pinned at conversation
   start, so evidence stays attributable to the corpus that produced it. The port's
   invariants are documented on the interface and exercised by a fake adapter in
