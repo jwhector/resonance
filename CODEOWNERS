@@ -1,0 +1,89 @@
+# CODEOWNERS — who must approve a change to Weave's behavior.
+#
+# This file is the *who* half of Weave OS governance (ADR-0020 § 3a). It encodes the
+# approval tiers from "Weave Evolution Engine Architecture" § 15 (Approval Authority)
+# as required reviewers per corpus path. The *why* half — what counts as a valid reason
+# to change a file — lives in each corpus file's own `evolution_policy` block and is
+# enforced by the corpus validator, not here.
+#
+# Everything else § 16 and § 17 ask for (candidate/approved separation, visible diffs,
+# no self-approval, recorded approval, rollback, release versions) is supplied by git,
+# pull requests, and the no-mistakes gate. See ADR-0020.
+#
+# ---------------------------------------------------------------------------------
+# Role → handle
+# ---------------------------------------------------------------------------------
+# The § 15 roles are listed per rule below as comments. Today one person holds all of
+# them, so every rule resolves to the same handle. When the roles separate, change the
+# handles here and the tiers stay correct — the rules do not need rewriting.
+#
+#   Founder / Philosophy Owner    @jwhector
+#   Product Owner                 @jwhector
+#   Technical Reviewer            @jwhector
+#   Research or Design Reviewer   @jwhector
+#   Architecture Reviewer         @jwhector
+#   Flow Owner                    @jwhector
+#
+# ---------------------------------------------------------------------------------
+# How to read this file
+# ---------------------------------------------------------------------------------
+# GitHub applies ONLY the last matching pattern to a path, and it cannot express
+# "any two of these three." So a tier's reviewers must all appear on the one pattern
+# that matches it, and § 15's quorum wording degrades to "all listed owners must
+# approve." Ordering is load-bearing: least-protected first, most-protected last.
+#
+# These paths are written before the corpus exists (seed resonance-5e69). They define
+# the layout `@resonance/weave-os` must adopt; change both together or neither.
+
+# --- Corpus baseline -------------------------------------------------------------
+# Anything under the corpus that a more specific rule below does not claim.
+# Roles: Product Owner, Technical Reviewer.
+/packages/weave-os/corpus/ @jwhector
+
+# --- Tier: flow-local change (§ 15) ----------------------------------------------
+# Active files — one creator experience each.
+# Roles: Flow Owner or Product Owner.
+/packages/weave-os/corpus/active/ @jwhector
+
+# --- Pattern Registry rulebook ---------------------------------------------------
+# Promotion destinations, thresholds, metric definitions, pattern schema. The evidence
+# and pattern *records* are Postgres rows, not files, and are not governed here
+# (ADR-0020 § 4). NOTE: § 15 names no tier for the rulebook — this is our extension.
+# Roles: Product Owner, Research or Design Reviewer, Technical Reviewer.
+/packages/weave-os/corpus/registry/ @jwhector
+
+# --- Root files ------------------------------------------------------------------
+# Shared guidance inherited by active flows. Baseline for anything under root/ that a
+# rule below does not claim.
+# Roles: Product Owner, Technical Reviewer.
+/packages/weave-os/corpus/root/ @jwhector
+
+# --- Tier: behavior rule (§ 15) --------------------------------------------------
+# Roles: Product Owner, Technical Reviewer.
+/packages/weave-os/corpus/root/weave_behavior_rules.yaml @jwhector
+
+# --- Tier: conversation heuristic (§ 15) -----------------------------------------
+# Roles: Product Owner, Research or Design Reviewer.
+/packages/weave-os/corpus/root/weave_conversation_heuristics.yaml @jwhector
+
+# --- Tier: new specialized root module (§ 15) ------------------------------------
+# Shared guidance for a recurring creator group or situation, beyond one active flow.
+# Roles: Architecture Reviewer, Product Owner, Technical Reviewer.
+/packages/weave-os/corpus/root/modules/ @jwhector
+
+# --- Tier: interaction principle (§ 15) ------------------------------------------
+# Roles: Founder or Philosophy Owner, Product Owner, Technical Reviewer.
+/packages/weave-os/corpus/root/weave_interaction_principles.yaml @jwhector
+
+# --- Tier: philosophy (§ 15) — the most protected file in the system --------------
+# Carries `change_threshold: exceptional`. Its `unacceptable_reasons` rule out
+# "temporary performance improvement", "easier implementation", and "stylistic
+# preference" as grounds for change; the validator enforces that, this rule enforces
+# who signs off.
+# Roles: Founder or Philosophy Owner, Product Owner, Technical Reviewer.
+/packages/weave-os/corpus/root/weave_interaction_philosophy.yaml @jwhector
+
+# --- This file -------------------------------------------------------------------
+# Governance that can be edited without the governing roles is not governance.
+# Roles: Founder or Philosophy Owner, Product Owner, Technical Reviewer.
+/CODEOWNERS @jwhector
