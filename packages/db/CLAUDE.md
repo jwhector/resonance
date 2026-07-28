@@ -19,16 +19,22 @@ src/
 │   ├── auth.ts                 Better Auth tables: user, session, account, verification
 │   ├── community.ts            follows (user → user follow graph)
 │   ├── creator.ts              creator_profiles, embeddings (+ Zod schemas)
+│   ├── weave-observation.ts    weave_observations, weave_evaluations,
+│   │                           weave_evaluation_scores, weave_limitation_verdicts
+│   ├── weave-pattern.ts        weave_patterns, weave_pattern_evidence (+ Zod schemas)
 │   └── index.ts                re-exports the schema files
 ├── queries/
 │   ├── discovery.ts            searchCreatorProfiles — THE deep ANN read (see below)
 │   ├── follows.ts              followCreator, unfollowCreator, getFollowStates
+│   ├── observations.ts         insertObservations, insertEvaluation — the atomic
+│   │                           evidence writes (see below)
 │   ├── profiles.ts             createCreatorProfile, getCreatorProfileById,
 │   │                           getCreatorProfileByUserId, upsertProfileEmbedding,
 │   │                           findSimilarProfiles (thin wrapper — see below)
 │   └── users.ts                setUserRoles — single write path for user.roles
 ├── adapters/
-│   └── discovery-adapter.ts    createDiscoveryAdapter — core's DiscoveryPort, live impl
+│   ├── discovery-adapter.ts    createDiscoveryAdapter — core's DiscoveryPort, live impl
+│   └── observation-adapter.ts  createObservationAdapter — core's ObservationPort, live impl
 └── testing/
     └── create-test-db.ts       createTestDb() — PGlite in-memory harness (dev/test only)
 drizzle/
@@ -36,6 +42,7 @@ drizzle/
     0001_pink_stone_men.sql     drizzle-kit generated: auth + creator_profiles + embeddings
     0002_yellow_changeling.sql  drizzle-kit generated: unique index on creator_profiles.user_id
     0003_green_ultimo.sql       drizzle-kit generated: follows table + discovery indexes
+    0004_motionless_bastion.sql drizzle-kit generated: Weave OS evidence + pattern records
 ```
 
 ## Public API
@@ -77,6 +84,13 @@ export {
   getFollowStates,
   type FollowEdge,
 } from "./queries/follows";
+
+// Weave OS evidence capture (ADR-0020)
+export { insertObservations, insertEvaluation } from "./queries/observations";
+export {
+  createObservationAdapter,
+  type ObservationAdapterDeps,
+} from "./adapters/observation-adapter";
 ```
 
 ### Discovery — one query, seven invariants
@@ -104,6 +118,37 @@ A wrong-width vector does **not** error inside pgvector — it silently matches 
 which reads as "no results" rather than "misconfigured embedder" (ADR-0010). That is why
 the width is asserted at the seam before any SQL runs, and why a test feeds a short vector
 and asserts the _throw_.
+
+### Evidence capture — atomic without a transaction
+
+`createObservationAdapter({ db })` is the live `ObservationPort` (ADR-0017, ADR-0020). It
+takes **only** `db`, and that is the point: the port forbids an adapter from substituting a
+"current" corpus release for a missing one, so the adapter is given nothing it could
+substitute. A release id can only come from the evidence itself.
+
+Both writes must be all-or-nothing — a conversation's observations together, an evaluation
+with all sixteen scores and every limitation verdict. Half-written evidence reads as a real
+measurement while silently under-counting, which is worse than no evidence at all.
+
+**Neither driver can express that as a transaction.** Neon's HTTP driver throws on
+`db.transaction()` (ADR-0004) and PGlite has no `db.batch()` — the two are disjoint. The one
+mechanism both share is Postgres itself: every single statement runs in its own implicit
+transaction. So each write in `queries/observations.ts` compiles to exactly **one statement**:
+
+- `insertObservations` is one multi-row `INSERT`.
+- `insertEvaluation` puts the evaluation (and the verdicts, when there are any) in
+  data-modifying `WITH` clauses and makes the sixteen scores the main insert. Postgres runs a
+  `WITH` clause exactly once and to completion, and the child rows' foreign keys resolve
+  because Postgres checks them after the statement finishes. The scores are the main insert
+  because they are the only part guaranteed non-empty.
+
+Row ids are generated in the helper rather than read back from `RETURNING`. That is what makes
+"one id per observation, in the order supplied" true by construction, and what lets an
+evaluation's children reference their parent inside one statement with no round trip.
+
+`commitCreatorProfile` in `@resonance/ai` solves the same no-transaction constraint the other
+way — ordering independent writes so a failure leaves a coherent state. Use ordering when the
+writes can stand alone; use one statement when they cannot.
 
 The PGlite test harness is exported ONLY from the `@resonance/db/testing` subpath
 (keeps PGlite out of production bundles) — it is not part of the main entrypoint.
@@ -174,6 +219,65 @@ _Future evolution_ in the design spec.
 model used by `@resonance/ai`. The column takes its width from `EMBEDDING_DIMS` in
 `@resonance/core`, not a literal, so the column, the embedder, and the query-time guard
 cannot drift apart. Changing the width means changing it there (and writing a migration).
+
+### Weave OS evidence (`schema/weave-observation.ts`)
+
+Four append-only tables behind the `ObservationPort`. The shapes are defined in
+`@resonance/core`'s `weave-observation.ts`; this is only where they land.
+
+- **`weave_observations`** — one recorded moment: `osReleaseId`, `conversationId`, `flowId`,
+  nullable `stageId`, `category`, `signal`, optional `detail`, `evidenceSource`, `observedAt`
+  (when it happened, supplied) and `recordedAt` (when the row landed). Indexed on release,
+  `(conversation_id, observed_at)`, `(flow_id, stage_id)`, `(category, signal)`, and
+  `evidence_source`.
+- **`weave_evaluations`** — one scored assessment of a conversation. Deliberately **not**
+  unique on `conversation_id`: re-scoring inserts another row, so two scorings disagreeing
+  stays visible.
+- **`weave_evaluation_scores`** — sixteen rows per evaluation, unique on
+  `(evaluation_id, dimension)`, with a CHECK pinning the score to the corpus's 0–3 scale. Rows
+  rather than sixteen columns because promoting a new interaction principle adds a
+  seventeenth dimension, and that should cost evidence, not a migration.
+- **`weave_limitation_verdicts`** — `limitationId` + a **boolean** `held` + optional evidence.
+  Its own table with no score column, because a limitation is an invariant and "mostly held"
+  is a breach. Keeping it out of the scores is what stops a violation being averaged away.
+
+**`os_release_id` has no default anywhere.** Evidence that cannot name the corpus release that
+produced it is worthless, and evidence that names the wrong one is worse. `NOT NULL` with
+nothing to fall back on means no write path can invent an attribution; `insertObservations` /
+`insertEvaluation` additionally reject a blank one, which `NOT NULL` would happily accept.
+
+### Weave pattern registry records (`schema/weave-pattern.ts`)
+
+The **records** half of the Pattern Registry (ADR-0020 §4). The **rulebook** — promotion
+destinations, thresholds, metric definitions — is corpus YAML in `@resonance/weave-os` and is
+not duplicated here. Nothing in these tables is ever inherited into a runtime prompt.
+
+- **`weave_patterns`** — one row per corpus pattern id (unique on `pattern_id`, uuid surrogate
+  PK, same split as `creator_profiles`): lifecycle, scope, the observation with its signals and
+  candidate responses, evidence confidence and notes, classification rationale, and promotion
+  state. Indexed on `lifecycle_status`, `promotion_decision`, `evidence_confidence`.
+- **`weave_pattern_evidence`** — the FK link from a pattern to the observations cited for or
+  against it (`stance`: supporting / contradicting). Unique on `(pattern_id, observation_id)`
+  so a replayed import cannot inflate a count.
+
+Two deliberate shape decisions:
+
+- **The two metric maps are `jsonb`, not nineteen integer columns** (ten evidence counts, nine
+  classification scores). The metric names are the rulebook's to define; a column each would
+  make this schema a second, silently divergent copy of that list, and adding a metric would
+  cost a migration instead of a corpus edit. `PatternEvidenceMetricsSchema` and
+  `PatternClassificationScoresSchema` type them at the boundary. The registry holds tens of
+  rows, so the scans this implies cost nothing worth a column for.
+- **Enumerated where the registry enumerates, plain text where it does not.** Lifecycle status
+  (seven) and promotion target (four) are named outright in the source, so they are unions.
+  `promotion_readiness`, `promotion_decision`, `discovered_during` and
+  `current_scope_hypothesis` have exactly one attested value each and no declared set, so they
+  carry the author's value as text rather than a guessed enum.
+
+Fields the registry attributes to the Evolution Engine's Architect and Validator — proposed
+destination, validation results, regression findings, risk assessment — are **absent on
+purpose**. Those entities are out of scope (ADR-0020), and columns nothing writes would be a
+guess about a design that does not exist yet.
 
 ## Migrations
 
