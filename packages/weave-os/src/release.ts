@@ -22,17 +22,19 @@ export function computeReleaseId(corpus: CompiledCorpus): OsReleaseId {
 }
 
 /**
- * Serialise deterministically: object keys sorted, arrays in order.
+ * Serialise deterministically: object keys in authored order, arrays in order.
  *
- * Authored key order is meaningful to a reader but must not be meaningful to the hash,
- * or reordering two blocks in a YAML file would look like a behaviour change.
+ * Authored key order is preserved because it is behaviour, not decoration: prompt
+ * composition emits a block's entries in the order they are authored, so reordering keys
+ * in a YAML file changes the prompt Weave runs on and must change the id that attributes
+ * evidence to it. Insertion order is deterministic — the compiled corpus round-trips
+ * through the same parse and the same JSON in the generated module.
  */
 function canonicalize(value: unknown): string {
   if (value === null || typeof value !== "object") return JSON.stringify(value) ?? "null";
   if (Array.isArray(value)) return `[${value.map(canonicalize).join(",")}]`;
   const entries = Object.entries(value as Record<string, unknown>)
     .filter(([, v]) => v !== undefined)
-    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
     .map(([k, v]) => `${JSON.stringify(k)}:${canonicalize(v)}`);
   return `{${entries.join(",")}}`;
 }

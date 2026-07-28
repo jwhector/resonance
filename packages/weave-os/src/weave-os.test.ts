@@ -251,12 +251,18 @@ describe("the release id", () => {
     expect(computeReleaseId(edited)).not.toBe(computeReleaseId(COMPILED_CORPUS));
   });
 
-  it("ignores the order authored keys happen to sit in", () => {
-    const reordered = {
-      registry: COMPILED_CORPUS.registry,
-      files: COMPILED_CORPUS.files,
-    };
-    expect(computeReleaseId(reordered)).toBe(computeReleaseId(COMPILED_CORPUS));
+  it("changes when authored keys are reordered within a block", () => {
+    // Composition emits a block's entries in author order, so reordering them changes the
+    // system prompt Weave runs on — and must change the id that attributes evidence to it.
+    const reordered = structuredClone(COMPILED_CORPUS) as typeof COMPILED_CORPUS;
+    const philosophy = reordered.files.find(
+      (entry) => entry.file.type === "interaction_philosophy",
+    );
+    if (philosophy?.file.type !== "interaction_philosophy") throw new Error("no philosophy file");
+
+    philosophy.file.blocks = Object.fromEntries(Object.entries(philosophy.file.blocks).reverse());
+
+    expect(computeReleaseId(reordered)).not.toBe(computeReleaseId(COMPILED_CORPUS));
   });
 });
 
@@ -305,7 +311,7 @@ function readCorpusYaml(): readonly CorpusSourceFile[] {
     )) {
       const absolute = join(directory, entry.name);
       if (entry.isDirectory()) walk(absolute);
-      else if (entry.name.endsWith(".yaml")) {
+      else if (entry.name.endsWith(".yaml") || entry.name.endsWith(".yml")) {
         found.push({
           path: relative(root, absolute).split("\\").join("/"),
           text: readFileSync(absolute, "utf8"),

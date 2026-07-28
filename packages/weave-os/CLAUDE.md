@@ -116,7 +116,7 @@ job-scoped executor (ADR-0020 § 6, deferred to `resonance-bc11`); any member-si
 `src/weave-os.test.ts`, through the seam. The load-bearing assertions: the generated
 module still matches the YAML; the validator fails on exactly those seven and on nothing
 else; inactive records never reach a prompt; the machinery comes back typed; the release
-id changes when any authored word changes and not when key order does.
+id changes when any authored word changes or when authored keys are reordered.
 
 ## Working here (seeds + mulch)
 

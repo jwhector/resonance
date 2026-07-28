@@ -226,16 +226,25 @@ foreign key from a pattern to a stage cannot be built until the two vocabularies
 
 ## D-21 · REG: ten patterns, not nine · question
 
-The registry defines ten patterns: `creator_uncertain`, `creator_gives_short_answer`,
+REG defines ten patterns: `creator_uncertain`, `creator_gives_short_answer`,
 `creator_becomes_reflective`, `creator_wants_speed`, `creator_dislikes_output`,
 `revision_direction_matches_output`, `generated_identity_is_provisional`,
 `creator_rejects_output_without_reason`, `tone_request_hides_meaning_mismatch`,
-`gradual_preference_learning`. (Recorded because the count was believed to be nine.)
+`gradual_preference_learning`. The registry is internally consistent at ten. This entry
+exists only because the **task brief** given to this transcription said nine — the
+discrepancy is in that brief, not in REG, and should not be read as a defect in the
+designer's document.
 
 Two of them — `creator_dislikes_output` and `gradual_preference_learning` — name **both**
 `behavior_rule` and `conversation_heuristic` as candidate promotions, so they are seeded
 into both files. That is the registry's own classification, not duplication; neither
 destination has been decided (`promotion.recommended_target: null` for all ten).
+
+`gradual_preference_learning` describes per-creator **runtime** memory — "remember
+confirmed preferences", "preserve context and timestamp", "allow preferences to change" —
+which is a different mechanism from the OS evolution the registry governs. It is seeded as
+an inactive record like the other nine; no preference-learning machinery is built for it
+here.
 
 `revision_direction_matches_output` also names `interview_pattern` as a candidate. There
 is no typed home for a flow-local pattern in an interview flow file, so it was seeded only
