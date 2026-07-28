@@ -29,6 +29,33 @@ packages speak.
   (embed → status-filtered ANN → tags → threshold → paging → follow state) that lives in
   `db`. `web` and `ui` depend on this interface and never on SQL; the port's invariants are
   documented on the interface and exercised by a fake adapter in `discovery.test.ts`.
+- `weave-os.ts` — the **Weave OS corpus contracts**: the shared vocabulary for Weave's
+  authored behaviour. File headers + `EvolutionPolicySchema`, the record types
+  (`InteractionPrincipleSchema`, `WeaveLimitationSchema`, `BehaviorRuleSchema`,
+  `ConversationHeuristicSchema`), the flow definition (`InterviewFlowFileSchema` and its
+  stages / flow map / session state / output constraints), and `CorpusFileSchema` — one
+  discriminated-union entry point for parsing any corpus file. Also `OsReleaseIdSchema`,
+  the opaque identity of one compiled corpus. Three rules hold this module together:
+  **every record carries `source` + `confidence`** so a transcribed record never passes for
+  an authored one; **inheritance is stored child-side only** (`inherits`), with
+  `CorpusInheritedBy` as a derived view that has no schema; and **type what something
+  consumes, carry what nothing consumes yet** — unmodelled authored blocks live in
+  `guidance` as `CorpusValue`, validated as data and never interpreted.
+- `weave-evaluation.ts` — the **16 evaluation dimensions**. The engine's ten and the seven
+  interaction principles are two lists that _compose_: `principle_alignment` is the one
+  composite and decomposes into one sub-score per principle, so a scored evaluation carries
+  7 + 9 = 16 numbers. The composition is in the types (`ProcessDimension` is `Exclude`d from
+  `EvaluationDimension`), not in a comment. Plus the corpus's `0..3` `ScoreSchema`, where
+  `0` means `not_observed`.
+- `weave-observation.ts` — the **observation contract**, i.e. the evidence-capture seam
+  (ADR-0017), built on the same construction as `discovery.ts`. `ObservationSchema`,
+  `EvaluationSchema` (schema-enforced complete coverage of all 16 dimensions),
+  `LimitationVerdictSchema` (boolean, because a limitation is an invariant and "mostly
+  held" is a breach), and `ObservationPort` — two methods over a batched, transactional
+  implementation in `db`. Every record carries an `osReleaseId`, pinned at conversation
+  start, so evidence stays attributable to the corpus that produced it. The port's
+  invariants are documented on the interface and exercised by a fake adapter in
+  `weave-observation.test.ts`.
 
 ## Rules
 
