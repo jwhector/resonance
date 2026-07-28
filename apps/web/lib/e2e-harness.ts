@@ -91,19 +91,32 @@ async function webEmbedder(): Promise<Embedder> {
  * module scopes (mulch failure mx-b19c21). Pinning guarantees the fake is built — and
  * `observeLoginCodes` called — exactly ONCE per process, so every scope shares the one fake and the
  * read-back never gets clobbered by a later empty buffer.
+ *
+ * The slot holds the in-flight PROMISE, not the resolved port, so the singleton survives concurrent
+ * callers. The signup form fires two auth requests in parallel (magic link + OTP send), and on a
+ * cold server both would reach a "build it if absent" check before either finished building. With
+ * the port stored, both built a fake: one won this slot (the transport auth actually sends through)
+ * while the other won the process-wide observation slot, so `peekLoginCode` read a buffer nothing
+ * wrote to and `/api/test/last-otp` answered `null` forever (seed resonance-86dd). Storing the
+ * promise makes the assignment atomic — it happens before any `await`, so concurrent callers all
+ * await the same construction. A failed construction clears the slot rather than caching a rejected
+ * promise, so a transient dynamic-import failure on a cold server can be retried.
  */
 const HARNESS_MAIL_KEY = "__resonance_web_harness_mail__";
-function harnessMailStore(): { [HARNESS_MAIL_KEY]?: AuthMailPort } {
-  return globalThis as unknown as { [HARNESS_MAIL_KEY]?: AuthMailPort };
+function harnessMailStore(): { [HARNESS_MAIL_KEY]?: Promise<AuthMailPort> } {
+  return globalThis as unknown as { [HARNESS_MAIL_KEY]?: Promise<AuthMailPort> };
 }
 export async function harnessMailOverride(): Promise<AuthMailPort | undefined> {
   if (!E2E_HARNESS) return undefined;
   const store = harnessMailStore();
-  if (!store[HARNESS_MAIL_KEY]) {
+  store[HARNESS_MAIL_KEY] ??= (async () => {
     const { createFakeMail, observeLoginCodes } = await import("@resonance/auth/testing");
     const fake = createFakeMail();
     observeLoginCodes(fake);
-    store[HARNESS_MAIL_KEY] = fake.port;
-  }
+    return fake.port;
+  })().catch((err: unknown) => {
+    delete store[HARNESS_MAIL_KEY];
+    throw err;
+  });
   return store[HARNESS_MAIL_KEY];
 }

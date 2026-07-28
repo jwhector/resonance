@@ -52,16 +52,6 @@ async function enterOtp(page: Page, otp: string) {
 async function signInFreshMember(page: Page, request: APIRequestContext): Promise<string> {
   const email = `e2e-discovery-member-${RUN_ID}-${Date.now()}@example.com`;
 
-  // Warm the harness's mail singleton with ONE auth request before the signup form fires two in
-  // parallel. `harnessMailOverride()` builds its fake and calls `observeLoginCodes(fake)` in two
-  // awaited steps with no lock, so two concurrent cold requests each build a fake: one wins the
-  // `globalThis` slot the auth instance uses, the other wins the OTP observation slot — and
-  // `peekLoginCode` then reads an array nothing writes to, so `/api/test/last-otp` answers `null`
-  // forever. This one warm request removes the concurrency and is enough. It is a TEST-SIDE
-  // mitigation, not a fix: the race lives in `apps/web/lib/e2e-harness.ts` and is why
-  // `onboarding-creator.spec.ts` fails on `main` today. Filed as `resonance-86dd`.
-  await request.get("/api/auth/get-session");
-
   await page.goto("/signup");
   await expect(page.getByRole("heading", { name: "Welcome to Resonance" })).toBeVisible();
   await page.getByLabel("Email").fill(email);
