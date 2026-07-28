@@ -1,5 +1,7 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
+import type * as EHarness from "./e2e-harness";
+
 /**
  * `harnessMailOverride` must build its fake mail transport exactly once per process even when
  * several auth requests arrive at the same time on a cold server (seed resonance-86dd).
@@ -40,8 +42,8 @@ function fakeMail(id: number) {
  * tests run in parallel. Per-case isolation still holds — the only mutable state is the `globalThis`
  * slot, which `beforeEach` clears.
  */
-let harnessOn: typeof import("./e2e-harness");
-let harnessOff: typeof import("./e2e-harness");
+let harnessOn: typeof EHarness;
+let harnessOff: typeof EHarness;
 
 beforeAll(async () => {
   vi.stubEnv("E2E_HARNESS", "1");
