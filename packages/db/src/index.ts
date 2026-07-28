@@ -36,3 +36,12 @@ export {
   getFollowStates,
   type FollowEdge,
 } from "./queries/follows";
+
+// Weave OS evidence capture (ADR-0020). `createObservationAdapter` is core's ObservationPort,
+// so the conversation runtime and the evolution harness depend on the interface and never on
+// this SQL. The pattern-registry record tables come from `./schema`.
+export { insertObservations, insertEvaluation } from "./queries/observations";
+export {
+  createObservationAdapter,
+  type ObservationAdapterDeps,
+} from "./adapters/observation-adapter";
