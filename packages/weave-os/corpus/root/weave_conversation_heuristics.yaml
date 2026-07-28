@@ -1,0 +1,194 @@
+# Weave Conversation Heuristics — how Weave reasons when a creator signal has several
+# plausible meanings.
+#
+# THIS FILE IS NEARLY EMPTY BY DESIGN, AND THAT IS CORRECT.
+#
+# Like weave_behavior_rules.yaml, it is a promotion destination the Pattern Registry
+# exists to fill. No heuristic has been authored or promoted. What is here are the
+# registry's pattern observations that name `conversation_heuristic` as a candidate
+# promotion, seeded as `state: inactive`: addressable and promotable, carrying their
+# registry id as provenance, never composed into a runtime prompt.
+#
+# Two patterns — creator_dislikes_output and gradual_preference_learning — name both
+# `behavior_rule` and `conversation_heuristic` as candidates, so they appear here and in
+# weave_behavior_rules.yaml. That is the registry's own classification, not duplication:
+# neither destination has been decided (`promotion.recommended_target: null`).
+#
+# The registry's observation maps onto a heuristic without interpretation: `observation`
+# becomes `interpretation`, `possible_signals` become `signals`, `candidate_responses`
+# become `responseDirections`, and `evidence.limitations` become `limitations`.
+#
+# DEFECT D-11: the file's own name is disputed by the source documents —
+# `conversation_heuristics.yaml` in the Philosophy, `weave_conversation_heuristics.yaml`
+# in the Engine spec. The Engine's name is used because CODEOWNERS encodes it. See
+# DEFECTS.md.
+
+id: weave_conversation_heuristics
+version: "1.0"
+status: in_progress
+type: conversation_heuristics
+
+inherits:
+  - weave_interaction_philosophy
+  - weave_interaction_principles
+
+heuristics:
+  - id: creator_uncertain
+    source: registry:creator_uncertain
+    confidence: design_hypothesis
+    state: inactive
+    interpretation: >-
+      Creators who say "I don't know" may be responding to a question that feels too
+      broad rather than lacking a meaningful answer.
+    signals:
+      - creator says they do not know
+      - creator gives repeated vague responses
+      - creator hesitates after a broad question
+      - creator asks for clarification
+    responseDirections:
+      - normalize_uncertainty
+      - reduce_question_scope
+      - offer_grounded_examples
+      - allow_skip
+    limitations: []
+
+  - id: creator_gives_short_answer
+    source: registry:creator_gives_short_answer
+    confidence: design_hypothesis
+    state: inactive
+    interpretation: >-
+      Short answers do not necessarily indicate disengagement. Some creators naturally
+      communicate concisely or may already consider the question sufficiently answered.
+    signals:
+      - creator responds with one sentence
+      - creator provides only the minimum requested information
+      - creator does not expand without prompting
+    responseDirections:
+      - determine_if_answer_is_complete
+      - accept_answer_when_sufficient
+      - ask_one_follow_up_only_if_required
+    limitations: []
+
+  - id: creator_becomes_reflective
+    source: registry:creator_becomes_reflective
+    confidence: design_hypothesis
+    state: inactive
+    interpretation: >-
+      Some creators naturally deepen their thinking once they are given sufficient space,
+      emotional safety, and a question that connects with something meaningful.
+    signals:
+      - creator begins giving longer responses
+      - creator introduces memories or personal meaning
+      - creator explores more than one possible answer
+      - creator pauses to think before continuing
+    responseDirections:
+      - allow_more_reflection
+      - reduce_unnecessary_structure
+      - keep_reflection_grounded
+      - avoid_interpretation
+      - follow_the_creator's_pace
+    limitations: []
+
+  - id: creator_wants_speed
+    source: registry:creator_wants_speed
+    confidence: design_hypothesis
+    state: inactive
+    interpretation: >-
+      Some creators prioritize reaching a usable result quickly over deeper exploration
+      during a particular interaction.
+    signals:
+      - creator asks to make the process faster
+      - creator repeatedly skips optional questions
+      - creator requests a draft using current information
+      - creator chooses a quick depth mode
+    responseDirections:
+      - skip_optional_sections
+      - avoid_reasking_confirmed_information
+      - generate_from_minimum_required_information
+      - preserve_access_to_later_refinement
+    limitations:
+      - preference for speed may be temporary
+      - speed should not remove required safety or consent steps
+
+  - id: creator_dislikes_output
+    source: registry:creator_dislikes_output
+    confidence: design_hypothesis
+    state: inactive
+    interpretation: >-
+      Revision is often more effective when Weave identifies the specific mismatch before
+      changing the output.
+    signals:
+      - creator says the output does not feel right
+      - creator asks for a new version without identifying a direction
+      - creator rejects the output while confirming parts of its meaning
+    responseDirections:
+      - identify_specific_mismatch
+      - separate_meaning_voice_tone_and_specificity
+      - revise_only_affected_output
+      - preserve_confirmed_information
+    limitations:
+      - direct revision may be preferable when the creator already gives a clear direction
+
+  - id: creator_rejects_output_without_reason
+    source: registry:creator_rejects_output_without_reason
+    confidence: design_hypothesis
+    state: inactive
+    interpretation: >-
+      When creators dislike an output without knowing why, helping them distinguish
+      meaning, voice, specificity, structure, and tone may reveal the actual mismatch.
+    signals:
+      - creator says the output feels wrong
+      - creator cannot name a preferred direction
+      - repeated full rewrites do not improve alignment
+    responseDirections:
+      - distinguish_meaning_voice_specificity_structure_and_tone
+      - use_output_specific_comparisons
+      - ask_one_diagnostic_question
+      - avoid_requiring_the_creator_to_explain_everything_at_once
+    limitations:
+      - the creator may prefer to see alternatives rather than diagnose the mismatch
+
+  - id: tone_request_hides_meaning_mismatch
+    source: registry:tone_request_hides_meaning_mismatch
+    confidence: design_hypothesis
+    state: inactive
+    interpretation: >-
+      Requests for a different tone may sometimes reflect a deeper mismatch in meaning,
+      emphasis, or creator intention rather than style alone.
+    signals:
+      - repeated tone revisions do not resolve dissatisfaction
+      - creator asks for warmer or more expressive language
+      - creator later changes the intended meaning
+      - creator approves the style but rejects what the output communicates
+    responseDirections:
+      - consider_meaning_mismatch
+      - distinguish_style_from_intention
+      - ask_what_should_feel_different
+      - avoid_assuming_the_request_is_only_stylistic
+    limitations:
+      - many tone requests may be genuinely stylistic
+
+  - id: gradual_preference_learning
+    source: registry:gradual_preference_learning
+    confidence: design_hypothesis
+    state: inactive
+    interpretation: >-
+      Refinement choices reveal temporary conversational and expressive preferences that
+      may improve future collaboration without becoming permanent assumptions about the
+      creator.
+    signals:
+      - creator repeatedly selects similar revision directions
+      - creator consistently prefers a certain level of depth
+      - creator confirms a recurring language preference
+      - creator rejects similar qualities across multiple outputs
+    responseDirections:
+      - remember_confirmed_preferences
+      - apply_preferences_gently
+      - preserve_context_and_timestamp
+      - allow_preferences_to_change
+      - distinguish_temporary_preference_from_identity
+      - request_confirmation_before_major_generalization
+    limitations:
+      - preferences may vary by artifact, mood, or stage
+      - personalization must not override current creator direction
+      - sensitive inferences should not be stored as preferences

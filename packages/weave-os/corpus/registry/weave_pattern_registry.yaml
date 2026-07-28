@@ -1,0 +1,482 @@
+# Weave Pattern Registry — THE RULEBOOK HALF ONLY.
+#
+# The source document mixes two things with different lifecycles, and ADR-0020 § 4 splits
+# them:
+#
+#   * the RULEBOOK — promotion destinations, lifecycle states, promotion targets, metric
+#     definitions, thresholds and the pattern schema — is stable config that changes by
+#     review, so it lives here as governed corpus YAML;
+#   * the RECORDS — patterns, evidence, confidence, contradictions, test history — are
+#     accumulating, queried, foreign-keyed app data, so they live in Postgres via
+#     `@resonance/db` (seed resonance-e030). They are NOT in this file.
+#
+# The split is the codebase's synthesis, not the designer's stated design, and it is
+# recorded as unratified in ADR-0020 § 4.
+#
+# Nothing here is inherited by a runtime conversation. That is the registry's own
+# declared constraint (`authority.inherited_by_runtime: false`, `executable: false`) and
+# the resolver honours it: the registry is never part of an inheritance chain.
+#
+# DEFECT D-03: the source's first key is `ile:` — the `f` of `file:` was eaten by the
+# document's bold markup. DEFECT D-05: the source disagrees with itself about where this
+# file belongs (`evolution/registry/…` in the Engine spec, `evolution/…` in the registry's
+# own `architecture.recommended_path`). Neither is used; CODEOWNERS decides the path.
+
+id: weave_pattern_registry
+version: "1.1"
+status: development
+type: pattern_registry
+
+# The registry observes root/ and active/ but inherits from nothing: it is not part of
+# any conversation's guidance chain.
+inherits: []
+
+purpose: >-
+  Capture recurring conversational observations discovered during interview design,
+  creator testing, and future production use.
+
+  Patterns remain observations while evidence is collected.
+
+  Validated patterns may later be promoted into interaction principles, behavior rules,
+  conversation heuristics, or active interview flows.
+
+# Where a promoted pattern lands, and what promoting it may do to that file. The
+# cross-file validator checks that each `file` names a corpus file that exists.
+promotionDestinations:
+  interaction_principle:
+    file: root/weave_interaction_principles.yaml
+    promotionActions:
+      - add_new_principle
+      - refine_existing_principle
+
+  behavior_rule:
+    file: root/weave_behavior_rules.yaml
+    promotionActions:
+      - add_new_rule
+      - refine_existing_rule
+      - split_pattern_into_multiple_rules
+
+  conversation_heuristic:
+    file: root/weave_conversation_heuristics.yaml
+    promotionActions:
+      - add_new_heuristic
+      - refine_existing_heuristic
+      - merge_with_related_heuristic
+
+  interview_pattern:
+    # A template, not a path. The validator reports it as a warning rather than an
+    # unresolved file.
+    file: active/{target_flow}.yaml
+    optionalFile: active/shared/{domain_module}.yaml
+    promotionActions:
+      - update_existing_stage
+      - add_flow_local_guidance
+      - create_shared_active_module
+
+# The states a pattern record moves through. The states are governed here; the records
+# that occupy them are Postgres rows.
+lifecycleStates:
+  discovered:
+    description: >-
+      The pattern has been observed during design, testing, or production, but has not
+      yet been systematically evaluated.
+  collecting_evidence:
+    description: Supporting, contradicting, and contextual cases are being collected.
+  validated:
+    description: >-
+      Evidence indicates that the pattern is repeatable and useful within its observed
+      scope.
+  candidate_for_promotion:
+    description: >-
+      The pattern has sufficient evidence and classification clarity for architectural
+      review.
+  promoted:
+    description: >-
+      The pattern has been incorporated into an interaction principle, behavior rule,
+      conversation heuristic, or active interview flow.
+  retained_in_registry:
+    description: >-
+      The pattern is useful as research knowledge but does not require promotion into an
+      operating system file.
+  rejected:
+    description: >-
+      Evidence does not support the pattern, or promotion would create unnecessary
+      assumptions, complexity, or regressions.
+
+# When each destination is the likely one.
+promotionTargets:
+  interaction_principle:
+    description: >-
+      A foundational commitment that shapes Weave's relationship with creators across the
+      entire operating system.
+    useWhen:
+      - reflects a foundational relationship with creators
+      - applies across nearly every conversation
+      - guides many behaviors rather than one specific action
+      - remains stable across different flows and creator contexts
+      - changing or violating it would alter Weave's identity
+
+  behavior_rule:
+    description: >-
+      A directly observable behavior Weave should consistently perform or avoid.
+    useWhen:
+      - describes what Weave should directly do or not do
+      - repeatedly improves conversational outcomes
+      - applies consistently across multiple flows or stages
+      - violating it creates meaningful friction, misalignment, or harm
+      - the correct behavior remains relatively stable across contexts
+
+  conversation_heuristic:
+    description: >-
+      A contextual interpretation that helps Weave recognize what may be happening for a
+      creator and choose a suitable response direction.
+    useWhen:
+      - describes a probable creator state or conversational dynamic
+      - more than one interpretation remains possible
+      - the appropriate response depends on context
+      - it should guide consideration rather than require one fixed action
+      - it must not be treated as a permanent creator trait
+
+  interview_pattern:
+    description: >-
+      A pattern that remains inside one particular interview, stage, artifact type, or
+      domain.
+    useWhen:
+      - depends on domain-specific knowledge
+      - applies to one interview or a limited group of stages
+      - does not consistently generalize across flows
+      - promotion to a global root file would create unnecessary behavior
+
+# The 0–3 scale every classification metric and evaluation dimension is scored on.
+scoreScale:
+  "0": not_observed
+  "1": weak
+  "2": moderate
+  "3": strong
+
+# The confidence ladder every corpus record's `confidence` is drawn from. The validator
+# checks these are exactly the levels `@resonance/core` defines, so a record promoted out
+# of the registry keeps the confidence it earned there.
+confidenceLevels:
+  design_hypothesis:
+    description: Proposed during flow design without direct creator-test evidence.
+  early_signal:
+    description: >-
+      Supported by a small number of cases but not yet sufficiently repeated or tested
+      across contexts.
+  emerging_pattern:
+    description: Repeated across several cases with limited contradiction.
+  validated_pattern:
+    description: >-
+      Consistently supported by sufficient evidence within the observed scope.
+  high_confidence:
+    description: >-
+      Supported across multiple flows, creator types, or test cycles with stable positive
+      outcomes and minimal contradiction.
+
+# What is counted about a pattern. The counters live on the Postgres records; the
+# definitions live here.
+evidenceMetrics:
+  supporting_case_count:
+    description: Number of cases that support the observation.
+  contradicting_case_count:
+    description: >-
+      Number of cases that challenge, weaken, or reveal limits to the observation.
+  test_count:
+    description: >-
+      Number of designed or production tests in which the pattern was evaluated.
+  creator_count:
+    description: Number of distinct creators represented in the evidence.
+  flow_count:
+    description: Number of distinct interview flows in which the pattern appeared.
+  stage_count:
+    description: Number of distinct stages in which the pattern appeared.
+  response_application_count:
+    description: >-
+      Number of times a candidate response direction was intentionally applied.
+  positive_outcome_count:
+    description: >-
+      Number of applications that improved clarity, comfort, completion, alignment, or
+      another defined outcome.
+  negative_outcome_count:
+    description: >-
+      Number of applications that produced friction, misunderstanding, unnecessary depth,
+      or another negative outcome.
+  unresolved_outcome_count:
+    description: Number of applications for which the outcome remains unclear.
+
+# What is judged about a pattern, on the 0–3 scale above. These are the axes
+# `promotionGuidance` sets thresholds against.
+classificationMetrics:
+  behavior_directness:
+    description: >-
+      Measures whether the pattern describes an action Weave can directly perform or
+      avoid.
+  interpretation_uncertainty:
+    description: >-
+      Measures how many plausible explanations may exist for the creator's observed
+      signal.
+  cross_flow_consistency:
+    description: >-
+      Measures whether the pattern remains useful across different interview flows.
+  contextual_dependency:
+    description: >-
+      Measures how strongly the appropriate response changes based on the creator, stage,
+      domain, or current conversation.
+  violation_impact:
+    description: >-
+      Measures the friction, misalignment, or harm caused when Weave fails to follow the
+      proposed pattern.
+  outcome_consistency:
+    description: >-
+      Measures whether applying the response direction repeatedly produces the intended
+      outcome.
+  domain_specificity:
+    description: >-
+      Measures how strongly the pattern depends on one artifact type, interview domain,
+      or stage.
+  relationship_significance:
+    description: >-
+      Measures how strongly the pattern affects trust, emotional safety, creator agency,
+      truthful expression, or the long-term relationship.
+  stability_over_time:
+    description: >-
+      Measures whether the pattern is expected to remain applicable as Weave, its flows,
+      and creator contexts evolve.
+
+# Thresholds that make a destination likely. Guidance for architectural review — never an
+# automatic decision; see `promotionReadiness.note`.
+promotionGuidance:
+  interaction_principle:
+    relationship_significance:
+      minimum: 3
+    cross_flow_consistency:
+      minimum: 3
+    stability_over_time:
+      minimum: 3
+    contextual_dependency:
+      maximum: 1
+
+  behavior_rule:
+    behavior_directness:
+      minimum: 2
+    violation_impact:
+      minimum: 2
+    outcome_consistency:
+      minimum: 2
+    interpretation_uncertainty:
+      maximum: 1
+    domain_specificity:
+      maximum: 1
+
+  conversation_heuristic:
+    interpretation_uncertainty:
+      minimum: 2
+    contextual_dependency:
+      minimum: 2
+    outcome_consistency:
+      minimum: 1
+    behavior_directness:
+      maximum: 2
+
+  interview_pattern:
+    domain_specificity:
+      minimum: 2
+    contextual_dependency:
+      minimum: 2
+    cross_flow_consistency:
+      maximum: 1
+
+promotionReadiness:
+  minimumRequirements:
+    - observation is clearly stated
+    - supporting and contradicting evidence have been reviewed
+    - candidate responses have been tested when applicable
+    - scope has been evaluated across available flows and stages
+    - classification metrics have been completed
+    - promotion rationale has been documented
+    - regression risks have been identified
+  note: >-
+    Metric thresholds guide architectural review but do not automatically determine
+    promotion. Frequency, score totals, or majority outcomes should not override creator
+    safety, contextual nuance, or Weave's interaction principles.
+
+# The shape a Postgres pattern record must satisfy. Enforced by `@resonance/db`, declared
+# here so the rulebook and the table cannot silently disagree.
+patternSchema:
+  requiredFields:
+    - id
+    - lifecycle
+    - observation
+    - scope
+    - candidate_responses
+    - evidence
+    - classification_assessment
+    - promotion
+
+guidance:
+  registry_role:
+    responsibilities:
+      - preserve observations before they become operating system instructions
+      - collect supporting and contradicting evidence
+      - measure pattern maturity and generalizability
+      - support consistent promotion decisions
+      - preserve the history and rationale behind promoted knowledge
+    does_not:
+      - automatically promote patterns
+      - treat early observations as established truths
+      - replace architectural review or validation
+      - allow frequency alone to determine promotion type
+
+  architecture:
+    layer: evolution
+    recommended_path:
+      - evolution/weave_pattern_registry.yaml
+    authority:
+      type: observational
+      executable: false
+      inherited_by_runtime: false
+    observes:
+      - root/*
+      - active/*
+    may_propose_changes_to:
+      - root/*
+      - active/*
+    may_directly_modify:
+      - evolution/weave_pattern_registry.yaml
+      - evolution/promotion_proposals/*
+      - evolution/validation_results/*
+    requires_human_approval_to_modify:
+      - root/*
+      - active/*
+
+  # Carried, not implemented. The five engine entities are explicitly out of scope for
+  # this slice (ADR-0020, Context). Their access rules are preserved so the engine can be
+  # built against the designer's own words later.
+  entity_access:
+    researcher:
+      role: >-
+        Develop evidence and determine whether an observed pattern is repeatable, useful,
+        and sufficiently understood.
+      reads:
+        - observation
+        - scope
+        - possible_signals
+        - candidate_responses
+        - existing_evidence
+        - observed_outcomes
+        - limitations
+      may_update:
+        - lifecycle.status
+        - evidence
+        - evidence.confidence
+        - evidence.metrics
+        - evidence.supporting_cases
+        - evidence.contradicting_cases
+        - evidence.observed_outcomes
+        - evidence.limitations
+        - evidence.notes
+      may_recommend:
+        - continue_collecting_evidence
+        - revise_pattern_observation
+        - combine_related_patterns
+        - separate_conflated_patterns
+        - advance_to_architect_review
+        - reject_pattern
+      cannot:
+        - promote_pattern
+        - directly_modify_root
+        - directly_modify_active
+
+    architect:
+      role: >-
+        Determine the appropriate architectural destination, scope, and form of a
+        sufficiently supported pattern.
+      reads:
+        - complete_pattern_record
+        - promotion_targets
+        - promotion_destinations
+        - classification_metrics
+        - current_root_architecture
+        - current_active_architecture
+      may_update:
+        - classification_assessment
+        - classification_assessment.candidate_promotions
+        - classification_assessment.scores
+        - classification_assessment.rationale
+        - scope.current_scope_hypothesis
+        - promotion.recommended_target
+        - promotion.proposed_destination
+        - promotion.architectural_rationale
+      may_recommend:
+        - promote_to_interaction_principle
+        - promote_to_behavior_rule
+        - promote_to_conversation_heuristic
+        - retain_as_interview_pattern
+        - split_across_multiple_destinations
+        - merge_with_existing_knowledge
+        - retain_in_registry
+        - reject_pattern
+      cannot:
+        - approve_own_proposal
+        - directly_modify_approved_root
+        - directly_modify_approved_active
+
+    validator:
+      role: >-
+        Test whether the proposed promotion improves Weave while preserving existing
+        principles, behavior, safety, and validated capabilities.
+      reads:
+        - complete_pattern_record
+        - proposed_promotion
+        - proposed_destination
+        - affected_root_files
+        - affected_active_files
+        - development_tests
+        - validation_tests
+        - regression_tests
+      may_update:
+        - promotion.validation
+        - promotion.validation_results
+        - promotion.regression_findings
+        - promotion.risk_assessment
+        - promotion.validator_recommendation
+      may_recommend:
+        - approve_for_human_review
+        - revise_and_retest
+        - retain_in_registry
+        - reject_promotion
+      cannot:
+        - change_the_proposed_architecture_without_returning_it_to_architect
+        - directly_modify_root
+        - directly_modify_active
+        - bypass_human_approval
+
+    evolution_manager:
+      role: >-
+        Coordinate lifecycle transitions, entity handoffs, validation, human approval,
+        application, and registry synchronization.
+      reads:
+        - complete_registry
+        - entity_recommendations
+        - validation_results
+        - human_approval_status
+      may_update:
+        - lifecycle.status
+        - promotion.readiness
+        - promotion.decision
+        - promotion.promoted_id
+        - promotion.promoted_version
+        - promotion.decision_rationale
+      may_execute:
+        - assign_pattern_to_researcher
+        - advance_pattern_to_architect
+        - submit_candidate_to_validator
+        - request_human_approval
+        - apply_approved_change
+        - synchronize_promoted_pattern
+        - reopen_pattern_when_new_evidence_emerges
+      cannot:
+        - bypass_validation
+        - bypass_required_human_approval
+        - silently_promote_observational_knowledge

@@ -1,0 +1,8 @@
+# Specialised root modules — shared guidance for a recurring creator group or situation
+# that goes beyond one active flow.
+#
+# Empty on purpose: none has been authored. The directory exists because CODEOWNERS
+# already governs it as its own approval tier (new specialised root module), and because
+# @resonance/core names `specialized_root_module` as a corpus file type. A module dropped
+# here needs a body schema in `@resonance/core`'s CorpusFileSchema union first — that
+# union deliberately has no entry for it yet.

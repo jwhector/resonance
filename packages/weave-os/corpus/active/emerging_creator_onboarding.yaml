@@ -1,0 +1,970 @@
+# Emerging Creator Onboarding Interview Flow.
+#
+# Transcribed from "docs/Emerging Creator Onboarding Interview Flow.md" (v1.1).
+#
+# Two things to know before reading:
+#
+# 1. The machinery here — flowMap, optionalBranches, sessionState, per-stage captures and
+#    actions — is typed and validated but DELIBERATELY NOT EXECUTED (ADR-0020 § 2). Only
+#    the guidance and copy compose into a prompt today. The gap is the tracked artifact a
+#    future evaluator scores against, not an omission.
+#
+# 2. `appliedPrinciples` below names seven ids that DO NOT EXIST in
+#    weave_interaction_principles.yaml. They are transcribed verbatim and the cross-file
+#    validator fails on every one of them, by design. Mapping them to the nearest real
+#    principle would author the designer's semantics on their behalf, which is exactly
+#    the drift this corpus exists to prevent. DEFECT D-06 in DEFECTS.md; the designer
+#    resolves it, not us.
+#
+# Blocks the schema does not model are carried verbatim under `guidance` (flow-level) or
+# a stage's own `guidance`, keyed by the author's own names.
+
+id: emerging_creator_onboarding
+version: "1.1"
+status: active
+type: interview_flow
+
+# The source writes these as paths (`root/weave_interaction_philosophy.yaml`); the corpus
+# stores file ids, because a file's layer is derived from its type and a path would be a
+# second, disagreeable source of truth for it.
+inherits:
+  - weave_interaction_philosophy
+  - weave_interaction_principles
+
+purpose: >-
+  Help an emerging creator express an initial public identity without requiring a
+  finished business, brand, audience, or offering.
+
+  The flow translates the creator's early expression into a usable first version of their
+  Resonance profile.
+
+framing:
+  - generated identity is provisional
+  - outputs are proposals rather than final definitions
+  - the creator remains the source of truth
+  - uncertainty is valid input
+  - the profile may continue evolving
+
+# UNRESOLVED. See the header note and DEFECT D-06. Do not "fix" these by renaming them.
+appliedPrinciples:
+  - expression_before_positioning
+  - creator_sovereignty
+  - discovery_over_directive
+  - low_cognitive_load
+  - reflection_not_interpretation
+  - provisional_identity
+  - relational_not_marketing_language
+
+flowMap:
+  sequence:
+    - opening
+    - creator_or_project_name
+    - what_they_want_to_share
+    - origin
+    - intended_experience
+    - resonance_moment
+    - resonant_people
+    - expression_style
+    - foundation_generation
+    - collaborative_refinement
+    - completion
+
+  # DEFECT D-07: only `collaborative_refinement` is a stage id. The other six targets are
+  # flow-local response directions with no definition anywhere in the corpus. The
+  # validator reports them as warnings rather than errors, because resolving them against
+  # stages would reject the corpus's own file.
+  optionalBranches:
+    name_uncertainty:
+      leadsTo:
+        - deferred_naming_support
+    difficulty_answering:
+      leadsTo:
+        - softer_question
+        - grounded_examples
+        - skip_option
+    creator_wants_less_depth:
+      leadsTo:
+        - quick_path
+    creator_wants_more_depth:
+      leadsTo:
+        - reflective_follow_up
+    creator_dislikes_generated_output:
+      leadsTo:
+        - collaborative_refinement
+
+sessionState:
+  flowId: emerging_creator_onboarding
+  currentStage: opening
+  depthMode: guided
+  slots:
+    collected:
+      creator_name: null
+      # DEFECT D-09: `unknown` is not among the four values the `creator_name` capture
+      # declares for `status` (confirmed / provisional / wants_support / skipped).
+      creator_name_status: unknown
+      offering_expression: null
+      # DEFECT D-10: the slot is `origin_story`; the capture and the stage are `origin`.
+      origin_story: null
+      intended_experience: null
+      resonance_moment: null
+      resonant_people: null
+      expression_style: null
+    generated:
+      creator_name_options: []
+      headline_options: []
+      about_options: []
+      discovery_tag_sets: []
+      resonant_people_summary: null
+      foundability_feedback: null
+    selected:
+      creator_name: null
+      headline: null
+      about: null
+      discovery_tags: []
+    preference_context:
+      selected_directions: []
+      selected_generations: []
+      manual_edits: []
+      creator_feedback: []
+    completion:
+      profile_generated: false
+      creator_reviewed: false
+      published: false
+      saved_as_draft: false
+
+stages:
+  - id: opening
+    order: 0
+    purpose: >-
+      Establish comfort, explain the outcome, communicate pacing, and give permission to
+      begin imperfectly.
+    weave:
+      primary: >-
+        Hi—it's great to meet you.
+
+        I'm Weave. I'll help shape what you share into a clear first version of your
+        Resonance profile.
+
+        You don't need to have everything figured out. We'll take it step by step and
+        create a headline, About section, and discovery tags that feel true to what
+        you're beginning.
+
+        This usually takes around 5–10 minutes. Would you like to begin?
+    actions:
+      - id: begin
+        label: "Yes, I'm ready"
+      - id: skip
+        label: "Skip for now"
+    skipBehavior:
+      - create_profile_with_editable_placeholders
+      - preserve_access_to_restart_interview
+      - do_not_mark_profile_as_completed
+    # DEFECT D-12a: this capture is authored with META keys (`type: enum`, `values: […]`)
+    # describing one scalar, where every other capture uses DATA keys naming its own
+    # fields. Transcribed as a single field named `value`, borrowing the author's own
+    # field name from the `creator_name` capture. `type: enum` is dropped: a non-empty
+    # `values` list already closes the set.
+    captures:
+      - id: depth_mode
+        fields:
+          value:
+            values:
+              - quick
+              - guided
+              - reflective
+    guidance:
+      # Duplicates the `depth_mode` capture above with a third spelling of the same set.
+      optional_depth_selection:
+        values:
+          - quick
+          - guided
+          - reflective
+
+  - id: creator_or_project_name
+    order: 1
+    purpose: Give the creator an initial anchor while keeping the name provisional.
+    weave:
+      primary: >-
+        To begin, what are you calling your project, business, or creative practice
+        right now?
+      input_placeholder: Type your current project or creator name
+    # DEFECT D-13: these actions are authored as bare ids with no creator-facing label,
+    # unlike the `opening` stage's. Labels are left unset rather than invented.
+    actions:
+      - id: continue_with_this_name
+      - id: help_me_explore_later
+      - id: skip
+    captures:
+      - id: creator_name
+        fields:
+          value:
+            shape: string | null
+          status:
+            values:
+              - confirmed
+              - provisional
+              - wants_support
+              - skipped
+    guidance:
+      # Copy nested inside branching machinery stays with its machinery rather than being
+      # lifted into `weave`, so the condition it belongs to is not lost.
+      response_paths:
+        creator_has_name:
+          guidance: >-
+            Briefly acknowledge the name without evaluating it as objectively good or
+            correct.
+          example: >-
+            Great—we can use that as your starting name. You can always change it as your
+            creation evolves.
+        creator_is_unsure:
+          response: >-
+            That's completely fine. We can continue without a name and return to it after
+            I understand more about what you're creating.
+        naming_support:
+          prompt: >-
+            Would you like me to suggest a few possible directions after hearing more
+            about your work?
+
+  - id: what_they_want_to_share
+    order: 2
+    purpose: Identify the creator's core expression without requiring a polished offering.
+    weave:
+      primary: What are you drawn to creating, offering, or sharing with others?
+      support: >-
+        It could be something people use, something they experience, something you make,
+        something you guide, or something you're still exploring.
+    captures:
+      - id: offering_expression
+        fields:
+          raw_response:
+            shape: string
+          confirmed_summary:
+            shape: string
+          certainty:
+            values:
+              - exploring
+              - emerging
+              - clear
+    guidance:
+      follow_up:
+        use_when:
+          - response_is_too_broad_for_generation
+        prompt: Which part of that feels most alive or important to begin with?
+        maximum_follow_ups: 1
+
+  - id: origin
+    order: 3
+    purpose: >-
+      Understand the grounded experience, curiosity, or need that brought the creator
+      toward this work.
+    optional: true
+    weave:
+      primary: >-
+        Was there a moment, experience, or curiosity that shaped your desire to create
+        this?
+      softer_alternative: What first drew you toward it?
+      support: >-
+        It can be simple—a personal experience, a challenge, something you discovered, or
+        something that kept returning to your attention.
+    skipBehavior:
+      - continue_with_remaining_information
+      - do_not_block_about_generation
+    captures:
+      - id: origin
+        fields:
+          raw_response:
+            shape: string | null
+          # DEFECT D-12b: `usable_elements` is plural but declares a closed value set; the
+          # source does not say whether one element or several may be recorded.
+          usable_elements:
+            values:
+              - experience
+              - curiosity
+              - challenge
+              - recurring_interest
+              - other
+
+  - id: intended_experience
+    order: 4
+    purpose: >-
+      Understand what the creator hopes another person may experience through the
+      creation.
+    weave:
+      primary: >-
+        When someone receives, uses, or experiences what you create, what do you hope it
+        gives them?
+      softer_alternative: >-
+        How would you like someone to feel after spending time with your creation?
+    guardrails:
+      - frame_as_intention_not_guaranteed_outcome
+      - distinguish_hope_from_observed_effect
+    avoidLanguage:
+      - What transformation do you deliver?
+      - What result do you guarantee?
+      - How does your product change people?
+    captures:
+      - id: intended_experience
+        fields:
+          raw_response:
+            shape: string
+          # DEFECT D-12c: the author wrote a bare `[]`. Under the schema an empty `values`
+          # means "free form", which is not obviously what `[]` was meant to say. The
+          # author's literal token is carried in `shape` so the ambiguity stays visible.
+          experience_terms:
+            values: []
+            shape: "[]"
+          creator_claim_strength:
+            values:
+              - hope
+              - intention
+              - observed_effect
+
+  - id: resonance_moment
+    order: 5
+    purpose: >-
+      Surface a lived or imagined moment in which the creator recognizes why the work
+      matters.
+    optional: true
+    weave:
+      primary: >-
+        Is there a moment, memory, or response that made you feel, "Yes—this is why I
+        want to do this"?
+      no_previous_recipients_alternative: >-
+        Is there a moment in your own experience that showed you why this creation
+        matters?
+    captures:
+      - id: resonance_moment
+        fields:
+          raw_response:
+            shape: string | null
+          source:
+            values:
+              - personal_experience
+              - recipient_response
+              - creative_process
+              - imagined_future
+              - skipped
+    guidance:
+      weighting:
+        personal_experience: normal
+        recipient_response: low_for_identity_generation
+        creative_process: normal
+        imagined_future: exploratory
+      note: >-
+        Recipient responses may support understanding, but should not outweigh the
+        creator's own meaning or intention.
+
+  - id: resonant_people
+    order: 6
+    purpose: >-
+      Understand who may naturally connect with the creator's work without forcing a
+      target-market exercise.
+    weave:
+      primary: Who do you feel naturally drawn to sharing this with?
+      softer_alternative: >-
+        Who do you imagine may naturally connect with what you're creating?
+      grounded_alternative: >-
+        Are there particular people, situations, or moments where this creation may feel
+        especially relevant?
+    avoidLanguage:
+      - ideal_customer
+      - target_demographic
+      - customer_persona
+      - market_segment
+      - conversion_audience
+    captures:
+      - id: resonant_people
+        fields:
+          raw_response:
+            shape: string | null
+          people_or_contexts:
+            values: []
+            shape: "[]"
+          confirmed_summary:
+            shape: string | null
+
+  - id: expression_style
+    order: 7
+    purpose: >-
+      Capture the creator's preferred public expression style for profile generation and
+      future suggestions in the current session.
+    weave:
+      primary: >-
+        Based on what you've shared, here are a few expression styles that may fit. Which
+        one feels closest to how you'd like your profile to sound?
+    actions:
+      - id: select_one
+      - id: combine_up_to_two
+      - id: describe_my_own
+      - id: let_weave_recommend
+      - id: skip
+    guardrails:
+      - style_is_contextual_not_fixed_identity
+      - do_not_use_style_as_personality_diagnosis
+      - creator_can_change_style_by_output_type
+    captures:
+      - id: expression_style
+        fields:
+          selected_labels:
+            values: []
+            shape: "[]"
+          # DEFECT D-12d: `creator_description: null` declares an initial VALUE where the
+          # sibling fields declare a type or a value set — a third capture authoring
+          # style. The author's literal token is carried in `shape`.
+          creator_description:
+            shape: "null"
+          source:
+            values:
+              - selected
+              - combined
+              - creator_defined
+              - weave_recommended
+              - skipped
+    guidance:
+      option_generation:
+        count: 5
+        source:
+          - creator_story
+          - creator_language
+          - offering_expression
+          - intended_experience
+          - interaction_tone
+        requirements:
+          - short_label
+          - one_sentence_description
+          - clearly_distinguishable_options
+          - no_fixed_personality_claims
+      example_options:
+        - label: warm_and_grounded
+          description: Clear, welcoming language rooted in everyday experience.
+        - label: reflective_and_intimate
+          description: Thoughtful language that allows more feeling and personal depth.
+        - label: clear_and_practical
+          description: >-
+            Direct language focused on what you create and how people may experience it.
+        - label: playful_and_curious
+          description: Light, exploratory language with energy and openness.
+        - label: quiet_and_poetic
+          description: >-
+            Spacious, image-rich language that remains understandable and grounded.
+
+  - id: foundation_generation
+    order: 8
+    purpose: >-
+      Translate the creator's expression into an editable first version of their public
+      profile.
+    weave:
+      transition: >-
+        Thank you. I've shaped what you shared into a first profile foundation.
+
+        Nothing here is final—you can edit it directly, use it as it is, or explore
+        another direction with me.
+    actions:
+      - id: put_on_my_profile
+      - id: revise_with_weave
+      - id: edit_directly
+      - id: generate_another_direction
+      - id: save_and_finish_later
+    outputs:
+      - id: creator_name
+        generateWhen:
+          - creator_name_status_is_wants_support
+        candidateCount: 3
+        # `each_candidate_includes` in the source.
+        fields:
+          name: {}
+          brief_rationale: {}
+        constraints:
+          rules:
+            - "rationale_max_sentences: 2"
+
+      - id: profile_headline
+        candidateCount: 3
+        recommendedCandidate: 1
+        constraints:
+          # DEFECT D-14: the source calls this `recommended_length_characters`. The schema
+          # models a bound, not a recommendation, so the "recommended" nuance is lost.
+          characterCount:
+            minimum: 50
+            maximum: 100
+          # `should_express` in the source.
+          include:
+            - what_the_creator_creates
+            - intended_experience_or_distinction
+          avoid:
+            - unsupported_superlatives
+            - seo_stuffing
+            - invented_identity
+            - guaranteed_outcomes
+
+      - id: about
+        candidateCount: 3
+        recommendedCandidate: 1
+        constraints:
+          characterCount:
+            maximum: 500
+          # `may_include` in the source.
+          include:
+            - what_the_creator_is_creating
+            - what_drew_them_toward_it
+            - what_they_hope_people_experience
+            - who_may_connect_with_it
+          rules:
+            - Include only components supported by the creator's responses.
+
+      - id: discovery_tags
+        # `recommended_count` in the source.
+        constraints:
+          itemCount:
+            minimum: 5
+            maximum: 10
+          rules:
+            - understandable_to_people
+            - relevant_to_creator_expression
+            - useful_for_discovery
+            - no_keyword_stuffing
+            - no_unsupported_niche_claims
+        sources:
+          - creator_language
+          - offering_category
+          - intended_experience
+          - materials_or_methods
+          - relevant_people_or_contexts
+
+      # The source's `supporting_outputs:` block. They are outputs with a different
+      # visibility, which is exactly what the four visibility flags express.
+      - id: resonant_people_summary
+        public: false
+        usedForGeneration: true
+        showDuringReview: true
+        creatorCanCorrect: true
+
+      - id: expression_style
+        public: false
+        usedForGeneration: true
+        showDuringReview: true
+        creatorCanCorrect: true
+
+      - id: foundability_feedback
+        public: false
+        usedForGeneration: false
+        showDuringReview: true
+        # DEFECT D-15: the source omits `creator_can_correct` for this output alone, where
+        # both sibling supporting outputs set it. The schema default (true) applies; the
+        # source does not say whether that is intended.
+        # `structure:` in the source.
+        fields:
+          status:
+            values:
+              - clear_foundation
+              - one_area_needs_clarity
+              - still_exploratory
+          clarity_area:
+            values:
+              - offering
+              - intended_experience
+              - resonant_people
+              - method_or_medium
+              - none
+          message:
+            shape: string
+        constraints:
+          # The source calls these `guardrails`; an output has no guardrails field, and
+          # they are constraints on what may be generated, so they land in `rules`
+          # verbatim rather than being re-worded into `avoid`.
+          rules:
+            - do_not_present_as_seo_score
+            - do_not_predict_specific_traffic
+            - explain_which_area_could_be_clearer
+            - distinguish_profile_clarity_from_platform_performance
+    guidance:
+      generation_source:
+        - creator_confirmed_language
+        - offering_expression
+        - origin
+        - intended_experience
+        - resonance_moment
+        - resonant_people
+        - expression_style
+      outputs:
+        creator_name:
+          each_candidate_includes:
+            - name
+            - brief_rationale
+          rationale_max_sentences: 2
+          additional_options:
+            - keep_current_name
+            - remain_unnamed_for_now
+
+  - id: collaborative_refinement
+    order: 9
+    purpose: >-
+      Help the creator explore alternative expressions of selected profile elements while
+      preserving the meaning and information they have already confirmed.
+    weave:
+      entry: What would you like to explore differently?
+    # The source's `selection_actions`.
+    actions:
+      - id: use_this
+      - id: keep_current_version
+      - id: regenerate_same_direction
+      - id: explore_another_direction
+      - id: provide_custom_direction
+      - id: edit_directly
+      - id: skip
+    guidance:
+      philosophy:
+        - generated_outputs_are_proposals
+        - creator_is_the_source_of_truth
+        - refinement_is_exploration_not_correction
+        - unaffected_outputs_remain_unchanged
+        - preferences_are_contextual_not_permanent
+      entry:
+        triggered_by:
+          - revise_with_weave
+        selectable_targets:
+          - creator_name
+          - profile_headline
+          - about
+          - discovery_tags
+      direction_generation:
+        purpose: >-
+          Offer useful starting directions while allowing Weave to adapt some suggestions
+          to the creator and selected output.
+        option_limit:
+          minimum: 3
+          maximum: 5
+        custom_direction:
+          always_include: true
+          counted_in_option_limit: false
+        sources:
+          - default_directions
+          - adaptive_directions
+        composition:
+          default_directions:
+            minimum: 2
+          adaptive_directions:
+            maximum: 3
+        prioritize:
+          - relevance_to_current_output
+          - grounding_in_creator_input
+          - current_session_preferences
+          - distinction_between_options
+          - low_cognitive_load
+        constraints:
+          - avoid_duplicate_meaning
+          - avoid_overlapping_options
+          - do_not_invent_preferences
+          - do_not_exceed_five_visible_directions
+      targets:
+        creator_name:
+          purpose: Explore new names that follow the selected naming direction.
+          generation_strategy: distinct_candidates
+          candidate_count: 3
+          default_directions:
+            - connected_to_what_i_create
+            - more_personal
+            - more_distinctive
+            - more_evocative
+            - simpler
+          adaptive_directions:
+            enabled: true
+          generation_rule: >-
+            Generate three distinct names based on the selected direction. Do not produce
+            minor wording variations of the same name.
+        profile_headline:
+          purpose: >-
+            Explore different ways of expressing the creator's work in a concise public
+            headline.
+          generation_strategy: controlled_variations
+          candidate_count: 3
+          default_directions:
+            - clearer
+            - warmer
+            - more_direct
+            - more_expressive
+            - simpler
+          adaptive_directions:
+            enabled: true
+          generation_rule: >-
+            Generate three interpretations of the selected direction while preserving the
+            creator's confirmed meaning.
+        about:
+          purpose: >-
+            Explore different ways of representing the creator and their work in public
+            language.
+          generation_strategy: controlled_variations
+          candidate_count: 3
+          default_directions:
+            - clearer
+            - more_natural_to_my_voice
+            - focus_on_why_it_matters
+            - focus_on_what_i_create
+            - more_concise
+          adaptive_directions:
+            enabled: true
+          generation_rule: >-
+            Generate three versions that apply the selected direction without adding
+            unsupported identity, story, or claims.
+        discovery_tags:
+          purpose: >-
+            Explore discovery-tag directions that preserve the creator's expression while
+            making the profile understandable and relevant to appropriate discovery
+            contexts.
+          generation_strategy: grouped_sets
+          candidate_count: 3
+          default_directions:
+            - offering_focused
+            - experience_focused
+            - people_and_context_focused
+          adaptive_directions:
+            enabled: true
+          generation_rule: >-
+            Generate three cohesive tag sets based on the selected direction. Each set
+            should function as one selectable discovery strategy.
+      adaptive_direction:
+        generated_from:
+          - creator_story
+          - creator_language
+          - selected_expression_style
+          - previous_refinement_choices
+          - current_generated_profile
+          - creator_feedback
+          - manual_edits
+        possible_examples:
+          - more_grounded
+          - more_playful
+          - more_community_oriented
+          - more_practical
+          - emphasize_traditional_herbalism
+          - emphasize_dreamwork
+          - emphasize_personal_story
+          - emphasize_nature_connection
+        guardrail: >-
+          Examples are not a fixed list. An adaptive direction must be grounded in
+          information the creator shared or selected.
+      refinement_sequence:
+        - select_target
+        - select_direction
+        - generate_candidates
+        - compare_candidates
+        - select_candidate
+        - confirm_selection
+        - continue_or_return_to_review
+      on_selection:
+        - update_only_selected_target
+        - preserve_other_confirmed_outputs
+        - record_selected_direction
+        - record_selected_candidate
+        - continue_to_next_target_or_review
+      transition:
+        purpose: >-
+          Acknowledge the previous choice, optionally communicate temporary adaptation,
+          introduce the next profile element, and invite further exploration.
+        structure:
+          acknowledge_previous_choice:
+            required: false
+          communicate_temporary_learning:
+            required: false
+          introduce_next_element:
+            required: true
+          invite_exploration:
+            required: true
+        language_flexibility: >-
+          Weave may phrase the transition naturally according to the conversation. It does
+          not need to use a fixed script.
+      preference_learning:
+        scope: current_session_only
+        sources:
+          - selected_direction
+          - selected_generation
+          - manual_edits
+          - creator_feedback
+        may_influence:
+          - future_generation
+          - adaptive_direction_recommendations
+          - transition_language
+        constraints:
+          - never_assume_permanent_preference
+          - do_not_apply_one_output_preference_to_all_outputs
+          - creator_can_override_anytime
+          - preference_does_not_define_creator_identity
+      repeated_rejection:
+        when:
+          - creator_rejects_multiple_generations
+        response_direction:
+          - stop_regenerating_automatically
+          - ask_what_feels_inaccurate
+          - distinguish_meaning_from_tone_problem
+          - confirm_source_material_before_continuing
+
+  - id: completion
+    order: 10
+    purpose: >-
+      Confirm the creator's decision, publish or save the profile, and reinforce that the
+      profile may continue evolving.
+    weave:
+      publish_response: >-
+        Your profile is now live on Resonance.
+
+        We've shaped a first creator presence from the story, atmosphere, and language you
+        shared. You can continue evolving it as your creation becomes clearer.
+      save_draft_response: >-
+        Your profile foundation has been saved. You can return whenever you'd like to
+        continue shaping or publishing it.
+    # The source's `next_steps.options`.
+    actions:
+      - id: create_profile_image
+      - id: create_cover_image
+      - id: refine_profile
+      - id: finish_for_now
+    guidance:
+      next_steps:
+        selection_type: single
+      # DEFECT D-16: `completion_data` is capture-shaped but nests one level deeper than a
+      # capture's fields allow (`accepted_outputs` is a map of maps). Carried whole here
+      # rather than split across a capture and a guidance block.
+      completion_data:
+        decision:
+          - published
+          - saved_draft
+          - placeholders
+          - exited
+        accepted_outputs:
+          creator_name: boolean
+          headline: boolean
+          about: boolean
+          discovery_tags: boolean
+
+minimumInformation:
+  requiredForGeneration:
+    - offering_expression
+    - intended_experience
+  recommended:
+    - origin
+    - resonance_moment
+    - resonant_people
+    - expression_style
+  optional:
+    - creator_name
+  rule: >-
+    Missing recommended information may reduce detail but should not block generation.
+
+evaluationSignals:
+  completion:
+    - interview_completed
+    - profile_generated
+    - profile_published
+    - profile_saved_as_draft
+    - stage_abandoned
+  friction:
+    - skipped_question
+    - repeated_uncertainty
+    - requested_rephrasing
+    - regenerated_output
+    - rejected_output
+    - repeated_refinement
+  alignment:
+    - creator_accepted_summary
+    - creator_corrected_interpretation
+    - creator_said_output_felt_accurate
+    - creator_said_output_felt_unlike_them
+    - creator_restored_original_version
+  pacing:
+    - completion_time
+    - number_of_follow_ups
+    - number_of_revision_cycles
+    - time_per_stage
+  output_quality:
+    - creator_name_accepted
+    - headline_accepted
+    - about_accepted
+    - tags_accepted
+    - direct_edit_frequency
+    - regeneration_frequency
+  refinement:
+    - refinement_entered
+    - target_selected
+    - default_direction_selected
+    - adaptive_direction_selected
+    - custom_direction_used
+    - first_candidate_accepted
+    - candidate_changed
+    - current_version_retained
+  preference_learning:
+    - repeated_direction_selection
+    - manual_edit_after_selection
+    - adaptive_direction_acceptance
+
+guidance:
+  profile_foundation:
+    public_outputs:
+      - creator_name
+      - profile_headline
+      - about
+      - discovery_tags
+    supporting_outputs:
+      - resonant_people_summary
+      - expression_style
+      - foundability_feedback
+    optional_outputs:
+      - creator_name_recommendations
+
+  creator_context:
+    intended_for:
+      - creators beginning a new project
+      - people without an established brand
+      - creators still exploring what they want to offer
+      - creators with meaningful direction but limited public language
+    not_required:
+      - finalized_business_name
+      - clear_audience_definition
+      - polished_brand_strategy
+      - existing_customers
+      - completed_product_or_service
+
+  evolution_boundaries:
+    flow_local:
+      examples:
+        - question_wording
+        - stage_order
+        - optional_branches
+        - output_format
+        - target_specific_refinement_directions
+        - minimum_information_requirement
+    behavior_rule_candidate:
+      examples:
+        - preserve_unaffected_outputs
+        - revise_only_selected_target
+        - treat_generated_identity_as_provisional
+        - stop_regenerating_after_repeated_rejection
+    conversation_heuristic_candidate:
+      examples:
+        - uncertainty_may_mean_question_is_too_broad
+        - repeated_rejection_may_signal_meaning_mismatch
+        - creator_may_prefer_less_depth
+        - short_answer_may_be_complete_or_hesitant
+    principle_candidate:
+      examples:
+        - recurring_foundational_relationship_pattern
+        - stable_creator_sovereignty_requirement
+        - repeated_need_across_many_interactions
+
+  version_history:
+    - version: "1.0"
+      status: initial_mvp
+      notes:
+        - structured_emerging_creator_onboarding
+        - supports_quick_guided_and_reflective_depth
+        - generates_initial_profile_foundation
+    - version: "1.1"
+      status: refined_mvp
+      notes:
+        - normalized_yaml_structure
+        - clarified_supporting_output_visibility
+        - added_contextual_collaborative_refinement
+        - limited_refinement_directions_to_five
+        - enabled_grounded_adaptive_directions
+        - reduced_minimum_generation_requirements
+        - replaced_traffic_prediction_with_foundability_clarity_feedback
+        - expanded_evaluation_and_evolution_signals
