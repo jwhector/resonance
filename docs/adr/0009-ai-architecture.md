@@ -29,6 +29,17 @@ features (and agents building them) replicate rather than reinvent.
 - Every AI feature looks the same → trivial to replicate (the `add-ai-agent` recipe).
 - Cost is driven by _which model handles which task_, made easy by the gateway.
 - No durability today; long/expensive multi-step jobs will need it later (see below).
+- **Amendment (ADR-0020, 2026-07-28) — the system prompt is no longer a string literal.**
+  Decision §3's "system prompt" field on an `AgentDefinition` still exists, but its
+  _source_ changes: prompts are composed from the versioned Weave OS corpus via
+  `resolveWeaveOs(…)` rather than authored as TypeScript literals
+  (`CREATOR_INTERVIEW_SYSTEM`, `PROFILE_GEN_SYSTEM`). The registry shape and the runner
+  are unchanged; what feeds them is now governed and versioned. See ADR-0020.
+- **Amendment (ADR-0020) — "one shared runner" is scoped to request-time product
+  agents.** That scope is correct and stands. It is not the seam for durable, multi-turn,
+  human-gated jobs: `runAgentStream` returns an HTTP stream and `runAgentStructured` is
+  capped at `stopWhen: stepCountIs(1)`. ADR-0020 §6 records the request-scoped vs.
+  job-scoped boundary and rejects adding a third loop entry point to the shared runner.
 
 ## When to revisit (add Vercel Workflow / WDK)
 
@@ -51,6 +62,12 @@ get lost:
 `setTimeout`/cron hack to "continue later," or seeing duplicate charges on retry.
 First likely candidates for Resonance: combined storefront generation, and bulk
 re-embedding.
+
+**Status (ADR-0020, 2026-07-28):** the decision did not get lost. The Weave Evolution
+Engine trips triggers **2** (expensive re-run / resume-from-step), **4** (human-in-the-loop
+pause), and **5** (fan-out/fan-in) — it needs a **job-scoped executor** distinct from this
+runner. ADR-0020 §6 records that boundary; it deliberately leaves the executor's design
+open until the engine's shape is known.
 
 ## Alternatives considered
 

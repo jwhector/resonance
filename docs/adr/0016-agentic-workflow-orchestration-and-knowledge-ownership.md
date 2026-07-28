@@ -61,6 +61,19 @@ The rules:
 - A discovered convention → mulch; promote it to CLAUDE.md/ADR only once it hardens
   into a permanent rule, then delete the mulch copy. Work → seeds.
 
+**Amendment (ADR-0020, 2026-07-28) — the Weave OS corpus is a fourth knowledge store.**
+mulch, CLAUDE.md, and the ADRs hold knowledge about _building_ Resonance, read by agents
+and humans. The corpus holds knowledge about _how Weave behaves_, read by the product:
+
+| Store                                   | Temperature                                                | Owns                                                                                                                                                                                                                                                                        | Not for                                                                                                                                                        |
+| --------------------------------------- | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **corpus** (`@resonance/weave-os` YAML) | **Runtime** — compiled into the build, read by the product | Weave's authored behavior: philosophy, principles, behavior rules, conversation heuristics, active flow definitions, output constraints, the Pattern Registry rulebook, and each file's `evolution_policy`. Versioned, governed by CODEOWNERS, released with a `releaseId`. | Engineering decisions (ADRs), rules for agents working on the repo (CLAUDE.md / mulch), or accumulating evidence and pattern records (Postgres — ADR-0020 §4). |
+
+One fact, one home applies across all four knowledge stores: a line of Weave's behavior
+lives in the corpus, and is never restated in a prompt literal, a CLAUDE.md, or a mulch
+record — those link to it. Conversely, the corpus is not a place for engineering
+rationale.
+
 **3. Gate layering — don't validate the same change twice.** The on-save hook
 (Prettier + ESLint + `tsc`) is fast local feedback; **no-mistakes** is the ship gate
 (full review/test/PR/CI, scoped to Turbo-affected packages); `/code-review` folds into

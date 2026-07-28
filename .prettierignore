@@ -19,3 +19,9 @@ packages/*/drizzle/
 
 # Tool-managed knowledge store (mulch generates README/records) — do not hand-format
 .mulch/
+
+# Weave design specs — verbatim Google Docs exports kept as source material for the
+# Weave OS corpus (ADR-0020). Reformatting would alter the escaped characters we
+# transcribe from, so they are read as-is and never rewritten.
+docs/Weave*.md
+docs/Emerging Creator Onboarding Interview Flow.md
