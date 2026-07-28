@@ -1,5 +1,34 @@
 # @resonance/weave-os
 
+## ⏸ Status: DEFERRED (2026-07-28) — built, but inert
+
+**Do not resume this work without explicit notice from Jared.** Seed `resonance-5c86`
+carries the full context; the `architecture` mulch domain carries the decision record.
+
+This package is complete and tested, but **nothing imports it**. The two prompt literals in
+`@resonance/ai` still run the product, so behaviour is unchanged and the package is safe to
+leave dormant. Waves 3–4 of plan `pl-9c75` (wiring it into `ai`, the simulated-run harness,
+and the web composition root) were never started.
+
+It was paused because the blocker is the **source design, not the engineering**. Two of the
+four root files and five of the six active flows were never authored by the designer; the
+specs carry two incompatible principle vocabularies and two incompatible stage vocabularies;
+and inheritance is declared in both directions, so a promotion into either promotion-target
+file currently reaches no conversation. [`DEFECTS.md`](DEFECTS.md) lists all 25 findings
+(4 blocking) and is the artifact to settle with the designer **before** any resumption —
+especially D-06 and D-17.
+
+A cheaper path to most of the near-term value was identified and not taken: put the
+philosophy and the seven principles straight into the system prompt, and use each
+principle's `prioritize`/`avoid` list as an LLM-judge rubric over transcripts. That needs no
+corpus, registry, or engine.
+
+> **The validator failing is correct.** It reports 7 unresolved `applied_principles`
+> references by name on every build, and a test pins exactly that. It is an open question
+> for the designer, not a bug to fix.
+
+---
+
 **Weave's authored behaviour, as a versioned corpus behind one resolver seam.** What
 Weave says is a governed YAML file with a version, provenance and named approvers — not a
 string literal (ADR-0020). Depends on `@resonance/core` and nothing else.

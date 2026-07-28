@@ -29,6 +29,11 @@ packages speak.
   (embed → status-filtered ANN → tags → threshold → paging → follow state) that lives in
   `db`. `web` and `ui` depend on this interface and never on SQL; the port's invariants are
   documented on the interface and exercised by a fake adapter in `discovery.test.ts`.
+  The three `weave-*` modules below are **⏸ DEFERRED (2026-07-28)**: shipped and tested, but
+  no consumer wires them yet and the product still runs from the prompt literals in
+  `@resonance/ai`. Leave them alone unless Jared says otherwise — context in seed
+  `resonance-5c86` and the `architecture` mulch decision.
+
 - `weave-os.ts` — the **Weave OS corpus contracts**: the shared vocabulary for Weave's
   authored behaviour. File headers + `EvolutionPolicySchema`, the record types
   (`InteractionPrincipleSchema`, `WeaveLimitationSchema`, `BehaviorRuleSchema`,

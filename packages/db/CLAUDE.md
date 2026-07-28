@@ -220,7 +220,13 @@ model used by `@resonance/ai`. The column takes its width from `EMBEDDING_DIMS` 
 `@resonance/core`, not a literal, so the column, the embedder, and the query-time guard
 cannot drift apart. Changing the width means changing it there (and writing a migration).
 
-### Weave OS evidence (`schema/weave-observation.ts`)
+### Weave OS evidence (`schema/weave-observation.ts`) — ⏸ DEFERRED
+
+**Deferred 2026-07-28.** These tables and the `ObservationPort` adapter are shipped and
+tested, but **nothing writes to them** — the evidence loop that would fill them (waves 3–4 of
+plan `pl-9c75`) was never built. Migration `0004` is committed; check whether it has been
+applied to your Neon branch before assuming either way. Context: seed `resonance-5c86` and
+the `architecture` mulch decision. Leave dormant unless Jared says otherwise.
 
 Four append-only tables behind the `ObservationPort`. The shapes are defined in
 `@resonance/core`'s `weave-observation.ts`; this is only where they land.
