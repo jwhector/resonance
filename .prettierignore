@@ -20,6 +20,11 @@ packages/*/drizzle/
 # Tool-managed knowledge store (mulch generates README/records) — do not hand-format
 .mulch/
 
+# The compiled Weave OS corpus — emitted by packages/weave-os/scripts/compile-corpus.ts.
+# `corpus:check` compares it byte-for-byte against a fresh compile, so reformatting it
+# would make the build report drift that does not exist.
+packages/weave-os/src/corpus.generated.ts
+
 # Weave design specs — verbatim Google Docs exports kept as source material for the
 # Weave OS corpus (ADR-0020). Reformatting would alter the escaped characters we
 # transcribe from, so they are read as-is and never rewritten.

@@ -35,6 +35,7 @@ packages/auth       Better Auth (magic-link), self-hosted on our DB
 packages/ai         AI Gateway client + typed agent/tool registry + prompts + embeddings
 packages/commerce   Orders, publishing, payments (Stripe Connect — modeled, mostly stubbed)
 packages/community  Posts, follows, feed (mostly stubbed)
+packages/weave-os   Weave's authored behaviour: versioned YAML corpus + the resolver seam
 tooling/*           Shared tsconfig + eslint config
 docs/adr            Architecture Decision Records — READ THESE before changing architecture
 docs/architecture   Living architecture diagram (the visual index of the ADRs)

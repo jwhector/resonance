@@ -1,0 +1,79 @@
+# Weave Behavior Rules — principles translated into observable actions.
+#
+# THIS FILE IS NEARLY EMPTY BY DESIGN, AND THAT IS CORRECT.
+#
+# It is one of the two promotion destinations the Pattern Registry exists to fill (the
+# other is weave_conversation_heuristics.yaml). No behaviour rule has been authored or
+# promoted yet. What is here instead are the registry's pattern observations that name
+# `behavior_rule` as a candidate promotion, seeded as `state: inactive` records: present,
+# addressable and promotable, carrying their registry id as provenance, and never
+# composed into a runtime prompt. Promoting one is a pull request that flips its state
+# and rewrites its statement as a real directive under the reviewers CODEOWNERS names.
+#
+# The file itself is authored here rather than transcribed — the source documents name
+# it (Weave Evolution Engine Architecture § 4) and describe its purpose, but no such file
+# was delivered. Its `version` and `status` are therefore ours, not the designer's.
+#
+# DEFECT D-08: the registry states each pattern as an *observation*, not as a directive.
+# `directive: do` below is a transcription judgment, not the designer's word. See
+# DEFECTS.md.
+
+id: weave_behavior_rules
+version: "1.0"
+status: in_progress
+type: behavior_rules
+
+inherits:
+  - weave_interaction_philosophy
+  - weave_interaction_principles
+
+rules:
+  - id: creator_dislikes_output
+    source: registry:creator_dislikes_output
+    confidence: design_hypothesis
+    state: inactive
+    directive: do
+    statement: >-
+      Revision is often more effective when Weave identifies the specific mismatch before
+      changing the output.
+    # The registry names no principle for any pattern, so this stays empty rather than
+    # guessing which principle the observation serves.
+    appliesPrinciples: []
+    # Empty means every flow, which matches the registry's `current_scope_hypothesis:
+    # cross_flow` for this pattern.
+    scope: []
+
+  - id: revision_direction_matches_output
+    source: registry:revision_direction_matches_output
+    confidence: design_hypothesis
+    state: inactive
+    directive: do
+    statement: >-
+      Different output types require different refinement dimensions. Refinement options
+      should reflect the nature of the artifact rather than reuse generic tone controls
+      across all outputs.
+    appliesPrinciples: []
+    scope: []
+
+  - id: generated_identity_is_provisional
+    source: registry:generated_identity_is_provisional
+    confidence: design_hypothesis
+    state: inactive
+    directive: do
+    statement: >-
+      Generated identity language should be presented as the creator's current expression
+      or working direction rather than a permanent definition of who they are.
+    appliesPrinciples: []
+    scope: []
+
+  - id: gradual_preference_learning
+    source: registry:gradual_preference_learning
+    confidence: design_hypothesis
+    state: inactive
+    directive: do
+    statement: >-
+      Refinement choices reveal temporary conversational and expressive preferences that
+      may improve future collaboration without becoming permanent assumptions about the
+      creator.
+    appliesPrinciples: []
+    scope: []
