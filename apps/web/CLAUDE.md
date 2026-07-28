@@ -61,7 +61,9 @@ and `zod`.
   is a `globalThis` singleton and registers its OTP buffer for read-back with an **explicit**
   `observeLoginCodes(fake)` call (never a construction side-effect), so building a fake — or a
   session read via `getWebSession` — can't clobber the `/api/test/last-otp` read-back (seed
-  resonance-5d4e). Session reads go through `getWebSession` → `getWebAuth`, so the mount and the
+  resonance-5d4e). The slot holds the **in-flight promise**, not the resolved port, so the parallel
+  auth requests the signup form fires share one construction instead of each building a fake on a
+  cold server (seed resonance-86dd). Session reads go through `getWebSession` → `getWebAuth`, so the mount and the
   reads share ONE Better Auth instance per process (seed resonance-eb15).
 - Live wiring is proven by the credential-gated **`verify:live`** smoke gate (`pnpm verify:live`,
   ADR-0018 §3): one real model call + embedding + email + DB write. It **skips** (exit 0) with no
