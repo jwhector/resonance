@@ -14,6 +14,13 @@ const buttonVariants = cva(
     variants: {
       variant: {
         primary: "bg-primary text-on-primary shadow-sm hover:bg-primary-strong",
+        /**
+         * The design's dark-neutral fill — Figma `Button/Wide` `Property 1=Black`
+         * (`1403:56524`): a `#2b2b2b` plate with a white label. It is its own variant in
+         * the design system, not a shade of `primary`, and the topic picker's "Continue"
+         * is drawn with it rather than the brand indigo.
+         */
+        neutral: "bg-foreground text-on-primary hover:bg-gray-200",
         secondary: "bg-surface-muted text-foreground hover:bg-border",
         outline:
           "border border-border-strong bg-transparent text-foreground hover:bg-surface-muted",

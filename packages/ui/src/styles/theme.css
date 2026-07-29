@@ -42,6 +42,12 @@
   --color-primary: #6034ff;
   --color-primary-strong: #6366f1;
   --color-on-primary: #ffffff;
+  /* The tinted plate behind a selected brand control. EXTRACTED from the Figma `Tags`
+     `Selectable/Selected` variant (`1519:78238`, design/manifest/screens/13-select-topics).
+     Like --color-image-placeholder it deliberately does NOT round onto the derived primary
+     ramp — it falls between primary-100 (#e4dcff) and primary-200 (#cbbcff) — so it gets its
+     own role token instead of a nearest-neighbour approximation. */
+  --color-primary-subtle: #dfd6ff;
 
   /* Neutral ramp — EXTRACTED from Figma. NOTE the inverted naming: gray-0 = black …
      gray-900 = white (light theme with dark text). */

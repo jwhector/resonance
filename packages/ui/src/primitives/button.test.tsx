@@ -10,6 +10,13 @@ describe("buttonVariants", () => {
   it("defaults to the primary variant", () => {
     expect(buttonVariants()).toContain("bg-primary");
   });
+
+  it("exposes the design's dark-neutral `Button/Wide=Black` fill", () => {
+    const neutral = buttonVariants({ variant: "neutral" });
+    expect(neutral).toContain("bg-foreground");
+    expect(neutral).toContain("text-on-primary");
+    expect(neutral).not.toContain("bg-primary ");
+  });
 });
 
 describe("Button", () => {
