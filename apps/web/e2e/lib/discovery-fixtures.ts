@@ -169,9 +169,11 @@ export async function seedDiscoveryFixture(runId: string): Promise<DiscoveryFixt
       extraUserIds.push(userId);
     },
     async cleanup() {
-      // Embeddings have no FK to creator_profiles, so they must go explicitly and first.
+      // Embeddings have no FK to creator_profiles, so they must go explicitly and first. No
+      // `::uuid` cast on `source_id`: it is a polymorphic key that may be stored as text, so let
+      // the column drive the bound parameter's type instead of forcing uuid.
       for (const id of profileIds) {
-        await raw`delete from embeddings where source_id = ${id}::uuid`;
+        await raw`delete from embeddings where source_id = ${id}`;
       }
       // Users cascade to creator_profiles, follows and sessions.
       for (const id of [...userIds, ...extraUserIds]) {

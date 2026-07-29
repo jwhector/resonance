@@ -156,8 +156,11 @@ export async function searchCreatorProfiles(
       followState,
     })
     .from(embeddings)
-    // innerJoin intentionally excludes profiles that have no embedding row yet
-    .innerJoin(creatorProfiles, eq(creatorProfiles.id, embeddings.sourceId))
+    // innerJoin intentionally excludes profiles that have no embedding row yet. Both sides are
+    // compared as text: `source_id` is a polymorphic key whose stored id can be a profile uuid or
+    // a plain-text id (e.g. a Better Auth user id), so a text comparison joins correctly whether
+    // the column is typed uuid or text.
+    .innerJoin(creatorProfiles, sql`${creatorProfiles.id}::text = ${embeddings.sourceId}::text`)
     .where(and(...where))
     // Grouping by the primary key alone is enough: every other selected creator_profiles column
     // is functionally dependent on it, which Postgres recognises.
