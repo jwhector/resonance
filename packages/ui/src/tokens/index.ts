@@ -33,6 +33,8 @@ export const colors = {
   primary: "#6034ff",
   primaryStrong: "#6366f1",
   onPrimary: "#ffffff",
+  /** Plate behind a selected brand control — EXTRACTED from Figma `Tags/Selectable/Selected`. */
+  primarySubtle: "#dfd6ff",
   background: "#f2f2f2",
   backgroundSubtle: "#e6e6e6",
   surface: "#ffffff",

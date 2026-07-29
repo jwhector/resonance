@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { Tag, TagGroup } from "./tag";
+import { Tag, TagGroup, tagVariants } from "./tag";
 
 describe("Tag", () => {
   it("renders its label", () => {
@@ -28,6 +28,32 @@ describe("Tag", () => {
       </Tag>,
     );
     expect(screen.getByRole("button", { name: "Delete keyword" })).toBeInTheDocument();
+  });
+});
+
+describe("tagVariants", () => {
+  it("defaults to the outlined `Added` treatment", () => {
+    render(<Tag>Dreamwork</Tag>);
+    expect(screen.getByText("Dreamwork").className).toContain("border-foreground");
+  });
+
+  it("maps the Figma Selectable / Selected states onto tokens", () => {
+    expect(tagVariants({ variant: "selectable" })).toContain("border-border");
+    const selected = tagVariants({ variant: "selected" });
+    expect(selected).toContain("border-primary");
+    expect(selected).toContain("bg-primary-subtle");
+    expect(selected).toContain("text-primary");
+  });
+
+  it("keeps the frame's shared chip geometry across every variant", () => {
+    for (const variant of ["outline", "selectable", "selected"] as const) {
+      const classes = tagVariants({ variant });
+      expect(classes).toContain("border-2");
+      expect(classes).toContain("rounded-md");
+      // 10px padding + the 2px border = the frame's 42px chip (Figma strokes draw inside).
+      expect(classes).toContain("p-2.5");
+      expect(classes).toContain("text-caption");
+    }
   });
 });
 

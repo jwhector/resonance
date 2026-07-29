@@ -11,7 +11,7 @@ src/
 ├── tokens/index.ts       Typed mirror of the tokens (for non-CSS use: charts, emails)
 ├── lib/cn.ts             cn() class-merge helper (the one way to compose classes)
 ├── primitives/           Owned shadcn/Radix primitives (Button is the canonical example)
-└── components/           Bespoke composites (Post card, Weave rail, …) — to be built
+└── components/           Bespoke composites (onboarding cards, search, Weave rail — see § Composites)
 ```
 
 The app imports `@resonance/ui/styles.css` (tokens + Tailwind) and components from
@@ -31,7 +31,35 @@ The app imports `@resonance/ui/styles.css` (tokens + Tailwind) and components fr
   unregistered size is silently dropped whenever a text colour merges alongside it — and the
   colour is dropped when the order reverses. `cn.ts` carries the scale in `FONT_SIZES`; keep it
   in sync with `theme.css` or the token will look applied and render at the inherited size.
+- **Figma strokes draw _inside_ the padding box; CSS borders add outside it.** A frame the
+  inspector reports as "42px tall, 12px padding, 2px stroke" is 12+18+12 in Figma but
+  12+18+12+4 in CSS. Subtract the border width from the padding (`p-2.5` + `border-2`, `p-5.75`
+  - `border`) or every bordered box ships a few pixels too large. `tagVariants` and
+    `TopicPicker`'s panel both carry a note saying so.
 - Build UI from the design with the `add-ui-component-from-figma` recipe.
+
+## Composites
+
+The onboarding family (`create-account-card`, `email-verify-card`, `intent-picker-card`,
+`topic-picker`) shares one shape: a centred column on the white page, the `ResonanceMark`
+over a heading block, then a form ending in a `Button size="wide"`. They are all
+presentational — local form state at most, never data or routing.
+
+- **`TopicPicker`** — the member's interest selection step (Figma `1554:79520`, manifest
+  screen `13-select-topics`). A **controlled** composite over `@resonance/core`'s `Topic`:
+  the caller owns the topic list and the selection. Two things about it are load-bearing and
+  easy to undo by accident: **Continue is never gated on a count** (the step is skippable and
+  `MemberInterestsSchema` takes a minimum of zero — the heading's "3" is copy), and **each
+  chip is a real `<input type="checkbox">`** inside a `<fieldset>` rather than a styled div,
+  which gives it keyboard operation and screen-reader semantics. **Native submission is
+  opt-in:** pass an `action` and the checked chips POST their slugs as `FormData` (a plain
+  form POST or a Server Action, working without JS); without an `action` the picker is purely
+  controlled and submission is intercepted, firing only the `onSubmit` callback.
+
+`tagVariants` (in `primitives/tag.tsx`) is exported alongside `Tag` because the chip's look
+and the chip's semantics have different owners — a read-only chip is a `listitem`, a chip that
+toggles a choice must be a form control. Compose `tagVariants` onto the right element rather
+than adding a second chip that drifts.
 
 ## Figma source
 
@@ -64,7 +92,9 @@ Colors and typography are **extracted** (from `get_design_context` on the color
   in `theme.css` (`--text-*`) and mirrored in `tokens/`.
 
 Still design-consistent **defaults** (the design system ships no explicit token frame for
-these): border radius, elevation/shadows, and the `*-subtle` semantic tints.
+these): border radius, elevation/shadows, and the derived status `*-subtle` tints
+(`success`/`warning`/`danger`/`info`). `--color-primary-subtle` is the exception — it is
+extracted from a real Figma frame, not derived (see `theme.css`).
 
 ## Testing
 
