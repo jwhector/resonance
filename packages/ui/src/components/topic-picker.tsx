@@ -17,8 +17,8 @@ import { ResonanceMark } from "./resonance-mark";
  *
  * A **controlled** composite over `@resonance/core`'s `Topic` contract: the caller owns the
  * topic list and the current selection, and this component renders them and reports
- * changes. It fetches nothing, holds no session, and calls no Server Action — `apps/web`
- * supplies the curated topics and persists the result.
+ * changes. It fetches nothing and holds no session — `apps/web` supplies the curated topics,
+ * owns the selection, and (optionally) the `action` the form submits to.
  *
  * **Continue is never gated on a count.** The heading asks for `MEMBER_INTEREST_TARGET`
  * topics, but skipping is a supported outcome (`MemberInterestsSchema` takes a minimum of
@@ -29,8 +29,10 @@ import { ResonanceMark } from "./resonance-mark";
  * **Each chip is a real checkbox, not a styled div.** The chips are a multi-select, so they
  * carry checkbox semantics natively: Space toggles, each is in the tab order, and a screen
  * reader announces "Wellness, checkbox, checked" plus the group's name from the heading.
- * That also makes the picker submit correctly as part of a plain `<form>` — every checked
- * chip contributes its slug under `name`, which is what the Server Action will parse.
+ * Native submission is opt-in: pass an `action` and the checked chips POST their slugs under
+ * `name` as `FormData` — a plain form POST or a Server Action that reads them, working even
+ * without JS. Without an `action` the picker is purely controlled: submission is intercepted
+ * and only `onSubmit` fires.
  */
 export interface TopicPickerProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "onSubmit"> {
   /** The selectable topics, in the order they should be laid out. */
@@ -50,6 +52,13 @@ export interface TopicPickerProps extends Omit<React.HTMLAttributes<HTMLDivEleme
   max?: number;
   /** `name` on each checkbox, so the picker works inside a plain form POST. */
   name?: string;
+  /**
+   * Optional form `action`. Supply it and submission is native: the checked chips POST
+   * their slugs, so the step works without JS (a plain form POST or a Server Action). Omit
+   * it and the picker is purely controlled — submission is intercepted and only `onSubmit`
+   * fires.
+   */
+  action?: React.FormHTMLAttributes<HTMLFormElement>["action"];
   /** Disables the submit while the caller is persisting. */
   pending?: boolean;
   /** Submit label. The design reads "Continue". */
@@ -65,6 +74,7 @@ export function TopicPicker({
   target = MEMBER_INTEREST_TARGET,
   max = MEMBER_INTEREST_MAX,
   name = "topicSlugs",
+  action,
   pending = false,
   submitLabel = "Continue",
   ...props
@@ -94,8 +104,9 @@ export function TopicPicker({
 
       <form
         className="flex flex-col gap-4"
+        action={action}
         onSubmit={(event) => {
-          event.preventDefault();
+          if (!action) event.preventDefault();
           if (!pending) onSubmit([...value]);
         }}
       >

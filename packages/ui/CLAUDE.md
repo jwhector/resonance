@@ -51,8 +51,10 @@ presentational — local form state at most, never data or routing.
   easy to undo by accident: **Continue is never gated on a count** (the step is skippable and
   `MemberInterestsSchema` takes a minimum of zero — the heading's "3" is copy), and **each
   chip is a real `<input type="checkbox">`** inside a `<fieldset>` rather than a styled div,
-  which is what gives it keyboard operation, screen-reader semantics, and a working plain-form
-  POST for the Server Action that will consume it.
+  which gives it keyboard operation and screen-reader semantics. **Native submission is
+  opt-in:** pass an `action` and the checked chips POST their slugs as `FormData` (a plain
+  form POST or a Server Action, working without JS); without an `action` the picker is purely
+  controlled and submission is intercepted, firing only the `onSubmit` callback.
 
 `tagVariants` (in `primitives/tag.tsx`) is exported alongside `Tag` because the chip's look
 and the chip's semantics have different owners — a read-only chip is a `listitem`, a chip that
