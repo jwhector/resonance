@@ -5,7 +5,7 @@ the protocol (R1–R4) and the **Capture notes** (the REST path is dead — use 
 Bridge).
 
 **Two source files.** Screens **01–07** were captured from `UYlkCL7jkCVgKWiqAVlEFp`; screens
-**08–12** from `vC0O5uyMmw1o5vYHmCoOXq` (`Resonance (Copy)`), which is the file the Desktop
+**08–13** from `vC0O5uyMmw1o5vYHmCoOXq` (`Resonance (Copy)`), which is the file the Desktop
 Bridge is connected to. Node ids resolve in both — that is the hazard, not the reassurance.
 Read [PROVENANCE.md](PROVENANCE.md) before adding a citation.
 

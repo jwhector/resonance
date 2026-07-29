@@ -11,7 +11,7 @@ src/
 ├── tokens/index.ts       Typed mirror of the tokens (for non-CSS use: charts, emails)
 ├── lib/cn.ts             cn() class-merge helper (the one way to compose classes)
 ├── primitives/           Owned shadcn/Radix primitives (Button is the canonical example)
-└── components/           Bespoke composites (Post card, Weave rail, …) — to be built
+└── components/           Bespoke composites (onboarding cards, search, Weave rail — see § Composites)
 ```
 
 The app imports `@resonance/ui/styles.css` (tokens + Tailwind) and components from
@@ -92,7 +92,9 @@ Colors and typography are **extracted** (from `get_design_context` on the color
   in `theme.css` (`--text-*`) and mirrored in `tokens/`.
 
 Still design-consistent **defaults** (the design system ships no explicit token frame for
-these): border radius, elevation/shadows, and the `*-subtle` semantic tints.
+these): border radius, elevation/shadows, and the derived status `*-subtle` tints
+(`success`/`warning`/`danger`/`info`). `--color-primary-subtle` is the exception — it is
+extracted from a real Figma frame, not derived (see `theme.css`).
 
 ## Testing
 
