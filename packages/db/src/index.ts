@@ -36,6 +36,17 @@ export {
   getFollowStates,
   type FollowEdge,
 } from "./queries/follows";
+// Member interests (Slice B). Same precedent as follows: writing an interest is not ranking, so
+// it ships as a direct export rather than a second method on DiscoveryPort. The vector it stores
+// is what the port's no-text branch ranks by.
+export {
+  listTopics,
+  getMemberInterests,
+  setMemberInterests,
+  getMemberInterestEmbedding,
+  type InterestEmbedder,
+  type SetMemberInterestsArgs,
+} from "./queries/interests";
 
 // Weave OS evidence capture (ADR-0020). `createObservationAdapter` is core's ObservationPort,
 // so the conversation runtime and the evolution harness depend on the interface and never on

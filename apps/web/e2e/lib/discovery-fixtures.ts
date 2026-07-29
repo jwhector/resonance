@@ -169,9 +169,9 @@ export async function seedDiscoveryFixture(runId: string): Promise<DiscoveryFixt
       extraUserIds.push(userId);
     },
     async cleanup() {
-      // Embeddings have no FK to creator_profiles, so they must go explicitly and first. No
-      // `::uuid` cast on `source_id`: it is a polymorphic key that may be stored as text, so let
-      // the column drive the bound parameter's type instead of forcing uuid.
+      // Embeddings have no FK to creator_profiles, so they must go explicitly and first.
+      // `source_id` is text — it also keys interest vectors to Better Auth user ids — so the
+      // profile uuid is compared as text; a `::uuid` cast here would no longer typecheck in SQL.
       for (const id of profileIds) {
         await raw`delete from embeddings where source_id = ${id}`;
       }

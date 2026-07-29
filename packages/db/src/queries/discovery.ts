@@ -156,11 +156,15 @@ export async function searchCreatorProfiles(
       followState,
     })
     .from(embeddings)
-    // innerJoin intentionally excludes profiles that have no embedding row yet. Both sides are
-    // compared as text: `source_id` is a polymorphic key whose stored id can be a profile uuid or
-    // a plain-text id (e.g. a Better Auth user id), so a text comparison joins correctly whether
-    // the column is typed uuid or text.
-    .innerJoin(creatorProfiles, sql`${creatorProfiles.id}::text = ${embeddings.sourceId}::text`)
+    // innerJoin intentionally excludes profiles that have no embedding row yet.
+    //
+    // `embeddings.source_id` is text, because the same column also holds Better Auth user ids for
+    // interest vectors. The PROFILE id is therefore cast to text to meet it, not the other way
+    // round: `source_id::uuid` would raise a syntax error the moment the planner evaluated it
+    // against a non-uuid source id, and nothing in SQL guarantees the `source_type` filter is
+    // applied first. Casting the uuid side is always safe, and the ANN scan dominates this query's
+    // cost regardless.
+    .innerJoin(creatorProfiles, sql`${creatorProfiles.id}::text = ${embeddings.sourceId}`)
     .where(and(...where))
     // Grouping by the primary key alone is enough: every other selected creator_profiles column
     // is functionally dependent on it, which Postgres recognises.
