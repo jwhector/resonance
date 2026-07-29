@@ -59,6 +59,14 @@ test("creator can sign up, interview with Weave, generate + commit a profile", a
   await enterOtp(page, otp);
   await page.getByRole("button", { name: "Continue" }).click();
 
+  // 2b) Interest selection now sits between verification and the interview, for every new account
+  //     (Slice B, `resonance-3a7d`). This spec is about the CREATOR path, so it skips the step —
+  //     which the picker supports by design: Continue with nothing selected is a valid, empty
+  //     selection. `resonance-6c52` owns driving the picking path.
+  await expect(page).toHaveURL(/\/interests/, { timeout: 20_000 });
+  await expect(page.getByRole("heading", { name: /Select \d+ topics/ })).toBeVisible();
+  await page.getByRole("button", { name: "Continue" }).click();
+
   await expect(page).toHaveURL(/\/onboarding\/creator/, { timeout: 20_000 });
 
   // 3) Interview: the Weave rail renders. Send a turn; assert the assistant reply SETTLES.

@@ -13,6 +13,14 @@ extraction-ready.
 - **Member discovery core** (`pl-bbca`) — `/discover`: session-optional ranked creator search
   over `@resonance/core`'s `DiscoveryPort`, plus follow/unfollow. Creators is the only tab with
   a data source; the other three render designed empty states.
+- **Member interests** (`pl-496f`) — `/interests` after email verification, for **every** newly
+  verified account (roles are additive, so a creator is also a member). Submission is the form's
+  **native `action`**, so the step works with JS disabled; `onSubmit` only marks it in flight.
+  Pressing Continue with nothing selected is a **valid empty selection**, which is how "skip"
+  works without inventing a control the design does not draw. On `/discover`, an **empty query
+  plus a signed-in viewer** omits `text` so the port ranks on stored interests instead
+  (`DiscoveryPort` invariant 8); signed out, it is not asked at all. `idle` therefore now means
+  "nothing searched **and** nothing to suggest", still distinct from `no-results`.
 
 Commerce/community routes are still unbuilt; the scaffold home page remains.
 
@@ -22,6 +30,8 @@ Commerce/community routes are still unbuilt; the scaffold home page remains.
 app/
 ├── (onboarding)/start           intent fork ("What brought you?", IntentPickerCard) → /signup or /discover
 ├── (onboarding)/signup, verify   passwordless front door (form + Better Auth)
+├── (onboarding)/interests/       interest selection (TopicPicker) — EVERY newly verified account
+│                                 passes through here; page.tsx · interests-form.tsx · actions.ts
 ├── (app)/layout.tsx              THE SHARED APP SHELL — the 80px `AppNav` rail, once, for
 │                                 every in-app route. Adds no URL segment.
 ├── (app)/discover/               member discovery: page.tsx (RSC, URL state) ·

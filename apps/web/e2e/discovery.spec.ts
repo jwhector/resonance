@@ -76,7 +76,13 @@ async function signInFreshMember(page: Page, request: APIRequestContext): Promis
 
   await enterOtp(page, otp);
   await page.getByRole("button", { name: "Continue" }).click();
-  // Verification lands on the creator interview; the member front door is a nav away.
+
+  // Verification now lands on interest selection (Slice B, `resonance-3a7d`). These discovery specs
+  // assert Slice A's behaviour, which must stay true for a member with NO interests, so this helper
+  // skips the step — Continue with nothing selected is a valid empty selection. That also keeps the
+  // /discover assertions below reading the search path rather than a personalized surface.
+  await expect(page).toHaveURL(/\/interests/, { timeout: 20_000 });
+  await page.getByRole("button", { name: "Continue" }).click();
   await expect(page).toHaveURL(/\/onboarding\/creator/, { timeout: 20_000 });
 
   return email;

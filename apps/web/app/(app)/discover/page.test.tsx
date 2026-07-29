@@ -98,4 +98,53 @@ describe("/discover", () => {
 
     expect(searchCreators).toHaveBeenCalledWith(expect.objectContaining({ text: "tinctures" }));
   });
+
+  // Slice B (resonance-3a7d): no query text is a *personalized* request, not "nothing asked".
+  describe("personalized surface when there is no query", () => {
+    const signedIn = { id: "user_member", email: "m@example.com", roles: ["member"] };
+
+    it("asks the port to rank for the viewer, with NO text field", async () => {
+      getWebSession.mockResolvedValueOnce(signedIn);
+      searchCreators.mockResolvedValueOnce(page([result]));
+
+      await renderPage({});
+
+      // Absent, not empty: `text: ""` would fail validation and mean a malformed search.
+      const input = searchCreators.mock.calls[0]![0] as Record<string, unknown>;
+      expect("text" in input).toBe(false);
+      expect(screen.getByRole("link", { name: "Ada Lovelace" })).toBeInTheDocument();
+      // The box stays empty — the results were not produced from typed text.
+      expect(screen.getByRole("searchbox")).toHaveValue("");
+    });
+
+    it("shows the idle surface, not 'no results', when the member skipped the picker", async () => {
+      getWebSession.mockResolvedValueOnce(signedIn);
+      searchCreators.mockResolvedValueOnce(page());
+
+      await renderPage({});
+
+      // Nothing searched AND nothing to suggest. Calling this "no results" would blame the member
+      // for a query they never made.
+      expect(document.querySelector('[data-empty-state="idle"]')).not.toBeNull();
+    });
+
+    it("still refuses a BLANK query rather than treating it as personalized", async () => {
+      getWebSession.mockResolvedValueOnce(signedIn);
+
+      await renderPage({ q: "   " });
+
+      // Whitespace trims to empty and fails `.min(1)`: malformed input, not a request to be ranked.
+      expect(searchCreators).not.toHaveBeenCalled();
+      expect(document.querySelector('[data-empty-state="idle"]')).not.toBeNull();
+    });
+
+    it("does not ask at all for a signed-out visitor", async () => {
+      getWebSession.mockResolvedValueOnce(null);
+
+      await renderPage({});
+
+      // The port would answer an empty page anyway (invariant 8); skipping spares the round trip.
+      expect(searchCreators).not.toHaveBeenCalled();
+    });
+  });
 });
