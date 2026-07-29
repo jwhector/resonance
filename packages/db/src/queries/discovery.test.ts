@@ -12,6 +12,7 @@ import type { CreatorProfileInput } from "../schema/creator";
 import { createTestDb, type TestDb } from "../testing/create-test-db";
 import { searchCreatorProfiles } from "./discovery";
 import { followCreator } from "./follows";
+import { setMemberInterests } from "./interests";
 import { createCreatorProfile, upsertProfileEmbedding } from "./profiles";
 
 /**
@@ -394,20 +395,108 @@ describe("searchCreatorProfiles — the DiscoveryPort contract", () => {
       ).rejects.toBeInstanceOf(EmbeddingDimensionError);
     });
 
-    // Invariant 8 (Slice B, resonance-b149). Interest storage lands in resonance-e2d0; until
-    // then no member has interests, so the contract's fallback is also the truthful answer.
-    it("returns an empty page for a personalized query, without embedding anything", async () => {
+    // ── Invariant 8: no query text ⇒ rank by the viewer's stored interests ────────────────
+    //
+    // Every test in this block injects an embedder that throws for ANY text, so reaching the
+    // embedder at all fails the test. That is how `undefined` is pinned out of the embedder: the
+    // personalized branch must read a stored vector, never embed a missing query.
+
+    /** Store an interest vector for a member at similarity `w` from `probe()`. */
+    async function seedInterest(memberId: string, w: number): Promise<void> {
+      await setMemberInterests(db, {
+        memberId,
+        topicSlugs: ["art"],
+        embedder: { model: "voyage-3.5", embed: async () => vec(w) },
+      });
+    }
+
+    it("ranks by the viewer's stored interest vector when there is no query text", async () => {
+      const near = await seed("u0", 0.9);
+      const far = await seed("u1", 0.2);
+      // The viewer's interests point exactly at `probe()`, so the ranking must be the same one
+      // searching for `probe()` produces — personalization is the same ranking, another signal.
+      await seedInterest("u5", 1);
+
+      const port = createDiscoveryAdapter({ db, embed: fakeEmbed({}) });
+      const page = await port.searchCreators(CreatorDiscoveryQuerySchema.parse({}), {
+        userId: "u5",
+      });
+
+      expect(() => CreatorResultPageSchema.parse(page)).not.toThrow();
+      expect(page.results.map((r) => r.profileId)).toEqual([near.id, far.id]);
+      expect(page.results[0]!.similarity).toBeCloseTo(0.9, 5);
+    });
+
+    it("keeps every other invariant on the personalized branch", async () => {
+      const tagged = await seed("u0", 0.95, { tags: ["pottery"] });
+      await seed("u1", 0.95, { tags: ["weaving"] });
+      await seed("u2", 0.1, { tags: ["pottery"] });
+      await createCreatorProfile(db, {
+        userId: "u3",
+        displayName: "Draft",
+        headline: "h",
+        bio: "b",
+        tags: ["pottery"],
+        offerings: [],
+        status: "draft",
+      });
+      await followCreator(db, { followerId: "u5", followingId: "u0" });
+      await seedInterest("u5", 1);
+
+      const port = createDiscoveryAdapter({ db, embed: fakeEmbed({}) });
+      const page = await port.searchCreators(
+        CreatorDiscoveryQuerySchema.parse({ tags: ["pottery"], threshold: 0.5, limit: 1 }),
+        { userId: "u5" },
+      );
+
+      // Tag filter (the draft and the weaver are gone), threshold (u2 is gone), limit, follow
+      // state and a real cursor — all of it, from the same searchCreatorProfiles call.
+      expect(page.results.map((r) => r.profileId)).toEqual([tagged.id]);
+      expect(page.results[0]!.followState).toBe("following");
+      expect(page.nextCursor).toBeNull();
+    });
+
+    it("returns an empty page for a signed-out viewer, without embedding anything", async () => {
       await seed("u0", 0.9);
-      // This embedder throws for ANY text, so reaching it at all fails the test — which is
-      // how we pin that `undefined` never gets handed to the embedder.
       const port = createDiscoveryAdapter({ db, embed: fakeEmbed({}) });
 
-      for (const viewer of [null, { userId: "u5" }]) {
-        const page = await port.searchCreators(CreatorDiscoveryQuerySchema.parse({}), viewer);
-        expect(page.kind).toBe("creators");
-        expect(page.results).toEqual([]);
-        expect(page.nextCursor).toBeNull();
-      }
+      const page = await port.searchCreators(CreatorDiscoveryQuerySchema.parse({}), null);
+
+      expect(page.kind).toBe("creators");
+      expect(page.results).toEqual([]);
+      expect(page.nextCursor).toBeNull();
+    });
+
+    it("returns an empty page — never the whole corpus — for a viewer with no interests", async () => {
+      await seed("u0", 0.9);
+      await seed("u1", 0.5);
+      const port = createDiscoveryAdapter({ db, embed: fakeEmbed({}) });
+
+      const page = await port.searchCreators(CreatorDiscoveryQuerySchema.parse({}), {
+        userId: "u5",
+      });
+
+      expect(page.results).toEqual([]);
+      expect(page.nextCursor).toBeNull();
+    });
+
+    it("prefers the typed query over the viewer's interests when both exist", async () => {
+      const queryHit = await seed("u0", 0.9);
+      await seed("u1", 0.2);
+      // Interests point the OTHER way: at vec(0.2), the far creator. If the adapter ranked by
+      // interests here, u1 would come first.
+      await setMemberInterests(db, {
+        memberId: "u5",
+        topicSlugs: ["art"],
+        embedder: { model: "voyage-3.5", embed: async () => vec(0.2) },
+      });
+
+      const port = createDiscoveryAdapter({ db, embed: fakeEmbed({ mugs: probe() }) });
+      const page = await port.searchCreators(CreatorDiscoveryQuerySchema.parse({ text: "mugs" }), {
+        userId: "u5",
+      });
+
+      expect(page.results[0]!.profileId).toBe(queryHit.id);
     });
   });
 });
