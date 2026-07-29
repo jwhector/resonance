@@ -29,3 +29,14 @@ Weave surface built in `resonance-6e42`.
    sample) — bound to real ProfileGen output, not a design delta.
 5. **Composer during draft is live but sends into the (suppressed) transcript**; the true
    "Revise with Weave" refine loop is deferred (`resonance-216c`).
+6. **`app.png` predates a 4px chip-size correction — the Search Keywords chips now render
+   smaller than this screenshot shows.** `resonance-9e66` moved the shared `Tag` primitive's
+   padding from `p-3` (12px) to `p-2.5` (10px), because Figma draws a chip's 2px stroke
+   _inside_ its padding box while CSS adds the border outside it; 12px of padding therefore
+   rendered the design's 42px chip at 46px. This screen consumes `Tag` through
+   `profile-draft-panels.tsx`, so its chips shrank by 4px in each dimension. It is a
+   **fidelity correction, not a regression** — the chips are now the size the design draws —
+   but this `app.png` was captured before it. Nothing in the "Resolved / matches" table above
+   measured chip geometry, so no verdict here is invalidated; recapture the screenshot on the
+   next pass over this screen. The rule is documented in `packages/ui/CLAUDE.md` and the
+   measurements in [`../13-select-topics/parity.md`](../13-select-topics/parity.md).
