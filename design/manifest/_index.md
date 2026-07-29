@@ -75,6 +75,37 @@ and filed as `resonance-b656` (background) and `resonance-8619` (rail inventory)
 DOM measurements, pixel samples and band diffs — in
 [`screens/12-search-creators/parity.md`](screens/12-search-creators/parity.md).
 
+## Screens — Member / Onboarding (Slice B, `pl-496f`)
+
+Captured from `vC0O5uyMmw1o5vYHmCoOXq` (`Resonance (Copy)`), page MVP, `2026-07-29T07:04:23Z`,
+via the Desktop Bridge. **`copy-derived`** — see [PROVENANCE.md](PROVENANCE.md). Node
+inventory: [`metadata/member-onboarding-selection.md`](metadata/member-onboarding-selection.md).
+
+| #   | Screen            | Figma node   | Route                         | Component                       | Citation (R1) | Status                                                                                                                     |
+| --- | ----------------- | ------------ | ----------------------------- | ------------------------------- | ------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| 13  | **Select topics** | `1554:79520` | — (wired by `resonance-3a7d`) | `TopicPicker` (+ `tagVariants`) | ✅ valid      | ⚠️ **built, parity captured** — 8 enumerated deltas ([`parity.md`](screens/13-select-topics/parity.md)) · `resonance-9e66` |
+
+Parity is stated as: _"matches `design.png` except [content column centred at x=506 vs the
+frame's x=530 · the frame's duplicate "Art" chip · a wrap instead of three fixed row frames ·
+chip widths 0.1–1.0px narrower from glyph advance · a `font-semibold` Continue label vs the
+frame's Medium · the `ResonanceMark` approximation · the selected-chip state verified against
+the `Tags` component set rather than this frame · unselected chips dimming at the selection
+cap]"_. Geometry, computed styles, band diffs and point samples are in
+[`screens/13-select-topics/parity.md`](screens/13-select-topics/parity.md).
+
+Only one delta is new and open — the button label weight, filed as **`resonance-e16b`**. The
+mark approximation is the existing `resonance-cbbb`; the rest are ratified or non-actionable.
+
+Two things about this row are unlike 01–12:
+
+- **`app.png` is an offline capture of the component in isolation**, not a route screenshot —
+  the route that hosts `TopicPicker` is a later step in the same plan. The real `theme.css` is
+  compiled into the capture page so the tokens are the shipped ones. See `parity.md` § _How
+  this was captured_.
+- **The frame is not the whole contract.** It draws every chip unselected, so the selected
+  treatment comes from the `Tags` component set (`1409:46348`), captured alongside as
+  `design-tag-variants.png`.
+
 **Legend:** 🟢 built & clean · ⚠️ built with open deltas · 🔴 built, wrong model · 🟡 in Figma, not built.
 
 ## Artifact coverage
@@ -93,6 +124,7 @@ DOM measurements, pixel samples and band diffs — in
 | 10 search-services                       |     ✅     |    ✅     |   — (orphan)    |
 | 11 search-posts                          |     ✅     |    ✅     |   — (orphan)    |
 | 12 search-creators                       |     ✅     |    ✅     |  ✅ (+parity)   |
+| 13 select-topics                         |     ✅     |    ✅     |  ✅ (+parity)   |
 
 Row 07's label is now the frame's **real Figma name**. It was previously listed here as
 "07 sign-in" while the screens table above called the same node "Member feed home" — the two

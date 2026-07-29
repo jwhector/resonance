@@ -12,7 +12,7 @@ export { Radio, RadioGroup, type RadioProps, type RadioGroupProps } from "./prim
 export { OtpInput, type OtpInputProps } from "./primitives/otp-input";
 export { MailIcon, type MailIconProps } from "./primitives/mail-icon";
 export { Textarea, type TextareaProps } from "./primitives/textarea";
-export { Tag, TagGroup, type TagProps, type TagGroupProps } from "./primitives/tag";
+export { Tag, TagGroup, tagVariants, type TagProps, type TagGroupProps } from "./primitives/tag";
 
 // Composites
 export { AppNav, type AppNavProps } from "./components/app-nav";
@@ -53,3 +53,7 @@ export {
   type ComingSoonStateProps,
   type NoResultsStateProps,
 } from "./components/discovery-empty-states";
+
+// Member interests — the `Member/Onboarding/CreateAccount/Selection` step
+// (design/manifest/screens/13-select-topics)
+export { TopicPicker, type TopicPickerProps } from "./components/topic-picker";
