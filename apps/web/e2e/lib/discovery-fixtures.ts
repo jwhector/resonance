@@ -170,8 +170,10 @@ export async function seedDiscoveryFixture(runId: string): Promise<DiscoveryFixt
     },
     async cleanup() {
       // Embeddings have no FK to creator_profiles, so they must go explicitly and first.
+      // `source_id` is text — it also keys interest vectors to Better Auth user ids — so the
+      // profile uuid is compared as text; a `::uuid` cast here would no longer typecheck in SQL.
       for (const id of profileIds) {
-        await raw`delete from embeddings where source_id = ${id}::uuid`;
+        await raw`delete from embeddings where source_id = ${id}`;
       }
       // Users cascade to creator_profiles, follows and sessions.
       for (const id of [...userIds, ...extraUserIds]) {

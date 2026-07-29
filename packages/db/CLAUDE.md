@@ -19,6 +19,7 @@ src/
 │   ├── auth.ts                 Better Auth tables: user, session, account, verification
 │   ├── community.ts            follows (user → user follow graph)
 │   ├── creator.ts              creator_profiles, embeddings (+ Zod schemas)
+│   ├── interests.ts            topics (curated taxonomy), member_interests (member → topic)
 │   ├── weave-observation.ts    weave_observations, weave_evaluations,
 │   │                           weave_evaluation_scores, weave_limitation_verdicts
 │   ├── weave-pattern.ts        weave_patterns, weave_pattern_evidence (+ Zod schemas)
@@ -26,6 +27,8 @@ src/
 ├── queries/
 │   ├── discovery.ts            searchCreatorProfiles — THE deep ANN read (see below)
 │   ├── follows.ts              followCreator, unfollowCreator, getFollowStates
+│   ├── interests.ts            listTopics, getMemberInterests, setMemberInterests,
+│   │                           getMemberInterestEmbedding
 │   ├── observations.ts         insertObservations, insertEvaluation — the atomic
 │   │                           evidence writes (see below)
 │   ├── profiles.ts             createCreatorProfile, getCreatorProfileById,
@@ -43,6 +46,9 @@ drizzle/
     0002_yellow_changeling.sql  drizzle-kit generated: unique index on creator_profiles.user_id
     0003_green_ultimo.sql       drizzle-kit generated: follows table + discovery indexes
     0004_motionless_bastion.sql drizzle-kit generated: Weave OS evidence + pattern records
+    0005_rapid_ogun.sql         drizzle-kit generated: topics + member_interests,
+                                embeddings.source_id widened uuid → text
+    0006_seed_topics.sql        Hand-written (--custom): the 13 curated topic rows
 ```
 
 ## Public API
@@ -85,6 +91,16 @@ export {
   type FollowEdge,
 } from "./queries/follows";
 
+// Member interests (Slice B) — same precedent as follows: writing an interest is not ranking.
+export {
+  listTopics,
+  getMemberInterests,
+  setMemberInterests,
+  getMemberInterestEmbedding,
+  type InterestEmbedder,
+  type SetMemberInterestsArgs,
+} from "./queries/interests";
+
 // Weave OS evidence capture (ADR-0020)
 export { insertObservations, insertEvaluation } from "./queries/observations";
 export {
@@ -93,13 +109,21 @@ export {
 } from "./adapters/observation-adapter";
 ```
 
-### Discovery — one query, seven invariants
+### Discovery — one query, eight invariants
 
 `searchCreatorProfiles(db, args)` is the **only** ANN read over creator profiles. It owns
 every rule that makes discovery correct: the `status = 'ready'` filter, the
 `assertEmbeddingDims` guard, conjunctive `tags @>` containment, the similarity floor,
 `similarity DESC, id ASC` ordering, keyset pagination, and per-viewer follow state. Do not
 write a second one — add an argument.
+
+Personalized ranking (invariant 8) is **not** a second query. `createDiscoveryAdapter`
+resolves the query vector from one of two sources — the embedded search text, or the
+viewer's stored interest vector when `query.text` is absent — and both flow into the same
+call, which is what makes invariants 2–7 hold on the personalized branch for free. No
+viewer, or a viewer with no stored vector, returns an **empty page**: "we have nothing to
+personalize on" and "here is everything" are different answers and only the first is honest.
+A typed query always wins over stored interests — it is the more current signal.
 
 Two things depend on that being singular:
 
@@ -200,20 +224,64 @@ member-to-member capability the moment the community slice grows. Self-follows t
 `ResonanceError("follow_self")` rather than hitting a CHECK constraint, so the web layer
 gets a typed error instead of an opaque driver one.
 
+### `topics` / `member_interests` (`schema/interests.ts`)
+
+The member-side counterpart to `creator_profiles`: a creator says what they offer, a member
+picks topics, and both become vectors in the same space so the two can be matched.
+
+**`topics`** is the curated taxonomy the interest picker renders (Figma `1554:79520`) — the
+13 unique topics the frame draws, seeded by migration `0006_seed_topics` with
+`ON CONFLICT DO NOTHING`. A **table rather than a constant** so the list can be corrected or
+extended as a data edit instead of a migration; seed-once, not enforce-forever. The **slug is
+the primary key**, matching `TopicSlugSchema` in `@resonance/core`: a topic is identified by
+slug at every boundary that carries it (`ui` chip → `web` form → this row), so a surrogate id
+would only give each of those boundaries something to resolve. `sortOrder` carries the frame's
+chip order, which is a design decision and has nowhere else to live.
+
+**`member_interests`** is `(member_id, topic_slug)` + `createdAt`, shaped after `follows` for
+the same reasons: the composite PK is the row's whole identity, which makes re-submitting a
+selection idempotent and indexes "what does this member care about" for free.
+`member_interests_topic_idx` serves the reverse direction and keeps the `topic_slug` foreign
+key's referential check off a sequential scan when the taxonomy is edited. Both FKs cascade.
+
+`setMemberInterests` **replaces** a selection rather than merging — the picker submits a whole
+selection, so dropped topics must actually go — and writes in a deliberate order, because
+neither driver can span statements atomically: embed first (an embedder outage leaves storage
+untouched), then the rows (the durable fact), then the vector (a projection recomputable from
+it). Each write is one statement, using the same data-modifying-`WITH` trick as
+`queries/observations.ts`, with the `DELETE` scoped to rows the `INSERT` does not touch.
+
+An **empty selection is a real outcome, not a no-op**: the picker is skippable, so submitting
+nothing clears both the rows and the vector, and the embedder is never called.
+
 ### `embeddings` (`schema/creator.ts`)
 
 Generic, polymorphic vector store. Columns: `sourceType` (open-ended enum),
-`sourceId` (uuid of the source row), `model` (embedding model ID), `content` (text
+`sourceId` (id of the source row, as text), `model` (embedding model ID), `content` (text
 that was embedded), `embedding` (`vector(1024)`). Unique index on
 `(sourceType, sourceId, model)` so `upsertProfileEmbedding` is idempotent.
 HNSW index (`vector_cosine_ops`) for ANN search.
 
-**Only `"creator_profile"` vectors are produced today.** Increment 2 of the
-reference slice wired the AI call that fills them: the `profile-gen` `saveProfile`
-tool embeds the generated profile via `@resonance/ai` and writes the row through
-`upsertProfileEmbedding`. The other values in `EMBEDDING_SOURCE_TYPES`
-(`"offering"`, `"post"`, `"interest"`) are reserved for future slices — see
-_Future evolution_ in the design spec.
+**`source_id` is `text`, not `uuid`** — the column is polymorphic in **id shape** as well as in
+source. A creator profile is addressed by a uuid; a member's interest vector is keyed to their
+Better Auth user id, which is text. A uuid column can hold one of those and not the other, so
+the wider type wins (migration `0005`, `ALTER COLUMN ... TYPE text`, which preserves existing
+uuids in canonical form). Two consequences worth knowing:
+
+- Comparisons are now **exact text comparisons**. A uuid-shaped source id must be stored
+  canonical lower-case hyphenated — which is what Postgres returns from a uuid column, and
+  therefore what every writer already passes.
+- `searchCreatorProfiles` joins with `creator_profiles.id::text = embeddings.source_id`. The
+  cast goes on the **uuid side deliberately**: `source_id::uuid` would raise a syntax error the
+  moment the planner evaluated it against a non-uuid source id such as an interest row, and
+  nothing in SQL guarantees the `source_type` filter is applied first.
+
+**`"creator_profile"` and `"interest"` vectors are produced today.** The `profile-gen`
+`saveProfile` tool embeds a generated profile via `@resonance/ai` and writes it through
+`upsertProfileEmbedding`; `setMemberInterests` writes the interest vector, of which a member has
+**exactly one** (the write prunes any row under a different model, so the read never has to
+choose between two). The remaining values in `EMBEDDING_SOURCE_TYPES` (`"offering"`, `"post"`)
+are reserved for future slices — see _Future evolution_ in the design spec.
 
 **Embedding dimensions are pinned to 1024** — matching Voyage `voyage-3.5`, the
 model used by `@resonance/ai`. The column takes its width from `EMBEDDING_DIMS` in
@@ -289,10 +357,12 @@ guess about a design that does not exist yet.
 
 - Generated with `drizzle-kit generate` (`pnpm db:generate`) and committed alongside
   the schema change. Use the `add-db-migration` recipe.
-- **Never hand-edit generated SQL** without noting it explicitly. The one exception is
-  `0000_enable_pgvector.sql`, which enables the `vector` Postgres extension — this
-  must run before any table that uses `vector(...)` columns, and drizzle-kit cannot
-  generate it.
+- **Never hand-edit generated SQL** without noting it explicitly. When you genuinely need
+  SQL drizzle-kit cannot generate, run `drizzle-kit generate --custom --name <name>` — it
+  prepares an empty file **and** registers the journal entry + snapshot, so the next
+  `db:generate` still diffs correctly. Two files use it: `0000_enable_pgvector.sql` (the
+  `vector` extension must exist before any `vector(...)` column) and `0006_seed_topics.sql`
+  (curated reference data — drizzle-kit generates schema, not data).
 - Applied in production with `pnpm db:migrate` (runs `drizzle-kit migrate` against
   `DATABASE_URL`). Applied in tests automatically by `createTestDb()` via the
   `drizzle-orm/pglite/migrator`.

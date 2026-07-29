@@ -60,8 +60,8 @@ export const creatorProfiles = pgTable(
   ],
 );
 
-// Generic, polymorphic vector store. sourceType is open-ended; only "creator_profile"
-// is used in this slice. sourceId is the uuid of the source row.
+// Generic, polymorphic vector store. sourceType is open-ended; "creator_profile" and
+// "interest" are produced today. sourceId is the id of the source row, as text.
 export const EMBEDDING_SOURCE_TYPES = ["creator_profile", "offering", "post", "interest"] as const;
 export const EmbeddingSourceTypeSchema = z.enum(EMBEDDING_SOURCE_TYPES);
 export type EmbeddingSourceType = z.infer<typeof EmbeddingSourceTypeSchema>;
@@ -71,7 +71,18 @@ export const embeddings = pgTable(
   {
     id: uuid("id").defaultRandom().primaryKey(),
     sourceType: text("source_type").$type<EmbeddingSourceType>().notNull(),
-    sourceId: uuid("source_id").notNull(),
+    // `text`, not `uuid`, because this column is polymorphic in ID SHAPE as well as in source.
+    // A creator profile is addressed by a uuid, but a member's interest vector is keyed to their
+    // Better Auth user id, which is text (auth mints string ids, not uuids). A uuid column can
+    // hold one of those and not the other, so the widest of the two identifier types wins.
+    //
+    // The cost is that comparisons are now exact text comparisons rather than uuid-normalised
+    // ones: a uuid-shaped source id must be stored in canonical lower-case hyphenated form, which
+    // is what Postgres returns from a uuid column and therefore what every writer here already
+    // passes. It is also why `searchCreatorProfiles` casts the profile id to text to join rather
+    // than casting this column to uuid — casting the other way would raise a syntax error the
+    // moment the planner touched a non-uuid source id, such as an interest row.
+    sourceId: text("source_id").notNull(),
     model: text("model").notNull(),
     content: text("content").notNull(),
     // Width comes from @resonance/core so the column, the embedder, and the query-time guard
