@@ -43,6 +43,11 @@ export default async function DiscoverPage({
   // or a 300-character paste is a *page state*, not a crash, so it is decided with `safeParse` and
   // rendered as the idle surface. The action then re-parses as the real trust boundary, because it
   // is also callable directly by a client and cannot inherit this one's verdict (golden rule 4).
+  //
+  // `text` is now optional, but that only permits an *absent* field — not an empty string. Both
+  // `?q=` and a bare `/discover` still arrive here as `text: ""` and still fail `.min(1)`, so this
+  // route keeps its idle surface unchanged. Wiring the personalized (absent-text) branch is
+  // resonance-3a7d's job.
   const searchable =
     kind === "creators" ? CreatorDiscoveryQuerySchema.safeParse({ text: q }) : null;
 
@@ -58,7 +63,7 @@ export default async function DiscoverPage({
     <main className="flex flex-1 justify-center overflow-y-auto pl-10">
       <div className="flex w-151 shrink-0 flex-col gap-10 pt-10 pb-16">
         <DiscoverClient
-          query={searchable?.success ? searchable.data.text : ""}
+          query={searchable?.success ? (searchable.data.text ?? "") : ""}
           kind={kind}
           results={results}
           signedIn={signedIn}

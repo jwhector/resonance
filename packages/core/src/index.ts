@@ -37,6 +37,19 @@ export {
   type DiscoveryViewer,
   type DiscoveryPort,
 } from "./discovery";
+// Member interests — the member-side counterpart to the creator interview. `ui` renders the
+// picker, `web` validates the submission, `db` stores the selection and embeds it as the
+// ranking signal behind `DiscoveryPort` when there is no query text.
+export {
+  TopicSlugSchema,
+  type TopicSlug,
+  TopicSchema,
+  type Topic,
+  MEMBER_INTEREST_TARGET,
+  MEMBER_INTEREST_MAX,
+  MemberInterestsSchema,
+  type MemberInterests,
+} from "./interests";
 // The Weave OS corpus contracts — the shared vocabulary for Weave's authored behaviour.
 // `weave-os` parses and validates it, `ai` composes prompts from it, `db` keys evidence to
 // it, and the evolution harness scores against it.

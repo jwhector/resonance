@@ -42,10 +42,20 @@ type CorpusEntry = {
 function createFakeDiscoveryPort(
   corpus: CorpusEntry[],
   follows: ReadonlyMap<string, ReadonlySet<string>> = new Map(),
+  /** Stored interest terms per user — this fake's stand-in for an interest embedding. */
+  interests: ReadonlyMap<string, readonly string[]> = new Map(),
 ): DiscoveryPort {
   return {
     searchCreators(query, viewer) {
-      const wanted = query.text.toLowerCase().split(/\s+/).filter(Boolean);
+      // invariant 8: absent text ⇒ rank on the viewer's stored interests instead. No
+      // viewer, or no interests, ⇒ an empty page — never an unranked dump of the corpus.
+      const stored = viewer ? interests.get(viewer.userId) : undefined;
+      const signal = query.text ?? (stored ?? []).join(" ");
+      if (query.text === undefined && signal === "") {
+        return Promise.resolve({ kind: "creators" as const, results: [], nextCursor: null });
+      }
+
+      const wanted = signal.toLowerCase().split(/\s+/).filter(Boolean);
       const followed = viewer ? (follows.get(viewer.userId) ?? new Set<string>()) : null;
 
       const ranked = corpus
@@ -146,6 +156,19 @@ describe("DiscoveryQuerySchema", () => {
     expect(DiscoveryQuerySchema.parse({ text: "  pottery  " }).text).toBe("pottery");
     expect(() => DiscoveryQuerySchema.parse({ text: "   " })).toThrow();
     expect(() => DiscoveryQuerySchema.parse({ text: "" })).toThrow();
+  });
+
+  it("treats absent text as a personalized query, but still rejects a blank one", () => {
+    // Absent means "no query — rank for this viewer" (invariant 8) and is valid.
+    expect(DiscoveryQuerySchema.parse({}).text).toBeUndefined();
+    expect(DiscoveryQuerySchema.parse({ text: undefined }).text).toBeUndefined();
+    // A blank search box is malformed input, NOT a request to personalize. If these two
+    // ever collapse into one case, an empty search silently becomes a browse.
+    expect(() => DiscoveryQuerySchema.parse({ text: "" })).toThrow();
+    expect(() => DiscoveryQuerySchema.parse({ text: "\t \n" })).toThrow();
+    // Everything else still applies to a personalized query.
+    expect(DiscoveryQuerySchema.parse({}).limit).toBe(DISCOVERY_DEFAULT_LIMIT);
+    expect(() => DiscoveryQuerySchema.parse({ limit: DISCOVERY_MAX_LIMIT + 1 })).toThrow();
   });
 
   it("caps the page size and rejects a fractional or oversized limit", () => {
@@ -325,5 +348,84 @@ describe("DiscoveryPort (driven purely through the interface)", () => {
     );
     expect(page.results).toEqual([]);
     expect(page.nextCursor).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Invariant 8 — personalized ranking behind the SAME seam (Slice B, resonance-b149).
+//
+// The point of these cases is that nothing about the interface changed: the same one
+// method, driven with `text` absent, ranks on the viewer's stored interests. If this had
+// needed a second method or a sibling port, the seam would have been in the wrong place.
+// ---------------------------------------------------------------------------
+describe("DiscoveryPort — personalized ranking when there is no query text", () => {
+  const port = createFakeDiscoveryPort(
+    CORPUS,
+    new Map(),
+    new Map([
+      ["user_ceramicist", ["pottery", "ceramics", "clay"]],
+      ["user_engineer", ["rust", "systems", "code"]],
+    ]),
+  );
+  const ceramicist: DiscoveryViewer = { userId: "user_ceramicist" };
+  const engineer: DiscoveryViewer = { userId: "user_engineer" };
+  const uninterested: DiscoveryViewer = { userId: "user_blank" };
+  const anonymousViewer: DiscoveryViewer = null;
+
+  it("ranks on the viewer's interests when text is absent", async () => {
+    const page = await port.searchCreators(parse({}), ceramicist);
+
+    expect(() => CreatorResultPageSchema.parse(page)).not.toThrow();
+    // Ranked, not filtered: an unrelated creator still appears, but below the matches —
+    // exactly as it would for the equivalent text search. Thresholding is the caller's
+    // lever (invariant 3), not something the personalized path applies on its own.
+    const order = page.results.map((r) => r.userId);
+    expect(order[0]).toBe("user_potter");
+    expect(order.indexOf("user_dev")).toBeGreaterThan(order.indexOf("user_glazer"));
+    expect(page.results.find((r) => r.userId === "user_dev")?.similarity).toBe(0);
+  });
+
+  it("gives two members with different interests different rankings", async () => {
+    const forPotter = await port.searchCreators(parse({}), ceramicist);
+    const forDev = await port.searchCreators(parse({}), engineer);
+
+    expect(forPotter.results[0]?.userId).toBe("user_potter");
+    expect(forDev.results[0]?.userId).toBe("user_dev");
+  });
+
+  it("returns an empty page for a signed-out viewer rather than an unranked dump", async () => {
+    const page = await port.searchCreators(parse({}), anonymousViewer);
+
+    expect(page.results).toEqual([]);
+    expect(page.nextCursor).toBeNull();
+  });
+
+  it("returns an empty page for a viewer who skipped the picker", async () => {
+    // The skippable picker makes this a real production path, not an edge case.
+    const page = await port.searchCreators(parse({}), uninterested);
+
+    expect(page.results).toEqual([]);
+    expect(page.nextCursor).toBeNull();
+  });
+
+  it("still honours every other invariant on the personalized path", async () => {
+    const page = await port.searchCreators(parse({ limit: 1 }), ceramicist);
+    // invariant 4: at most `limit`, cursor non-null iff more may follow
+    expect(page.results).toHaveLength(1);
+    expect(page.nextCursor).not.toBeNull();
+    // invariant 6: drafts never surface, even when they match the interests perfectly
+    const all = await port.searchCreators(parse({}), ceramicist);
+    expect(all.results.map((r) => r.userId)).not.toContain("user_draft");
+    // invariant 5: a signed-in viewer's follow state is always knowable
+    expect(all.results.every((r) => r.followState !== "unknown")).toBe(true);
+    // invariant 2: descending similarity
+    const sims = all.results.map((r) => r.similarity);
+    expect([...sims].sort((a, b) => b - a)).toEqual(sims);
+  });
+
+  it("keeps the tag filter working without a query string", async () => {
+    const page = await port.searchCreators(parse({ tags: ["handmade"] }), ceramicist);
+
+    expect(page.results.map((r) => r.userId)).toEqual(["user_potter"]);
   });
 });

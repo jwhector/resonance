@@ -26,9 +26,22 @@ packages speak.
   for the search box + tab), `CreatorResultSchema` / `CreatorResultPageSchema` (the designed
   result row + its cursor-paginated envelope), `FollowStateSchema`, `ResultKindSchema` (the
   four designed tabs), and `DiscoveryPort` — one method over a large implementation
-  (embed → status-filtered ANN → tags → threshold → paging → follow state) that lives in
-  `db`. `web` and `ui` depend on this interface and never on SQL; the port's invariants are
+  (query vector → status-filtered ANN → tags → threshold → paging → follow state) that lives
+  in `db`. `web` and `ui` depend on this interface and never on SQL; the port's invariants are
   documented on the interface and exercised by a fake adapter in `discovery.test.ts`.
+  The query vector has **two sources** and the caller cannot tell which was used: the
+  embedded search text, or — when `text` is **absent** — the viewer's stored interest
+  embedding (invariant 8). `text` absent and `text: ""` are deliberately different: absent
+  means "rank for this viewer", blank is still a malformed search and fails validation. A
+  viewer with no interests gets an **empty page**, never an unranked dump.
+- `interests.ts` — **member interests**, the member-side counterpart to the creator
+  interview. `TopicSlugSchema` / `TopicSchema` (topics are identified by **slug, not row id**,
+  because `ui`, `web`, and `db` must name the same topic across a payload) and
+  `MemberInterestsSchema`, the validation boundary for the selection — minimum **zero**
+  because the picker is skippable, duplicates rejected rather than deduped, and no member
+  field on it (identity comes from the session, as with `DiscoveryViewer`).
+  `MEMBER_INTEREST_TARGET` is the design's "Select 3 topics" copy — UI guidance, **not** a
+  validation rule. The curated topic _list_ is seed data owned by `db`, not here.
   The three `weave-*` modules below are **⏸ DEFERRED (2026-07-28)**: shipped and tested, but
   no consumer wires them yet and the product still runs from the prompt literals in
   `@resonance/ai`. Leave them alone unless Jared says otherwise — context in seed

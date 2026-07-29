@@ -47,6 +47,16 @@ export function createDiscoveryAdapter({ db, embed }: DiscoveryAdapterDeps): Dis
       query: CreatorDiscoveryQuery,
       viewer: DiscoveryViewer,
     ): Promise<CreatorResultPage> {
+      // Invariant 8: absent text means "rank for this viewer", not "search for nothing". The
+      // interest vector that will feed this branch is storage this package does not have yet —
+      // the topics / member_interests tables and the 'interest' embedding land in resonance-e2d0.
+      // Until they do, no member has interests, so the contract's documented fallback for a
+      // viewer without interests — an empty page — is also the truthful answer here. Returning
+      // early also keeps `undefined` from ever reaching the embedder.
+      if (query.text === undefined) {
+        return { kind: "creators", results: [], nextCursor: null };
+      }
+
       // `query` arrived through CreatorDiscoveryQuerySchema at the web boundary; adapters trust it
       // (conventions.md § Errors). The one thing not yet checked is the vector, which the embedder
       // produces — searchCreatorProfiles asserts its width before any SQL runs.

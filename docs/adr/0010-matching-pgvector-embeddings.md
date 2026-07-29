@@ -2,6 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-06-16
+- **Amended:** 2026-07-28 — consequence restated: picked topics are an interest embedding (the ranking signal), not a metadata filter (seed resonance-b149).
 
 ## Context
 
@@ -23,7 +24,12 @@ stored, proving the pipeline end-to-end before there is a corpus to match agains
 
 - One datastore, transactional with the rest of the data (ADR-0004); scales well into
   the hundreds of thousands of rows.
-- "Select 3 topics" tags become metadata filters layered on top of similarity.
+- The topics a member picks in "Select 3 topics" are embedded as an _interest_ vector and
+  become the ranking signal when the member has typed no query (DiscoveryPort invariant 8) —
+  not a metadata filter.
+- Metadata filtering (tags, role, region) stays a separate, composable lever on top of
+  similarity — already live for creator tags (`creator_profiles.tags`, GIN-indexed, applied by
+  `searchCreatorProfiles`) — and composes with either ranking signal, query- or interest-derived.
 - Re-embedding all content after a model change is a bulk job — a likely first
   trigger for durable workflows (ADR-0009).
 

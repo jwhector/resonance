@@ -6,11 +6,19 @@ import { z } from "zod";
  * ## The module
  *
  * `DiscoveryPort` is a one-method **interface** at the `@resonance/core` **seam**. Behind
- * it sits a large **implementation** owned by `@resonance/db`: embed the query text →
+ * it sits a large **implementation** owned by `@resonance/db`: resolve a query vector →
  * status-filtered pgvector ANN search → tag filter → similarity threshold → keyset
  * pagination → follow-state resolution for the viewer. None of that leaks through the
  * interface. Callers learn one method and two data shapes; they get the whole ranked
  * search pipeline. That ratio is the **depth**.
+ *
+ * The query vector has **two sources**, and which one is used is an implementation
+ * detail: the embedded search text when the member typed something, or the member's
+ * stored interest embedding when they did not (invariant 8). Personalized ranking is
+ * therefore not a second method or a sibling port — it is another ranking strategy behind
+ * the same seam, which is exactly what this seam exists to absorb. `resonance-7890`'s
+ * planned work (retuning thresholds, blending interest with query and follows) lands here
+ * too, without `web` or `ui` changing.
  *
  * ## Why the contract lives here and not in `db`
  *
@@ -83,13 +91,16 @@ export const DISCOVERY_MAX_LIMIT = 50;
  * *not* a field on it (see {@link DiscoveryViewer}).
  *
  * - `text` is trimmed then length-checked, so a whitespace-only search fails validation
- *   rather than reaching the embedder.
+ *   rather than reaching the embedder. It is **optional, and absent is not empty**: absent
+ *   means "no query — rank for this viewer" (invariant 8), while `""` or `"   "` is a
+ *   malformed search and still fails here. Keeping those two cases distinguishable is what
+ *   stops a blank search box from being silently reinterpreted as a personalized browse.
  * - `threshold` is a *minimum similarity*; omitted means the implementation's default.
  *   Tuning it is the whole point of the seam — it must never require a UI change.
  * - `cursor` is opaque (see {@link CreatorResultPage}).
  */
 export const DiscoveryQuerySchema = z.object({
-  text: z.string().trim().min(1).max(200),
+  text: z.string().trim().min(1).max(200).optional(),
   kind: ResultKindSchema.default("creators"),
   tags: z.array(z.string().min(1).max(64)).max(10).default([]),
   threshold: z.number().min(0).max(1).optional(),
@@ -187,6 +198,11 @@ export type DiscoveryViewer = { readonly userId: string } | null;
  * 6. Only publishable creators appear; draft-status profiles never do.
  * 7. Errors are thrown as `ResonanceError` subclasses, never returned as empty pages — an
  *    empty page means "no matches", never "something broke".
+ * 8. When `query.text` is **absent**, the ranking signal is the viewer's stored interests
+ *    instead of a query string, and every other invariant still holds unchanged. If the
+ *    viewer is `null`, or has no interests, the result is an **empty page** — never an
+ *    unranked or arbitrarily ordered dump of the corpus. "We have nothing to personalize
+ *    on" and "here is everything" are different answers, and only the first is honest.
  */
 export interface DiscoveryPort {
   searchCreators(query: CreatorDiscoveryQuery, viewer: DiscoveryViewer): Promise<CreatorResultPage>;
