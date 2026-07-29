@@ -13,7 +13,7 @@
 | ------------------------ | ---------------------- | --------------------------------------------------------------------------------------- |
 | `7FOYLdtzCTITjcPeGKwF31` | original               | The first file the manifest referenced. Starter-tier team, budget-capped (`mx-29478a`). |
 | `UYlkCL7jkCVgKWiqAVlEFp` | Pro-team copy          | What screens **01–07** were captured from, and what `_index.md` still declares.         |
-| `vC0O5uyMmw1o5vYHmCoOXq` | **`Resonance (Copy)`** | What the Desktop Bridge is connected to **today**, and the source of screens **08–12**. |
+| `vC0O5uyMmw1o5vYHmCoOXq` | **`Resonance (Copy)`** | What the Desktop Bridge is connected to **today**, and the source of screens **08–13**. |
 
 Figma preserves node ids across a copy, so an id resolves in all three. **That is exactly
 the hazard**: an id keeps resolving after it has stopped meaning the same thing.
@@ -77,8 +77,9 @@ migration below fixes that.
 
 ## Rules until the migration lands
 
-1. Screens **08–12** are `copy-derived`. Treat every value in them as descriptive of
-   `Resonance (Copy)` at `2026-07-26T23:41:08Z`, not as the designer's current intent.
+1. Screens **08–13** are `copy-derived`. Treat every value in them as descriptive of
+   `Resonance (Copy)` at its capture time (08–12 `2026-07-26T23:41:08Z`, 13
+   `2026-07-29T07:04:23Z`), not as the designer's current intent.
 2. Do not add new citations to `UYlkCL7jkCVgKWiqAVlEFp` — it is not the file the bridge is
    connected to, so a new citation against it cannot be verified in-session.
 3. **Read-only.** Never call a Figma write tool against any of these files. We do not own
