@@ -1,5 +1,5 @@
 import * as React from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { createEvent, fireEvent, render, screen } from "@testing-library/react";
 import type { Topic } from "@resonance/core";
 import { describe, expect, it, vi } from "vitest";
 import { TopicPicker } from "./topic-picker";
@@ -127,6 +127,35 @@ describe("TopicPicker", () => {
     const inputs = container.querySelectorAll<HTMLInputElement>('input[type="checkbox"]');
     expect([...inputs].map((i) => i.name)).toEqual(TOPICS.map(() => "topicSlugs"));
     expect([...inputs].map((i) => i.value)).toEqual(TOPICS.map((t) => t.slug));
+  });
+
+  it("intercepts submission when no action is given, and still reports the selection", () => {
+    const onSubmit = vi.fn();
+    const { container } = render(<Harness initial={["art"]} onSubmit={onSubmit} />);
+    const form = container.querySelector("form")!;
+    const submit = createEvent.submit(form);
+    fireEvent(form, submit);
+    expect(submit.defaultPrevented).toBe(true);
+    expect(onSubmit).toHaveBeenCalledWith(["art"]);
+  });
+
+  it("submits natively when an action is given — forwards it and does not cancel the event", () => {
+    const onSubmit = vi.fn();
+    const { container } = render(
+      <TopicPicker
+        topics={TOPICS}
+        value={["art"]}
+        onValueChange={() => {}}
+        onSubmit={onSubmit}
+        action="/onboarding/topics"
+      />,
+    );
+    const form = container.querySelector("form")!;
+    expect(form).toHaveAttribute("action", "/onboarding/topics");
+    const submit = createEvent.submit(form);
+    fireEvent(form, submit);
+    expect(submit.defaultPrevented).toBe(false);
+    expect(onSubmit).toHaveBeenCalledWith(["art"]);
   });
 
   it("disables submission while pending", () => {
