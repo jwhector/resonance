@@ -69,7 +69,21 @@ export async function discoveryEmbedder(): Promise<Embedder> {
   return webEmbedder();
 }
 
-/** The one place the harness/live embedder decision is made; both accessors above read it. */
+/**
+ * Embedder for the member interest-selection path (`/interests`' Server Action, which hands it to
+ * `@resonance/db`'s `setMemberInterests`).
+ *
+ * Named for its own composition root like the two above, and reading the same harness decision for
+ * the same reason: `/discover`'s personalized ranking only finds anything if the member's stored
+ * interest vector and the creator-profile vectors came from the SAME embedder. Under the harness
+ * both are the deterministic text-derived fake, so the E2E can assert a ranking rather than hope
+ * for one.
+ */
+export async function interestsEmbedder(): Promise<Embedder> {
+  return webEmbedder();
+}
+
+/** The one place the harness/live embedder decision is made; all accessors above read it. */
 async function webEmbedder(): Promise<Embedder> {
   if (!E2E_HARNESS) return resolveEmbedder();
   const { createFakeEmbedder } = await import("@resonance/ai/testing");

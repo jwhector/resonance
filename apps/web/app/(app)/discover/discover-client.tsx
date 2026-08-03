@@ -90,14 +90,21 @@ export function DiscoverClient({ query, kind, results, signedIn }: DiscoverClien
     [results, followOverrides],
   );
 
+  // Rows decide first, because since Slice B an empty query can legitimately have results: with no
+  // query text the port ranks on the member's stored interests instead (`DiscoveryPort` invariant
+  // 8). Keying `idle` off the query alone would swallow exactly those personalized rows.
+  //
+  // The three "nothing to show" cases stay distinct. `idle` now means "nothing searched AND nothing
+  // to suggest" — a signed-out visitor, or a member who skipped the picker — while `no-results`
+  // still means a real query that matched nothing.
   const resultsView: ResultsView =
     kind !== "creators"
       ? { view: "coming-soon", kind }
-      : query.length === 0
-        ? { view: "idle" }
-        : rows.length === 0
-          ? { view: "no-results" }
-          : { view: "results" };
+      : rows.length > 0
+        ? { view: "results" }
+        : query.length === 0
+          ? { view: "idle" }
+          : { view: "no-results" };
 
   function navigate(nextKind: ResultKind, nextQuery: string) {
     router.push(discoverHref(nextKind, nextQuery));

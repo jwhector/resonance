@@ -44,20 +44,30 @@ export default async function DiscoverPage({
   // rendered as the idle surface. The action then re-parses as the real trust boundary, because it
   // is also callable directly by a client and cannot inherit this one's verdict (golden rule 4).
   //
-  // `text` is now optional, but that only permits an *absent* field — not an empty string. Both
-  // `?q=` and a bare `/discover` still arrive here as `text: ""` and still fail `.min(1)`, so this
-  // route keeps its idle surface unchanged. Wiring the personalized (absent-text) branch is
-  // resonance-3a7d's job.
+  // Read once, and before the search, because it decides *which question to ask*: it feeds the
+  // Follow control's signed-out prompt (not inferable from the rows — an empty page carries no
+  // `followState` to read the viewer off) and gates the personalized branch below.
+  const signedIn = (await getWebSession(await headers())) !== null;
+
+  // Three cases, and the difference between the first two is the whole of Slice B on this screen:
+  //
+  //   no query text + a viewer  → `{}`: omit `text` and the port ranks on the member's stored
+  //                               interest embedding instead (`DiscoveryPort` invariant 8).
+  //   no query text + no viewer → don't ask at all. The port would answer an empty page anyway,
+  //                               so skipping spares an anonymous visit a pointless round trip.
+  //   query text                → `{ text: q }`, exactly as before.
+  //
+  // A *blank* box is still not a personalized query: `?q=%20%20` arrives as `text: "  "`, which
+  // trims to empty and fails `.min(1)` here — malformed input, not a request to be ranked for.
+  const queryInput = q === "" ? (signedIn ? {} : null) : { text: q };
   const searchable =
-    kind === "creators" ? CreatorDiscoveryQuerySchema.safeParse({ text: q }) : null;
+    kind === "creators" && queryInput !== null
+      ? CreatorDiscoveryQuerySchema.safeParse(queryInput)
+      : null;
 
   const results: readonly CreatorResult[] = searchable?.success
     ? (await searchCreators(searchable.data)).results
     : [];
-
-  // Read once for the Follow control's signed-out prompt. Not inferable from the rows: a page with
-  // no results carries no `followState` to read the viewer off, and the prompt must work there too.
-  const signedIn = (await getWebSession(await headers())) !== null;
 
   return (
     <main className="flex flex-1 justify-center overflow-y-auto pl-10">

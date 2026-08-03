@@ -7,7 +7,9 @@ import { CreateAccountCard, type CreateAccountValues } from "@resonance/ui";
 import { authClient } from "../../../lib/auth-client";
 
 /** Where Better Auth lands the user after they click the magic link (post-verify session). */
-const AFTER_VERIFY = "/onboarding/creator";
+// Must match `verify-form`'s destination: the magic-link callback and the OTP path have to land on
+// the same screen, or which channel the member used would change where they end up.
+const AFTER_VERIFY = "/interests";
 
 /**
  * Client wrapper over the presentational `CreateAccountCard`. On submit it dispatches BOTH

@@ -5,13 +5,20 @@ import { useRouter } from "next/navigation";
 import { EmailVerifyCard } from "@resonance/ui";
 import { authClient } from "../../../lib/auth-client";
 
-/** Session destination shared with the magic-link callback (see `signup-form`). */
-const AFTER_VERIFY = "/onboarding/creator";
+/**
+ * Session destination shared with the magic-link callback (see `signup-form`).
+ *
+ * Every newly verified account goes through interest selection, not just members: roles are
+ * additive, so a creator is also a member and a personalized `/discover` comes from the same
+ * selection. `/interests` then continues to the creator interview, so this inserts a step rather
+ * than rerouting the flow.
+ */
+const AFTER_VERIFY = "/interests";
 
 /**
  * Client wrapper over the presentational `EmailVerifyCard`. The OTP path verifies the code
  * via Better Auth's emailOTP sign-in (which sets the session cookie on its response) and then
- * routes to the creator interview; the magic-link path is handled entirely by Better Auth's
+ * routes to interest selection; the magic-link path is handled entirely by Better Auth's
  * callback, which lands on the same destination. "Try again" re-sends both channels.
  */
 export function VerifyForm({ email }: { email: string }) {
