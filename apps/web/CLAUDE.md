@@ -51,9 +51,17 @@ lib/
 e2e/
 ├── onboarding-creator.spec.ts    full-flow Playwright (runs under E2E_HARNESS)
 ├── discovery.spec.ts             member discovery front door + follow/unfollow (E2E_HARNESS)
+├── interests.spec.ts             pick topics → interest-ranked /discover, and the skip path
 ├── home.spec.ts                  scaffold smoke test
-└── lib/discovery-fixtures.ts     seeds ready/draft creator profiles into the real Neon DB
+└── lib/                          signup.ts — the shared passwordless front door, driven to
+                                  /interests · db.ts — fixture DB plumbing · discovery-fixtures.ts
+                                  — ready/draft creator profiles · interest-fixtures.ts — the
+                                  creator seeded to match a member's interest text exactly
 ```
+
+Fixture cleanup lives in `afterEach`, never a `finally` inside a test: Playwright aborts the test
+body on a timeout, so a `finally` there silently leaks rows into the shared dev database — the
+cause behind seed `resonance-1236`.
 
 Depends on every `@resonance/*` package plus `next`, `react`, `@tanstack/react-query`,
 and `zod`.
