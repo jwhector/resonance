@@ -1,9 +1,7 @@
 import { type APIRequestContext, type Page, expect, test } from "@playwright/test";
-import {
-  deleteUserByEmail,
-  seedDiscoveryFixture,
-  type DiscoveryFixture,
-} from "./lib/discovery-fixtures";
+import { deleteUserByEmail } from "./lib/db";
+import { seedDiscoveryFixture, type DiscoveryFixture } from "./lib/discovery-fixtures";
+import { signUpAndVerify, skipInterests } from "./lib/signup";
 
 /**
  * End-to-end member discovery (Slice A, `pl-bbca` step 6 / `resonance-3f15`): the real front
@@ -30,61 +28,39 @@ const RUN_ID = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 
 
 let fixture: DiscoveryFixture;
 
+/**
+ * Accounts a test signed up, drained in `afterEach` rather than a `finally` inside the test body:
+ * a Playwright timeout aborts the body at its current `await` so the `finally` never runs and the
+ * member row leaks into the shared dev database (the cause behind seed `resonance-1236`).
+ * `afterEach` still runs after a timeout and gets its own time budget.
+ */
+let accounts: string[] = [];
+
 test.beforeAll(async () => {
   fixture = await seedDiscoveryFixture(RUN_ID);
+});
+
+test.afterEach(async () => {
+  for (const email of accounts) await deleteUserByEmail(email);
+  accounts = [];
 });
 
 test.afterAll(async () => {
   await fixture?.cleanup();
 });
 
-/** Fill the 6 OTP cells one digit at a time (each cell is labelled "Digit N of 6"). */
-async function enterOtp(page: Page, otp: string) {
-  for (let i = 0; i < otp.length; i++) {
-    await page.getByLabel(`Digit ${i + 1} of 6`).fill(otp[i]!);
-  }
-}
-
 /**
- * Sign a brand-new member in through the real passwordless front door, exactly as
- * `onboarding-creator.spec.ts` does. Returns the email so the test can delete the user after.
+ * Sign a brand-new member in through the real passwordless front door. Returns the email so the
+ * test can delete the user after.
+ *
+ * Verification lands on interest selection (Slice B, `resonance-3a7d`), and this helper **skips**
+ * it: these specs assert Slice A's behaviour, which must stay true for a member with NO interests.
+ * That also keeps the `/discover` assertions below reading the search path rather than a
+ * personalized surface — `interests.spec.ts` owns the picking path.
  */
 async function signInFreshMember(page: Page, request: APIRequestContext): Promise<string> {
-  const email = `e2e-discovery-member-${RUN_ID}-${Date.now()}@example.com`;
-
-  await page.goto("/signup");
-  await expect(page.getByRole("heading", { name: "Welcome to Resonance" })).toBeVisible();
-  await page.getByLabel("Email").fill(email);
-  await page.getByRole("checkbox").click();
-  await page.getByRole("button", { name: "Continue" }).click();
-
-  await expect(page).toHaveURL(/\/verify/, { timeout: 15_000 });
-
-  let otp = "";
-  await expect
-    .poll(
-      async () => {
-        const res = await request.get(`/api/test/last-otp?email=${encodeURIComponent(email)}`);
-        if (!res.ok()) return null;
-        const body = (await res.json()) as { otp: string | null };
-        otp = body.otp ?? "";
-        return body.otp;
-      },
-      { timeout: 15_000 },
-    )
-    .toMatch(/^\d{6}$/);
-
-  await enterOtp(page, otp);
-  await page.getByRole("button", { name: "Continue" }).click();
-
-  // Verification now lands on interest selection (Slice B, `resonance-3a7d`). These discovery specs
-  // assert Slice A's behaviour, which must stay true for a member with NO interests, so this helper
-  // skips the step — Continue with nothing selected is a valid empty selection. That also keeps the
-  // /discover assertions below reading the search path rather than a personalized surface.
-  await expect(page).toHaveURL(/\/interests/, { timeout: 20_000 });
-  await page.getByRole("button", { name: "Continue" }).click();
-  await expect(page).toHaveURL(/\/onboarding\/creator/, { timeout: 20_000 });
-
+  const email = await signUpAndVerify(page, request, `e2e-discovery-member-${RUN_ID}`);
+  await skipInterests(page);
   return email;
 }
 
@@ -160,40 +136,38 @@ test("a signed-in member follows a creator and the state survives a reload", asy
   page,
   request,
 }) => {
-  const email = await signInFreshMember(page, request);
-  try {
-    await page.goto("/discover");
-    await searchFor(page, fixture.query);
+  accounts.push(await signInFreshMember(page, request));
+  await page.goto("/discover");
+  await searchFor(page, fixture.query);
 
-    const follow = page.getByRole("button", { name: `Follow ${fixture.top.displayName}` });
-    await expect(follow).toBeVisible();
-    await follow.click();
+  const follow = page.getByRole("button", { name: `Follow ${fixture.top.displayName}` });
+  await expect(follow).toBeVisible();
+  await follow.click();
 
-    // Settled outcome of the mutation: the row's control is now the Following affordance.
-    const following = page.getByRole("button", { name: `Unfollow ${fixture.top.displayName}` });
-    await expect(following).toBeVisible({ timeout: 20_000 });
-    await expect(following).toHaveText("Following");
+  // Settled outcome of the mutation: the row's control is now the Following affordance.
+  const following = page.getByRole("button", { name: `Unfollow ${fixture.top.displayName}` });
+  await expect(following).toBeVisible({ timeout: 20_000 });
+  await expect(following).toHaveText("Following");
 
-    // Acceptance criterion 3: PERSISTS. A reload re-runs the ranked query server-side, so the
-    // state can only still be "Following" if the follow edge actually landed in the database.
-    await page.reload();
-    await expect(
-      page.getByRole("button", { name: `Unfollow ${fixture.top.displayName}` }),
-    ).toBeVisible({ timeout: 20_000 });
+  // Acceptance criterion 3: PERSISTS. A reload re-runs the ranked query server-side, so the
+  // state can only still be "Following" if the follow edge actually landed in the database.
+  await page.reload();
+  await expect(
+    page.getByRole("button", { name: `Unfollow ${fixture.top.displayName}` }),
+  ).toBeVisible({ timeout: 20_000 });
 
-    // And back again — unfollow is the same claim in the other direction.
-    await page.getByRole("button", { name: `Unfollow ${fixture.top.displayName}` }).click();
-    await expect(
-      page.getByRole("button", { name: `Follow ${fixture.top.displayName}` }),
-    ).toHaveText("Follow", { timeout: 20_000 });
+  // And back again — unfollow is the same claim in the other direction.
+  await page.getByRole("button", { name: `Unfollow ${fixture.top.displayName}` }).click();
+  await expect(page.getByRole("button", { name: `Follow ${fixture.top.displayName}` })).toHaveText(
+    "Follow",
+    { timeout: 20_000 },
+  );
 
-    await page.reload();
-    await expect(
-      page.getByRole("button", { name: `Follow ${fixture.top.displayName}` }),
-    ).toHaveText("Follow", { timeout: 20_000 });
-  } finally {
-    await deleteUserByEmail(email);
-  }
+  await page.reload();
+  await expect(page.getByRole("button", { name: `Follow ${fixture.top.displayName}` })).toHaveText(
+    "Follow",
+    { timeout: 20_000 },
+  );
 });
 
 test("a signed-out member is prompted to sign in rather than silently failing", async ({

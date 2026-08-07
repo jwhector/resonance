@@ -1,4 +1,6 @@
-import { type Page, expect, test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+import { deleteUserByEmail } from "./lib/db";
+import { signUpAndVerify, skipInterests } from "./lib/signup";
 
 /**
  * End-to-end Creator Onboarding flow (ADR-0013): the real passwordless front door →
@@ -16,58 +18,37 @@ import { type Page, expect, test } from "@playwright/test";
 /** The canned line the fake interview model streams (see @resonance/ai gateway fake). */
 const CANNED_REPLY = "Thanks for sharing — what first drew you to this work?";
 
-/** Fill the 6 OTP cells one digit at a time (each cell is labelled "Digit N of 6"). */
-async function enterOtp(page: Page, otp: string) {
-  for (let i = 0; i < otp.length; i++) {
-    await page.getByLabel(`Digit ${i + 1} of 6`).fill(otp[i]!);
-  }
-}
+/**
+ * Accounts this worker signed up, removed in `afterEach`.
+ *
+ * This spec is the one that **commits a creator profile**, so leaving its account behind does not
+ * just leak a row — it leaks a published, embedded profile that ranks in every subsequent
+ * discovery search. 70 of the dev database's 80 profiles were `New Creator` leftovers from this
+ * test before the teardown existed, crowding real results off the first page.
+ *
+ * `afterEach` rather than a `finally` inside the test: Playwright aborts the test body on a
+ * timeout, and a `finally` there never runs — the mechanism behind seed `resonance-1236`.
+ */
+let accounts: string[] = [];
+
+test.afterEach(async () => {
+  for (const email of accounts) await deleteUserByEmail(email);
+  accounts = [];
+});
 
 test("creator can sign up, interview with Weave, generate + commit a profile", async ({
   page,
   request,
 }) => {
-  // Unique per run so re-runs never collide on Better Auth's one-account-per-email.
-  const email = `e2e-creator-${Date.now()}@example.com`;
+  // 1) /signup → /verify → the OTP from the test seam → signed in, standing on /interests.
+  //    Unique per run so re-runs never collide on Better Auth's one-account-per-email.
+  accounts.push(await signUpAndVerify(page, request, "e2e-creator"));
 
-  // 1) /signup — enter email, consent, submit. Lands on /verify.
-  await page.goto("/signup");
-  await expect(page.getByRole("heading", { name: "Welcome to Resonance" })).toBeVisible();
-  await page.getByLabel("Email").fill(email);
-  await page.getByRole("checkbox").click();
-  await page.getByRole("button", { name: "Continue" }).click();
-
-  await expect(page).toHaveURL(/\/verify/, { timeout: 15_000 });
-  await expect(page.getByRole("heading", { name: "Check your email to continue" })).toBeVisible();
-
-  // 2) Fetch the fake OTP from the test seam (poll until the async send has landed), enter it,
-  //    submit → session cookie is set → redirect to the creator interview.
-  let otp = "";
-  await expect
-    .poll(
-      async () => {
-        const res = await request.get(`/api/test/last-otp?email=${encodeURIComponent(email)}`);
-        if (!res.ok()) return null;
-        const body = (await res.json()) as { otp: string | null };
-        otp = body.otp ?? "";
-        return body.otp;
-      },
-      { timeout: 15_000 },
-    )
-    .toMatch(/^\d{6}$/);
-
-  await enterOtp(page, otp);
-  await page.getByRole("button", { name: "Continue" }).click();
-
-  // 2b) Interest selection now sits between verification and the interview, for every new account
-  //     (Slice B, `resonance-3a7d`). This spec is about the CREATOR path, so it skips the step —
-  //     which the picker supports by design: Continue with nothing selected is a valid, empty
-  //     selection. `resonance-6c52` owns driving the picking path.
-  await expect(page).toHaveURL(/\/interests/, { timeout: 20_000 });
-  await expect(page.getByRole("heading", { name: /Select \d+ topics/ })).toBeVisible();
-  await page.getByRole("button", { name: "Continue" }).click();
-
-  await expect(page).toHaveURL(/\/onboarding\/creator/, { timeout: 20_000 });
+  // 2) Interest selection now sits between verification and the interview, for every new account
+  //    (Slice B, `resonance-3a7d`). This spec is about the CREATOR path, so it skips the step —
+  //    which the picker supports by design: Continue with nothing selected is a valid, empty
+  //    selection. `interests.spec.ts` owns driving the picking path.
+  await skipInterests(page);
 
   // 3) Interview: the Weave rail renders. Send a turn; assert the assistant reply SETTLES.
   await expect(page.getByRole("region", { name: "Weave interview" })).toBeVisible();

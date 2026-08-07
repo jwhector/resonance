@@ -38,7 +38,7 @@ y=225   card list         1443:78150   604×n    VERTICAL, gap 40
 Full spec for `SearchBar/Filled` and `Tabs/Search` lives in
 [`../12-search-creators/design.md`](../12-search-creators/design.md).
 
-## Post card (Slice B — not built in Slice A)
+## Post card (Slice C — not built in Slice A or B)
 
 Structure read off `design.png`, `PROVISIONAL` — only the frame-level tree was resolved
 in-session. Lighter than the commerce cards: **no price, no select, no cart actions.**
