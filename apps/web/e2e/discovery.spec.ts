@@ -28,8 +28,21 @@ const RUN_ID = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 
 
 let fixture: DiscoveryFixture;
 
+/**
+ * Accounts a test signed up, drained in `afterEach` rather than a `finally` inside the test body:
+ * a Playwright timeout aborts the body at its current `await` so the `finally` never runs and the
+ * member row leaks into the shared dev database (the cause behind seed `resonance-1236`).
+ * `afterEach` still runs after a timeout and gets its own time budget.
+ */
+let accounts: string[] = [];
+
 test.beforeAll(async () => {
   fixture = await seedDiscoveryFixture(RUN_ID);
+});
+
+test.afterEach(async () => {
+  for (const email of accounts) await deleteUserByEmail(email);
+  accounts = [];
 });
 
 test.afterAll(async () => {
@@ -123,40 +136,38 @@ test("a signed-in member follows a creator and the state survives a reload", asy
   page,
   request,
 }) => {
-  const email = await signInFreshMember(page, request);
-  try {
-    await page.goto("/discover");
-    await searchFor(page, fixture.query);
+  accounts.push(await signInFreshMember(page, request));
+  await page.goto("/discover");
+  await searchFor(page, fixture.query);
 
-    const follow = page.getByRole("button", { name: `Follow ${fixture.top.displayName}` });
-    await expect(follow).toBeVisible();
-    await follow.click();
+  const follow = page.getByRole("button", { name: `Follow ${fixture.top.displayName}` });
+  await expect(follow).toBeVisible();
+  await follow.click();
 
-    // Settled outcome of the mutation: the row's control is now the Following affordance.
-    const following = page.getByRole("button", { name: `Unfollow ${fixture.top.displayName}` });
-    await expect(following).toBeVisible({ timeout: 20_000 });
-    await expect(following).toHaveText("Following");
+  // Settled outcome of the mutation: the row's control is now the Following affordance.
+  const following = page.getByRole("button", { name: `Unfollow ${fixture.top.displayName}` });
+  await expect(following).toBeVisible({ timeout: 20_000 });
+  await expect(following).toHaveText("Following");
 
-    // Acceptance criterion 3: PERSISTS. A reload re-runs the ranked query server-side, so the
-    // state can only still be "Following" if the follow edge actually landed in the database.
-    await page.reload();
-    await expect(
-      page.getByRole("button", { name: `Unfollow ${fixture.top.displayName}` }),
-    ).toBeVisible({ timeout: 20_000 });
+  // Acceptance criterion 3: PERSISTS. A reload re-runs the ranked query server-side, so the
+  // state can only still be "Following" if the follow edge actually landed in the database.
+  await page.reload();
+  await expect(
+    page.getByRole("button", { name: `Unfollow ${fixture.top.displayName}` }),
+  ).toBeVisible({ timeout: 20_000 });
 
-    // And back again — unfollow is the same claim in the other direction.
-    await page.getByRole("button", { name: `Unfollow ${fixture.top.displayName}` }).click();
-    await expect(
-      page.getByRole("button", { name: `Follow ${fixture.top.displayName}` }),
-    ).toHaveText("Follow", { timeout: 20_000 });
+  // And back again — unfollow is the same claim in the other direction.
+  await page.getByRole("button", { name: `Unfollow ${fixture.top.displayName}` }).click();
+  await expect(page.getByRole("button", { name: `Follow ${fixture.top.displayName}` })).toHaveText(
+    "Follow",
+    { timeout: 20_000 },
+  );
 
-    await page.reload();
-    await expect(
-      page.getByRole("button", { name: `Follow ${fixture.top.displayName}` }),
-    ).toHaveText("Follow", { timeout: 20_000 });
-  } finally {
-    await deleteUserByEmail(email);
-  }
+  await page.reload();
+  await expect(page.getByRole("button", { name: `Follow ${fixture.top.displayName}` })).toHaveText(
+    "Follow",
+    { timeout: 20_000 },
+  );
 });
 
 test("a signed-out member is prompted to sign in rather than silently failing", async ({

@@ -59,8 +59,6 @@ export interface DiscoveryFixture {
   draft: SeededCreator;
   /** The single offering rendered on {@link top}'s profile page. */
   offering: { title: string; description: string };
-  /** Extra user ids to remove on cleanup (e.g. a member created by signing up mid-test). */
-  trackUserId(userId: string): void;
   cleanup(): Promise<void>;
 }
 
@@ -135,17 +133,12 @@ export async function seedDiscoveryFixture(runId: string): Promise<DiscoveryFixt
   );
   const draft = await seed("draft", `E2E Draft ${runId}`, query, "draft");
 
-  const extraUserIds: string[] = [];
-
   return {
     query,
     top,
     second,
     draft,
     offering,
-    trackUserId(userId: string) {
-      extraUserIds.push(userId);
-    },
     async cleanup() {
       // Embeddings have no FK to creator_profiles, so they must go explicitly and first.
       // `source_id` is text — it also keys interest vectors to Better Auth user ids — so the
@@ -154,7 +147,7 @@ export async function seedDiscoveryFixture(runId: string): Promise<DiscoveryFixt
         await raw`delete from embeddings where source_id = ${id}`;
       }
       // Users cascade to creator_profiles, follows and sessions.
-      for (const id of [...userIds, ...extraUserIds]) {
+      for (const id of userIds) {
         await raw`delete from "user" where id = ${id}`;
       }
     },
