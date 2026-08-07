@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { deleteUserByEmail } from "./lib/db";
 import { signUpAndVerify, skipInterests } from "./lib/signup";
 
 /**
@@ -17,13 +18,31 @@ import { signUpAndVerify, skipInterests } from "./lib/signup";
 /** The canned line the fake interview model streams (see @resonance/ai gateway fake). */
 const CANNED_REPLY = "Thanks for sharing — what first drew you to this work?";
 
+/**
+ * Accounts this worker signed up, removed in `afterEach`.
+ *
+ * This spec is the one that **commits a creator profile**, so leaving its account behind does not
+ * just leak a row — it leaks a published, embedded profile that ranks in every subsequent
+ * discovery search. 70 of the dev database's 80 profiles were `New Creator` leftovers from this
+ * test before the teardown existed, crowding real results off the first page.
+ *
+ * `afterEach` rather than a `finally` inside the test: Playwright aborts the test body on a
+ * timeout, and a `finally` there never runs — the mechanism behind seed `resonance-1236`.
+ */
+let accounts: string[] = [];
+
+test.afterEach(async () => {
+  for (const email of accounts) await deleteUserByEmail(email);
+  accounts = [];
+});
+
 test("creator can sign up, interview with Weave, generate + commit a profile", async ({
   page,
   request,
 }) => {
   // 1) /signup → /verify → the OTP from the test seam → signed in, standing on /interests.
   //    Unique per run so re-runs never collide on Better Auth's one-account-per-email.
-  await signUpAndVerify(page, request, "e2e-creator");
+  accounts.push(await signUpAndVerify(page, request, "e2e-creator"));
 
   // 2) Interest selection now sits between verification and the interview, for every new account
   //    (Slice B, `resonance-3a7d`). This spec is about the CREATOR path, so it skips the step —

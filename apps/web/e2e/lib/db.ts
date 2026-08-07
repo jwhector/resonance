@@ -43,14 +43,21 @@ export function rawClient(db: ReturnType<typeof createDb>): RawSql {
 }
 
 /**
- * Remove a member created by signing up during a test, addressed by email because Better Auth
- * mints the id. Cascades to their profile, session and follow edges.
+ * Remove an account created by signing up during a test, addressed by email because Better Auth
+ * mints the id. The `user` delete cascades to their creator profile, sessions and follow edges.
  *
- * Their **interest vector** is deleted explicitly first: `embeddings` has no foreign key to
- * `user` (its `source_id` is text, holding profile uuids and member ids alike), so the cascade
- * cannot reach it and a member who picked topics would otherwise leave a vector behind on every
- * run. It is inert — discovery only joins `source_type = 'creator_profile'` rows — but it
- * accumulates, and "inert today" is how the last pile of leaked rows started.
+ * **Both kinds of embedding are deleted explicitly first, because no cascade can reach them.**
+ * `embeddings` has no foreign key to anything — its `source_id` is plain text, holding creator
+ * profile uuids and member ids alike — so deleting the user leaves:
+ *
+ * - the member's **interest vector** (`source_type = 'interest'`, keyed by user id), and
+ * - the **creator-profile vector** of any profile the test committed (`source_type =
+ *   'creator_profile'`, keyed by the profile uuid that is about to cascade away).
+ *
+ * The second one is not inert. A stranded creator vector still joins nothing and so never
+ * appears in results — but the profile row it described is gone, and while the profile *is*
+ * there it ranks in real searches. That is how the dev database accumulated 70 `New Creator`
+ * profiles: every full-flow run committed one and deleted none.
  */
 export async function deleteUserByEmail(email: string): Promise<void> {
   ensureDatabaseUrl();
@@ -59,6 +66,17 @@ export async function deleteUserByEmail(email: string): Promise<void> {
     delete from embeddings
     where source_type = 'interest'
       and source_id in (select id from "user" where email = ${email})
+  `;
+  // Profile uuid compared as text: `source_id` is a text column, so casting the uuid side is the
+  // safe direction — `source_id::uuid` would raise the moment it met a non-uuid interest key.
+  await raw`
+    delete from embeddings
+    where source_id in (
+      select p.id::text
+      from creator_profiles p
+      join "user" u on u.id = p.user_id
+      where u.email = ${email}
+    )
   `;
   await raw`delete from "user" where email = ${email}`;
 }
