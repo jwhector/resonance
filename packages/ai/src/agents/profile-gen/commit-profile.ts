@@ -48,7 +48,7 @@ export async function commitCreatorProfile(
     bio: commit.bio,
     tags: commit.tags,
     // The commit payload carries no offerings — the onboarding UI has no offerings editor — so a
-    // profile starts with an empty list (design spec § Increment 2 / Creator Onboarding).
+    // profile starts with an empty list.
     offerings: [],
   });
 

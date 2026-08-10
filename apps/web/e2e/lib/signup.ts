@@ -4,11 +4,10 @@ import { type APIRequestContext, type Page, expect } from "@playwright/test";
  * The real passwordless front door, driven the way a member drives it — shared by every spec that
  * needs a signed-in account.
  *
- * It is one helper rather than three copies because the front door now has a *step* in it: since
- * Slice B (`resonance-3a7d`), `/interests` sits between email verification and the rest of
- * onboarding for every newly verified account, so all three specs pass through it. Keeping the
- * route names in one place is also what confines seed `resonance-f4be` — which changes where
- * `/interests` continues to — to a single edit instead of three.
+ * It is one helper rather than three copies because the front door has a *step* in it:
+ * `/interests` sits between email verification and the rest of onboarding for every newly
+ * verified account, so all three specs pass through it. Keeping the route names in one place
+ * also makes changing where `/interests` continues to a single edit instead of three.
  *
  * The OTP comes from the `E2E_HARNESS`-gated `/api/test/last-otp` seam, which reads the same
  * fake-mail singleton Better Auth wrote the code to (ADR-0018 §4).
@@ -17,9 +16,9 @@ import { type APIRequestContext, type Page, expect } from "@playwright/test";
 /**
  * Where `/interests` continues to today.
  *
- * Deliberately today's post-verification destination, unchanged by Slice B — member and creator
- * cannot be told apart at that point (see `(onboarding)/interests/actions.ts` and seed
- * `resonance-f4be`, which owns changing it).
+ * Deliberately the existing post-verification destination: member and creator cannot be told
+ * apart at that point, because nothing in the app records who is a creator (see
+ * `(onboarding)/interests/actions.ts`).
  */
 export const AFTER_INTERESTS = /\/onboarding\/creator/;
 

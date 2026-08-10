@@ -80,7 +80,7 @@ export function createDiscoveryAdapter({ db, embed }: DiscoveryAdapterDeps): Dis
         embedding = interest;
       } else {
         // `query` arrived through CreatorDiscoveryQuerySchema at the web boundary; adapters trust
-        // it (conventions.md § Errors). The one thing not yet checked is the vector, which the
+        // it. The one thing not yet checked is the vector, which the
         // embedder produces — searchCreatorProfiles asserts its width before any SQL runs.
         embedding = await embed(query.text);
       }

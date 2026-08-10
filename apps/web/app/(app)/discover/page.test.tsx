@@ -99,7 +99,7 @@ describe("/discover", () => {
     expect(searchCreators).toHaveBeenCalledWith(expect.objectContaining({ text: "tinctures" }));
   });
 
-  // Slice B (resonance-3a7d): no query text is a *personalized* request, not "nothing asked".
+  // No query text is a *personalized* request, not "nothing asked".
   describe("personalized surface when there is no query", () => {
     const signedIn = { id: "user_member", email: "m@example.com", roles: ["member"] };
 

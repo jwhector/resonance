@@ -17,7 +17,7 @@ export {
 } from "./queries/profiles";
 export { setUserRoles } from "./queries/users";
 
-// Discovery (Slice A). `searchCreatorProfiles` is the deep ANN read; `createDiscoveryAdapter`
+// Discovery. `searchCreatorProfiles` is the deep ANN read; `createDiscoveryAdapter`
 // wraps it as core's DiscoveryPort so `web`/`ui` depend on the interface and never on this SQL.
 export {
   searchCreatorProfiles,
@@ -36,7 +36,7 @@ export {
   getFollowStates,
   type FollowEdge,
 } from "./queries/follows";
-// Member interests (Slice B). Same precedent as follows: writing an interest is not ranking, so
+// Member interests. Same precedent as follows: writing an interest is not ranking, so
 // it ships as a direct export rather than a second method on DiscoveryPort. The vector it stores
 // is what the port's no-text branch ranks by.
 export {

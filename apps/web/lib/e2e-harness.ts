@@ -40,7 +40,7 @@ export async function onboardingModelOverride(): Promise<{ model?: LanguageModel
  * (`assertAiConfigured`). Under the harness the model AND embedder are injected fakes (see
  * `onboardingModelOverride` / `onboardingEmbedder`), so no real AI credentials exist or are
  * needed — running the presence check there would spuriously throw and break the E2E. Live path
- * keeps the guard so a partial prod config still fails fast (seed resonance-2fdc).
+ * keeps the guard so a partial prod config still fails fast.
  */
 export function onboardingAiCheckEnabled(): boolean {
   return !E2E_HARNESS;
@@ -95,14 +95,14 @@ async function webEmbedder(): Promise<Embedder> {
  * handler that WRITES the login code and the `/api/test/last-otp` read-back observe the SAME
  * captured codes), else `undefined` → the caller uses the live `getAuth()`.
  *
- * We EXPLICITLY register the fake's captured codes for read-back via `observeLoginCodes(fake)`
- * (seed resonance-5d4e). Construction alone registers nothing, so building a fake elsewhere — or a
+ * We EXPLICITLY register the fake's captured codes for read-back via `observeLoginCodes(fake)`.
+ * Construction alone registers nothing, so building a fake elsewhere — or a
  * session read routing through `getWebAuth()` — cannot silently hijack the OTP read-back; only this
  * intentional call feeds `peekLoginCode`.
  *
  * Singleton pinned to `globalThis` (not a module-level `let`), because in Next.js the auth mount,
  * the RSC/Server-Action session reads, and the `/api/test/last-otp` route can evaluate in different
- * module scopes (mulch failure mx-b19c21). Pinning guarantees the fake is built — and
+ * module scopes. Pinning guarantees the fake is built — and
  * `observeLoginCodes` called — exactly ONCE per process, so every scope shares the one fake and the
  * read-back never gets clobbered by a later empty buffer.
  *
@@ -111,7 +111,7 @@ async function webEmbedder(): Promise<Embedder> {
  * cold server both would reach a "build it if absent" check before either finished building. With
  * the port stored, both built a fake: one won this slot (the transport auth actually sends through)
  * while the other won the process-wide observation slot, so `peekLoginCode` read a buffer nothing
- * wrote to and `/api/test/last-otp` answered `null` forever (seed resonance-86dd). Storing the
+ * wrote to and `/api/test/last-otp` answered `null` forever. Storing the
  * promise makes the assignment atomic — it happens before any `await`, so concurrent callers all
  * await the same construction. A failed construction clears the slot rather than caching a rejected
  * promise, so a transient dynamic-import failure on a cold server can be retried.

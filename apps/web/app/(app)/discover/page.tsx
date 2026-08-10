@@ -36,20 +36,20 @@ export default async function DiscoverPage({
   const params = await searchParams;
   const q = first(params.q);
   // An unknown/absent tab falls back to Creators rather than 404-ing: a hand-edited URL should
-  // land somewhere sensible, and Creators is the only tab with a data source this slice.
+  // land somewhere sensible, and Creators is the only tab with a data source.
   const kind = ResultKindSchema.catch("creators").parse(first(params.tab));
 
   // Two different questions, so two parses. Here: "is this URL searchable at all?" — an empty box
   // or a 300-character paste is a *page state*, not a crash, so it is decided with `safeParse` and
   // rendered as the idle surface. The action then re-parses as the real trust boundary, because it
-  // is also callable directly by a client and cannot inherit this one's verdict (golden rule 4).
+  // is also callable directly by a client and cannot inherit this one's verdict.
   //
   // Read once, and before the search, because it decides *which question to ask*: it feeds the
   // Follow control's signed-out prompt (not inferable from the rows — an empty page carries no
   // `followState` to read the viewer off) and gates the personalized branch below.
   const signedIn = (await getWebSession(await headers())) !== null;
 
-  // Three cases, and the difference between the first two is the whole of Slice B on this screen:
+  // Three cases, and the difference between the first two is the whole of personalization here:
   //
   //   no query text + a viewer  → `{}`: omit `text` and the port ranks on the member's stored
   //                               interest embedding instead (`DiscoveryPort` invariant 8).

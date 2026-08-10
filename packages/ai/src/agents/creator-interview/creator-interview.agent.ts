@@ -6,7 +6,7 @@ export const CREATOR_INTERVIEW_MODEL = "anthropic/claude-sonnet-5";
 
 /**
  * The Weave onboarding interview: streaming chat, no tools. Run it through
- * `runAgentStream` from a route handler that pipes tokens to the client (Increment 3).
+ * `runAgentStream` from a route handler that pipes tokens to the client.
  */
 export const creatorInterviewAgent: AgentDefinition = defineAgent({
   id: "creator-interview",

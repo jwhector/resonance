@@ -9,7 +9,7 @@ import { signUpAndVerify, skipInterests } from "./lib/signup";
  * deterministic fake model / mail / embedder at the app's composition roots (ADR-0018 §4) — so the
  * flow is deterministic and credential-free — against the real Neon DB.
  *
- * Robustness (ADR-0011 / plan risk R5): assert only on SETTLED state — role queries,
+ * Robustness (ADR-0011): assert only on SETTLED state — role queries,
  * `toBeVisible`, `toHaveURL`, generous timeouts. Never assert on mid-stream tokens. The OTP is
  * pulled from the `E2E_HARNESS`-gated `/api/test/last-otp` seam, which reads the same fake-mail
  * singleton Better Auth writes the code to (see `@resonance/auth` `peekLoginCode`).
@@ -27,7 +27,7 @@ const CANNED_REPLY = "Thanks for sharing — what first drew you to this work?";
  * test before the teardown existed, crowding real results off the first page.
  *
  * `afterEach` rather than a `finally` inside the test: Playwright aborts the test body on a
- * timeout, and a `finally` there never runs — the mechanism behind seed `resonance-1236`.
+ * timeout, and a `finally` there never runs.
  */
 let accounts: string[] = [];
 
@@ -44,8 +44,8 @@ test("creator can sign up, interview with Weave, generate + commit a profile", a
   //    Unique per run so re-runs never collide on Better Auth's one-account-per-email.
   accounts.push(await signUpAndVerify(page, request, "e2e-creator"));
 
-  // 2) Interest selection now sits between verification and the interview, for every new account
-  //    (Slice B, `resonance-3a7d`). This spec is about the CREATOR path, so it skips the step —
+  // 2) Interest selection sits between verification and the interview, for every new account.
+  //    This spec is about the CREATOR path, so it skips the step —
   //    which the picker supports by design: Continue with nothing selected is a valid, empty
   //    selection. `interests.spec.ts` owns driving the picking path.
   await skipInterests(page);

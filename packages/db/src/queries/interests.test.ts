@@ -68,7 +68,7 @@ describe("member interests", () => {
   let close: () => Promise<void>;
 
   // Generous hookTimeout: PGlite WASM cold-init + migrations can exceed the 10s default under
-  // parallel test-suite CPU contention in CI (seed resonance-75e5).
+  // parallel test-suite CPU contention in CI.
   beforeEach(async () => {
     ({ db, close } = await createTestDb());
     await db

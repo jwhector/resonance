@@ -352,7 +352,7 @@ describe("DiscoveryPort (driven purely through the interface)", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Invariant 8 — personalized ranking behind the SAME seam (Slice B, resonance-b149).
+// Invariant 8 — personalized ranking behind the SAME seam.
 //
 // The point of these cases is that nothing about the interface changed: the same one
 // method, driven with `text` absent, ranks on the viewer's stored interests. If this had
