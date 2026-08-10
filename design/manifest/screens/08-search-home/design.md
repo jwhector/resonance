@@ -2,8 +2,15 @@
 
 The **member feed home**, and the screen that owns the search entry point. Despite the
 `Search` path segment this is not a results screen: search appears here as a single bar in
-the right rail. **Slice B owns this screen** (`resonance-8c96` — member interests + feed
-assembly). Captured now so the search entry has a design contract when Slice B builds it.
+the right rail.
+
+**No slice owns this screen yet, and no parity claim is made about it.** It was assigned to
+Slice B (`resonance-8c96`) when that slice was planned; the assignment was withdrawn on the
+evidence of this very spec. The frame draws the home as a **post feed** with a composer and a
+Cart rail, and `@resonance/community` holds a `Post` type and nothing else — the composer,
+posts, likes and cart are all Slice C (`resonance-537e`), so building this now would ship a
+dead surface. Slice B shipped the interest picker (screen 13) and spent it on `/discover`
+instead. Nothing on `/discover` is an attempt at this frame.
 
 ## Provenance
 
@@ -60,6 +67,6 @@ Centre feed, from y=40:
 - The feed rows use a **circular** avatar (`ProfileImg/Circle`), where the Creators search
   results use a **square, radius-8** one. Both variants are needed — see `resonance-0407`.
 - Post cards carry an engagement footer: comment count, heart count, a Weave-wave count, and
-  the Weave symbol. Not specced here; Slice B's frame to read.
+  the Weave symbol. Not specced here; Slice C's frame to read (`resonance-537e`).
 - This screen has **no tab bar**. The `Products|Services|Posts|Creators` tabs only appear
   once a query has been run (screens 09–12).

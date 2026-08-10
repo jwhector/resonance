@@ -172,7 +172,7 @@ Following state, walked from `1443:78161` — identical except the button:
 </frame>
 ```
 
-## `Member/Search/Home` `1443:78098` — feed shell (Slice B)
+## `Member/Search/Home` `1443:78098` — feed shell (unclaimed; needs Slice C)
 
 ```xml
 <frame id="1443:78098" name="Member/Search/Home" width="1512" height="982" fill="#ffffff">

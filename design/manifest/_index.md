@@ -50,13 +50,13 @@ Captured from `vC0O5uyMmw1o5vYHmCoOXq` (`Resonance (Copy)`), page MVP, `2026-07-
 via the Desktop Bridge. All five are **`copy-derived`** — see [PROVENANCE.md](PROVENANCE.md).
 Node inventory: [`metadata/member-search-frames.md`](metadata/member-search-frames.md).
 
-| #   | Screen                          | Figma node   | Route       | Component                                        | Citation (R1) | Status                                                                                                                       |
-| --- | ------------------------------- | ------------ | ----------- | ------------------------------------------------ | ------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| 08  | Member feed home (search entry) | `1443:78098` | —           | — (right-rail `SearchBar`, Cart panel)           | ✅ valid      | 🟡 orphan-design → **Slice B** (`resonance-8c96`) — feed shell, not a results screen                                         |
-| 09  | Search results · Products       | `1443:78123` | `/discover` | tab bar + product card                           | ✅ valid      | 🟡 chrome in Slice A; **card deferred to Slice C** — ships as a designed empty state                                         |
-| 10  | Search results · Services       | `1443:78133` | `/discover` | tab bar + service card                           | ✅ valid      | 🟡 chrome in Slice A; **card deferred to Slice C** — ships as a designed empty state                                         |
-| 11  | Search results · Posts          | `1443:78143` | `/discover` | tab bar + post card                              | ✅ valid      | 🟡 chrome in Slice A; **card deferred to Slice B** — ships as a designed empty state                                         |
-| 12  | **Search results · Creators**   | `1443:78153` | `/discover` | `SearchBar` + `Tabs/Search` + `CreatorResultRow` | ✅ valid      | ⚠️ **built, parity captured** — 9 enumerated deltas ([`parity.md`](screens/12-search-creators/parity.md)) · `resonance-3f15` |
+| #   | Screen                          | Figma node   | Route       | Component                                        | Citation (R1) | Status                                                                                                                                                             |
+| --- | ------------------------------- | ------------ | ----------- | ------------------------------------------------ | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 08  | Member feed home (search entry) | `1443:78098` | —           | — (right-rail `SearchBar`, Cart panel)           | ✅ valid      | 🟡 orphan-design — **not claimed by Slice B**; the feed shell needs posts, a composer and a cart, all Slice C (`resonance-537e`). See the note under Slice B below |
+| 09  | Search results · Products       | `1443:78123` | `/discover` | tab bar + product card                           | ✅ valid      | 🟡 chrome in Slice A; **card deferred to Slice C** — ships as a designed empty state                                                                               |
+| 10  | Search results · Services       | `1443:78133` | `/discover` | tab bar + service card                           | ✅ valid      | 🟡 chrome in Slice A; **card deferred to Slice C** — ships as a designed empty state                                                                               |
+| 11  | Search results · Posts          | `1443:78143` | `/discover` | tab bar + post card                              | ✅ valid      | 🟡 chrome in Slice A; **card deferred to Slice C** — ships as a designed empty state                                                                               |
+| 12  | **Search results · Creators**   | `1443:78153` | `/discover` | `SearchBar` + `Tabs/Search` + `CreatorResultRow` | ✅ valid      | ⚠️ **built, parity captured** — 9 enumerated deltas ([`parity.md`](screens/12-search-creators/parity.md)) · `resonance-3f15`                                       |
 
 Screens 09–12 share one chrome: `SearchBar/Filled` 604×56 + `Tabs/Search` 604×49
 (`Products｜Services｜Posts｜Creators`), content column 604 wide at x=514, stack gap 40. The full
@@ -96,6 +96,22 @@ cap]"_. Geometry, computed styles, band diffs and point samples are in
 Only one delta is new and open — the button label weight, filed as **`resonance-e16b`**. The
 mark approximation is the existing `resonance-cbbb`; the rest are ratified or non-actionable.
 
+### Screen 08 stays orphan-design — Slice B did **not** claim it
+
+Screen 13 is the **only** frame Slice B built. Row 08 (`Member/Search/Home` `1443:78098`) was
+assigned to this slice when it was planned, and that assignment is now withdrawn: the frame draws
+the member home as a **post feed** — a 710px centre column of Post cards with a "What's on your
+mind?" composer, beside a Cart right rail — and `@resonance/community` holds a `Post` type and
+nothing else. The composer, posts, likes and cart are all Slice C (`resonance-537e`), so building
+the frame now would have shipped a dead surface. Slice B spent the interests capability on the
+surface that already exists instead: `/discover`'s empty-query state ranks creators by the
+member's stored interest vector.
+
+**No parity claim is made about screen 08, and none should be read into `/discover`.** A populated
+empty-query `/discover` is _not_ an attempt at `1443:78098` and must not be reviewed as a
+regression against it — the two are different screens with different frames. `/discover`'s only
+parity contract remains screen 12.
+
 Two things about this row are unlike 01–12:
 
 - **`app.png` is an offline capture of the component in isolation**, not a route screenshot —
@@ -133,10 +149,10 @@ corrected. `1463:71449` is the sign-in screen; it is **not** a search screen. Se
 correction note above.
 
 Screen **12** now has both an `app.png` and a `parity.md` (`resonance-3f15`). Screens **08–11**
-still have **no `app.png` and no `parity.md`, by design**: 08 is Slice B's feed shell, and 09–11
-ship as designed empty states this slice rather than as the card layouts their frames draw. Per
-R2, no parity claim may be made about any of those four — the E2E asserts their tabs render
-distinct copy, which is behaviour, not parity.
+still have **no `app.png` and no `parity.md`, by design**: 08 is a feed shell no slice has built
+(Slice B deliberately did not — see the note above), and 09–11 ship as designed empty states
+rather than as the card layouts their frames draw. Per R2, no parity claim may be made about any
+of those four — the E2E asserts their tabs render distinct copy, which is behaviour, not parity.
 
 ## Cross-cutting findings (decide once, not per-screen)
 

@@ -1,5 +1,6 @@
 import { createFakeEmbedder } from "@resonance/ai/testing";
 import { createCreatorProfile, createDb, upsertProfileEmbedding } from "@resonance/db";
+import { ensureDatabaseUrl, rawClient } from "./db";
 
 /**
  * Deterministic discovery fixtures for the `/discover` E2E (`resonance-3f15`).
@@ -32,9 +33,9 @@ import { createCreatorProfile, createDb, upsertProfileEmbedding } from "@resonan
  *
  * Every fixture id, email and display name carries a per-worker `runId`, so parallel workers and
  * repeated runs never collide. `cleanup()` deletes the embeddings and then the users; the
- * `creator_profiles` and `follows` rows go with them via `ON DELETE cascade`. Deletes go through
- * `db.$client` (the raw Neon tagged template Drizzle exposes) rather than a `drizzle-orm` import,
- * because `apps/web` does not depend on `drizzle-orm` and should not start now.
+ * `creator_profiles` and `follows` rows go with them via `ON DELETE cascade`. The database
+ * plumbing itself — reaching the same Neon instance from the test process, and the raw SQL
+ * escape hatch — is shared with the other fixtures in `./db`.
  */
 
 /** One seeded creator. */
@@ -58,32 +59,7 @@ export interface DiscoveryFixture {
   draft: SeededCreator;
   /** The single offering rendered on {@link top}'s profile page. */
   offering: { title: string; description: string };
-  /** Extra user ids to remove on cleanup (e.g. a member created by signing up mid-test). */
-  trackUserId(userId: string): void;
   cleanup(): Promise<void>;
-}
-
-/** The Neon tagged template Drizzle keeps on `$client`. Typed locally to avoid a driver import. */
-type RawSql = (strings: TemplateStringsArray, ...values: unknown[]) => Promise<unknown[]>;
-
-/**
- * Load `DATABASE_URL` from `apps/web/.env.local` when the Playwright runner does not already
- * have it. `next dev` reads that file itself, but the test process is a separate process and
- * needs the same database to seed into. The file is gitignored and never printed.
- */
-function ensureDatabaseUrl(): void {
-  if (process.env.DATABASE_URL) return;
-  const loadEnvFile = (process as unknown as { loadEnvFile?: (p: string) => void }).loadEnvFile;
-  if (!loadEnvFile) throw new Error("DATABASE_URL is not set and process.loadEnvFile is missing");
-  for (const candidate of [".env.local", "apps/web/.env.local"]) {
-    try {
-      loadEnvFile(candidate);
-      if (process.env.DATABASE_URL) return;
-    } catch {
-      /* try the next candidate */
-    }
-  }
-  throw new Error("DATABASE_URL is not set and no apps/web/.env.local could be read");
 }
 
 /**
@@ -95,7 +71,7 @@ function ensureDatabaseUrl(): void {
 export async function seedDiscoveryFixture(runId: string): Promise<DiscoveryFixture> {
   ensureDatabaseUrl();
   const db = createDb();
-  const raw = (db as unknown as { $client: RawSql }).$client;
+  const raw = rawClient(db);
   const embedder = createFakeEmbedder();
 
   // Distinctive enough that it cannot collide with a real profile's text, and well under the
@@ -157,17 +133,12 @@ export async function seedDiscoveryFixture(runId: string): Promise<DiscoveryFixt
   );
   const draft = await seed("draft", `E2E Draft ${runId}`, query, "draft");
 
-  const extraUserIds: string[] = [];
-
   return {
     query,
     top,
     second,
     draft,
     offering,
-    trackUserId(userId: string) {
-      extraUserIds.push(userId);
-    },
     async cleanup() {
       // Embeddings have no FK to creator_profiles, so they must go explicitly and first.
       // `source_id` is text — it also keys interest vectors to Better Auth user ids — so the
@@ -176,20 +147,9 @@ export async function seedDiscoveryFixture(runId: string): Promise<DiscoveryFixt
         await raw`delete from embeddings where source_id = ${id}`;
       }
       // Users cascade to creator_profiles, follows and sessions.
-      for (const id of [...userIds, ...extraUserIds]) {
+      for (const id of userIds) {
         await raw`delete from "user" where id = ${id}`;
       }
     },
   };
-}
-
-/**
- * Remove a member created by signing up during a test, addressed by email because Better Auth
- * mints the id. Cascades to their profile, session and follow edges.
- */
-export async function deleteUserByEmail(email: string): Promise<void> {
-  ensureDatabaseUrl();
-  const db = createDb();
-  const raw = (db as unknown as { $client: RawSql }).$client;
-  await raw`delete from "user" where email = ${email}`;
 }
