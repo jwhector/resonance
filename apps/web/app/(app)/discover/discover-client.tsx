@@ -32,7 +32,7 @@ import { followCreator, unfollowCreator } from "./actions";
 
 /** Which "nothing to show" surface applies. Deliberately three cases, never collapsed into one. */
 type ResultsView =
-  /** The tab has no data source this slice — a product statement (`ComingSoonState`). */
+  /** The tab has no data source yet — a product statement (`ComingSoonState`). */
   | { view: "coming-soon"; kind: ComingSoonKind }
   /** Nothing has been searched yet. Not an outcome; the field is simply empty. */
   | { view: "idle" }
@@ -90,7 +90,7 @@ export function DiscoverClient({ query, kind, results, signedIn }: DiscoverClien
     [results, followOverrides],
   );
 
-  // Rows decide first, because since Slice B an empty query can legitimately have results: with no
+  // Rows decide first, because an empty query can legitimately have results: with no
   // query text the port ranks on the member's stored interests instead (`DiscoveryPort` invariant
   // 8). Keying `idle` off the query alone would swallow exactly those personalized rows.
   //

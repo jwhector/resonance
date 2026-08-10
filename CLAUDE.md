@@ -83,7 +83,14 @@ docs/working-with-agents.md  How to run a productive agent session against this 
     except [deltas]", keep unverified values `PROVISIONAL`, and cite only node ids present in a
     `metadata/` dump (ADR-0019). Build UI with the `add-ui-component-from-figma` recipe and
     verify with the pixel-diff loop.
-11. **Do not excessively comment about session-scoped discoveries.** Findings and discoveries surfaced during sessions that are left as in-code comments full of inscrutable jargon are confusing. When writing comments, focus on evergreen, plain-english description.
+11. **Comments describe the code, not the process that produced it.** Write for a reader
+    who was not in the session and cannot open our trackers. State the reason in plain
+    English; never cite seed/plan/mulch ids, "Slice A/B/C", "Increment N", "golden rule N",
+    "plan risk N", or `CLAUDE.md`. The only citations allowed are **ADRs** and **Figma node
+    ids** — durable, checked in, about the product — and they follow the reason rather than
+    replacing it. Rationale that doesn't fit belongs in an ADR (ratified decision), mulch
+    (agent-discovered learning) or a seed (work). Full rule + examples:
+    [docs/conventions.md § Comments](docs/conventions.md).
 
 ## Stack at a glance
 

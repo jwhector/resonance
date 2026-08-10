@@ -86,7 +86,7 @@ export const embeddings = pgTable(
     model: text("model").notNull(),
     content: text("content").notNull(),
     // Width comes from @resonance/core so the column, the embedder, and the query-time guard
-    // cannot drift apart (seed resonance-e0e6). Changing it there changes it here.
+    // cannot drift apart. Changing it there changes it here.
     embedding: vector("embedding", { dimensions: EMBEDDING_DIMS }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },

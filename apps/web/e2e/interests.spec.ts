@@ -8,11 +8,11 @@ import {
 import { signUpAndVerify, skipInterests } from "./lib/signup";
 
 /**
- * End-to-end member interests (Slice B, `pl-496f` step 5 / `resonance-6c52`): a new member picks
+ * End-to-end member interests: a new member picks
  * topics on the way in and lands on a `/discover` that has something to suggest — and the member
  * who skips still gets today's idle surface, unchanged.
  *
- * The two paths are the whole point of the slice, and they are asserted as a **contrast on the
+ * Both paths must be proven, and they are asserted as a **contrast on the
  * same URL**: `/discover` with an empty query renders interest-ranked creators for the member who
  * picked, and the idle prompt for the member who did not. Either assertion alone would pass
  * against a broken build — "rows appeared" is also true of an unranked dump, and "idle appeared"
@@ -34,8 +34,7 @@ const RUN_ID = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 
 /**
  * What the current test has to clean up. Torn down in `afterEach` rather than a `finally` inside
  * the test body, because a Playwright **timeout** aborts the body at its current `await` and the
- * `finally` never runs — which is precisely how the leaked fixtures behind seed `resonance-1236`
- * accumulate. `afterEach` is still run after a timeout, and gets its own time budget.
+ * `finally` never runs — which is precisely how leaked fixtures accumulate. `afterEach` is still run after a timeout, and gets its own time budget.
  *
  * Worker-scoped module state is safe here: each worker imports this module fresh, and tests within
  * a worker run one at a time.
@@ -75,7 +74,7 @@ async function rankedNames(page: Page): Promise<string[]> {
 
 /**
  * Fail loudly, and with the cause named, if a previous run's interest fixture is still in the
- * database (seed `resonance-1236`).
+ * database.
  *
  * The fixture's content is dictated by the taxonomy and so cannot be run-scoped: a leaked sibling
  * scores the same 1.0 and can win rank 1 on the id tiebreak. Without this check that surfaces as
@@ -88,7 +87,7 @@ function assertNoLeakedSiblings(names: readonly string[], ownDisplayName: string
   );
   expect(
     strays,
-    `Leaked interest fixtures from earlier runs are competing for rank 1 (seed resonance-1236). ` +
+    `Leaked interest fixtures from earlier runs are competing for rank 1. ` +
       `Remove the stale "${INTEREST_FIXTURE_PREFIX} …" creators before trusting this result.`,
   ).toEqual([]);
 }
@@ -99,7 +98,7 @@ test("a member picks topics and lands on an interest-ranked /discover", async ({
 }) => {
   const seeded = (fixture = await seedInterestFixture(RUN_ID));
 
-  // 1) The real front door, stopping on the step Slice B inserted.
+  // 1) The real front door, stopping on the interest-selection step.
   accounts.push(await signUpAndVerify(page, request, `e2e-interests-${RUN_ID}`));
   await expect(page.getByRole("heading", { name: /Select \d+ topics/ })).toBeVisible();
 
@@ -110,7 +109,7 @@ test("a member picks topics and lands on an interest-ranked /discover", async ({
   await page.getByRole("button", { name: "Continue" }).click();
   await expect(page).toHaveURL(/\/onboarding\/creator/, { timeout: 20_000 });
 
-  // 3) The selection PERSISTED (acceptance criterion 1). Re-entering the step re-reads it from the
+  // 3) The selection PERSISTED. Re-entering the step re-reads it from the
   //    database and rehydrates the picker — the chips can only be checked if the write landed, not
   //    merely if the client remembered.
   await page.goto("/interests");
@@ -118,7 +117,7 @@ test("a member picks topics and lands on an interest-ranked /discover", async ({
     await expect(page.getByRole("checkbox", { name: topic.label })).toBeChecked();
   }
 
-  // 4) The slice, on the surface it was spent on: an EMPTY query now ranks creators by the
+  // 4) An EMPTY query now ranks creators by the
   //    member's stored interest vector (`DiscoveryPort` invariant 8). The search box is empty and
   //    the URL carries no `?q=`, so these rows cannot have come from a search.
   await page.goto("/discover");
@@ -136,7 +135,7 @@ test("a member picks topics and lands on an interest-ranked /discover", async ({
   assertNoLeakedSiblings(names, seeded.match.displayName);
   expect(names[0]).toBe(seeded.match.displayName);
 
-  // 6) A blank search is still not a personalized browse (acceptance criterion 5). `?q=%20%20`
+  // 6) A blank search is still not a personalized browse. `?q=%20%20`
   //    trims to empty and fails validation at the boundary, so it renders the idle surface rather
   //    than quietly falling back to this member's interests.
   await page.goto("/discover?q=%20%20");

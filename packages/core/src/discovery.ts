@@ -16,9 +16,9 @@ import { z } from "zod";
  * detail: the embedded search text when the member typed something, or the member's
  * stored interest embedding when they did not (invariant 8). Personalized ranking is
  * therefore not a second method or a sibling port — it is another ranking strategy behind
- * the same seam, which is exactly what this seam exists to absorb. `resonance-7890`'s
- * planned work (retuning thresholds, blending interest with query and follows) lands here
- * too, without `web` or `ui` changing.
+ * the same seam, which is exactly what this seam exists to absorb. Future ranking work
+ * (retuning thresholds, blending interest with query and follows) lands here too, without
+ * `web` or `ui` changing.
  *
  * ## Why the contract lives here and not in `db`
  *
@@ -34,7 +34,7 @@ import { z } from "zod";
  * once. `apps/web`'s Server Action would hand-roll a query shape and its validation;
  * `@resonance/ui`'s result-row props would hand-roll a matching result shape; the two
  * would drift, and every field added to a result row would be a three-package edit. Worse,
- * ranking would stop being swappable: `resonance-7890`'s experiments (retuning the
+ * ranking would stop being swappable: ranking experiments (retuning the
  * threshold, changing the filter set, replacing ANN with a hybrid ranker) would have to
  * edit the Server Action and the UI to change scoring, because there would be no seam to
  * change behind. The module earns its keep on both counts — **leverage** for `web`/`ui`,
@@ -44,7 +44,7 @@ import { z } from "zod";
  *
  * Two, so the seam is real rather than hypothetical: the `@resonance/db` ANN adapter, and
  * the in-test fake in `discovery.test.ts` that drives the whole contract without a
- * database. A third — a hybrid/keyword ranker — is the point of `resonance-7890`.
+ * database. A third — a hybrid/keyword ranker — is what the seam exists to allow.
  *
  * @see docs/adr/0017-design-deep-modules.md
  * @see docs/adr/0010-embeddings-and-vector-search.md
@@ -52,8 +52,8 @@ import { z } from "zod";
 
 /**
  * The four result tabs in the designed results screen. Only `creators` has a data source
- * in Slice A; `products`, `services`, and `posts` exist because the design's tab bar has
- * them and later slices fill them (`Offering` carries no price/image/type yet, and
+ * today; `products`, `services`, and `posts` exist because the design's tab bar has
+ * them and later work fills them (`Offering` carries no price/image/type yet, and
  * `@resonance/community` is a stub). Naming them now gives those slices an obvious socket
  * and keeps `web`'s route state validatable today.
  *
@@ -85,7 +85,7 @@ export const DISCOVERY_MAX_LIMIT = 50;
 /**
  * A discovery query as it arrives from the client (search box + tab + URL params).
  *
- * This is the **validation boundary** (golden rule 4): `apps/web` parses `searchParams`
+ * This is the **validation boundary**: `apps/web` parses `searchParams`
  * and Server Action input through it before anything reaches the port. Everything in here
  * is client-supplied and therefore untrusted — which is exactly why the viewer identity is
  * *not* a field on it (see {@link DiscoveryViewer}).
@@ -131,7 +131,7 @@ export type CreatorDiscoveryQuery = z.infer<typeof CreatorDiscoveryQuerySchema>;
  *   the session-comparison key, so the row can tell "this is me" from "I follow them"
  *   without a second round trip.
  * - There is deliberately **no avatar/image field**: `creator_profiles` has no such column
- *   and the ratified decision for this slice is an initials placeholder derived from
+ *   and the ratified decision is an initials placeholder derived from
  *   `displayName`, logged as an enumerated ADR-0019 parity delta. Real imagery is filed as
  *   follow-up work; inventing the field here would imply a data source that does not exist.
  * - `similarity` is `1 - cosineDistance`, so its true range is [-1, 1] even though embedded
@@ -189,7 +189,7 @@ export type DiscoveryViewer = { readonly userId: string } | null;
  * Interface contract (the invariants an adapter must honour, not just the signature):
  *
  * 1. `query` is already validated — parse it with {@link CreatorDiscoveryQuerySchema} at
- *    the boundary; adapters trust it (docs/conventions.md § Errors).
+ *    the boundary; adapters trust it.
  * 2. Results are ordered by descending `similarity`.
  * 3. Every result satisfies `similarity >= threshold` when a threshold is supplied.
  * 4. At most `limit` results are returned. `nextCursor` is non-null iff more may follow.

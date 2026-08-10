@@ -107,6 +107,41 @@ Co-locate schemas with the domain type. Infer the TS type from the schema
 - Zod schemas: `FooSchema`; inferred type: `Foo`.
 - AI agents in the registry: `kebab-case` ids (`creator-interview`, `profile-gen`).
 
+## Comments
+
+**A comment describes the code, never the process that produced it.** Write for someone
+reading this file for the first time, who was not in the session that wrote it and has no
+access to our trackers.
+
+- **Say the reason in plain English.** Explain _why_ the code is the way it is — the
+  constraint, the ordering rule, the thing that bit us — not what a reader can already see
+  from the code.
+- **Never cite work artifacts.** Seed ids (`resonance-xxxx`), plan ids (`pl-xxxx`), mulch
+  ids (`mx-xxxxxx`), "Slice A/B/C", "Increment N", "golden rule N", "plan risk N",
+  "acceptance criterion N", "this slice"/"this seed", or pointers to `CLAUDE.md` /
+  `conventions.md`. None of it resolves for the reader; "golden rule 4" names nothing they
+  can see.
+- **Two citations are allowed**, because both are durable, checked in, and about the
+  product rather than how it got built:
+  - **`ADR-0018`** and friends — the decision record holding the _why_.
+  - **Figma node ids** (`1554:79520`) — the design contract, which ADR-0019 requires
+    parity work to cite.
+    Cite them _after_ stating the reason, so the comment stands alone if the reader never
+    opens `docs/`.
+
+The rationale that does not belong in a comment still has a home: an **ADR** for a
+ratified decision, **mulch** for an agent-discovered learning, a **seed** for work.
+
+```ts
+// ✗ The knowledge dies with the session.
+// Relaxed per plan risk 3 in Slice B (resonance-b149); see golden rule 4.
+
+// ✓ The constraint is legible to anyone.
+// `text` is optional because an absent query means "rank me by my stored interests",
+// which the required-string contract could not express. Absent and empty are different:
+// a blank search must still fail validation rather than silently become a browse.
+```
+
 ## Errors
 
 - Throw typed errors from `@resonance/core` (e.g. `ResonanceError` subclasses), not

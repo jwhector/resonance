@@ -41,7 +41,7 @@ describe("searchCreatorProfiles — the DiscoveryPort contract", () => {
   let close: () => Promise<void>;
 
   // Generous hookTimeout: PGlite WASM cold-init + migrations is ~1s in isolation but can exceed the
-  // 10s default under parallel test-suite CPU contention in CI (seed resonance-75e5).
+  // 10s default under parallel test-suite CPU contention in CI.
   beforeEach(async () => {
     ({ db, close } = await createTestDb());
     await db.insert(user).values(

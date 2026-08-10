@@ -4,7 +4,7 @@ import { seedDiscoveryFixture, type DiscoveryFixture } from "./lib/discovery-fix
 import { signUpAndVerify, skipInterests } from "./lib/signup";
 
 /**
- * End-to-end member discovery (Slice A, `pl-bbca` step 6 / `resonance-3f15`): the real front
+ * End-to-end member discovery: the real front
  * door — `/start` → "exploring/buying" → `/discover` → search → embedding-ranked creators →
  * open a creator → their profile with offerings — plus the follow/unfollow path, the signed-out
  * prompt, draft exclusion, and the distinct empty surfaces.
@@ -15,7 +15,7 @@ import { signUpAndVerify, skipInterests } from "./lib/signup";
  * deterministic text hash is precisely what makes the ranking assertable — see
  * `./lib/discovery-fixtures.ts`.
  *
- * **Settled state only** (named plan risk; ADR-0011). Every assertion is a role query plus
+ * **Settled state only** (ADR-0011). Every assertion is a role query plus
  * `toBeVisible` / `toHaveURL` / `toHaveText` with a generous timeout. Nothing here asserts on an
  * intermediate token, a spinner, or a transient in-flight class.
  *
@@ -31,7 +31,7 @@ let fixture: DiscoveryFixture;
 /**
  * Accounts a test signed up, drained in `afterEach` rather than a `finally` inside the test body:
  * a Playwright timeout aborts the body at its current `await` so the `finally` never runs and the
- * member row leaks into the shared dev database (the cause behind seed `resonance-1236`).
+ * member row leaks into the shared dev database.
  * `afterEach` still runs after a timeout and gets its own time budget.
  */
 let accounts: string[] = [];
@@ -53,8 +53,8 @@ test.afterAll(async () => {
  * Sign a brand-new member in through the real passwordless front door. Returns the email so the
  * test can delete the user after.
  *
- * Verification lands on interest selection (Slice B, `resonance-3a7d`), and this helper **skips**
- * it: these specs assert Slice A's behaviour, which must stay true for a member with NO interests.
+ * Verification lands on interest selection, and this helper **skips** it: these specs assert
+ * search behaviour, which must stay true for a member with NO interests.
  * That also keeps the `/discover` assertions below reading the search path rather than a
  * personalized surface — `interests.spec.ts` owns the picking path.
  */
@@ -89,8 +89,8 @@ async function rankedNames(page: Page): Promise<string[]> {
 test("a member reaches ranked creators through the front door and opens a profile", async ({
   page,
 }) => {
-  // 1) The real intent fork. `explore` is the slot that pointed at the scaffold home until
-  //    this slice cashed it in — driving it here is what proves the screen is reachable.
+  // 1) The real intent fork. `explore` once pointed at the scaffold home; driving it here is
+  //    what proves the screen is reachable.
   await page.goto("/start");
   await page.getByRole("radio", { name: "I'm exploring/ buying" }).click();
   // `exact` — `next dev` injects its own "Open Next.js Dev Tools" button into every page.
@@ -116,7 +116,7 @@ test("a member reaches ranked creators through the front door and opens a profil
   await expect(page.getByRole("heading", { name: fixture.top.displayName })).toBeVisible();
   await expect(page.getByText(fixture.top.headline)).toBeVisible();
 
-  // 4) …including offerings, which `/creator/[id]` only started rendering for this slice.
+  // 4) …including offerings, which `/creator/[id]` renders.
   await expect(page.getByRole("heading", { name: "Offerings" })).toBeVisible();
   await expect(page.getByRole("heading", { name: fixture.offering.title })).toBeVisible();
   await expect(page.getByText(fixture.offering.description)).toBeVisible();
@@ -149,7 +149,7 @@ test("a signed-in member follows a creator and the state survives a reload", asy
   await expect(following).toBeVisible({ timeout: 20_000 });
   await expect(following).toHaveText("Following");
 
-  // Acceptance criterion 3: PERSISTS. A reload re-runs the ranked query server-side, so the
+  // The follow PERSISTS. A reload re-runs the ranked query server-side, so the
   // state can only still be "Following" if the follow edge actually landed in the database.
   await page.reload();
   await expect(

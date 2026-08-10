@@ -11,8 +11,8 @@ import { InterestsForm } from "./interests-form";
  * creator is also a member and gets a personalized `/discover` from the same selection.
  *
  * Lives in the `(onboarding)` group because the frame draws its own full-page chrome — the
- * Resonance mark over content the `<main>` wrapper centres, with no `AppNav` rail
- * (apps/web/CLAUDE.md § Rules); the wrapper matches every sibling onboarding screen.
+ * Resonance mark over content the `<main>` wrapper centres, with no `AppNav` rail. The
+ * wrapper matches every sibling onboarding screen.
  *
  * `force-dynamic` + a lazy `createDb()` keep `next build` away from a live database, matching
  * `/discover` and `/creator/[id]`.
@@ -27,7 +27,7 @@ export default async function InterestsPage() {
 
   const db = createDb();
   // The taxonomy comes from the database, not a constant, so a corrected or extended topic list is
-  // a data edit rather than a deploy (packages/db/CLAUDE.md § topics).
+  // a data edit rather than a deploy.
   const [topics, existing] = await Promise.all([listTopics(db), getMemberInterests(db, user.id)]);
 
   return (

@@ -28,7 +28,7 @@ export function InterestsForm({ topics, initialSelection }: InterestsFormProps) 
 
   // React's documented "adjusting state when props change" pattern. A bare
   // `useState(initialSelection)` goes stale under the App Router, because a re-render from a server
-  // navigation re-runs this component with new props while keeping the old state (mulch mx-0916d6).
+  // navigation re-runs this component with new props while keeping the old state.
   const [lastInitial, setLastInitial] = React.useState(initialSelection);
   if (lastInitial !== initialSelection) {
     setLastInitial(initialSelection);

@@ -4,7 +4,7 @@ import { createCreatorProfile, createDb, listTopics, upsertProfileEmbedding } fr
 import { ensureDatabaseUrl, rawClient, type RawSql } from "./db";
 
 /**
- * The fixture that makes `/discover`'s **personalized** ranking assertable (`resonance-6c52`).
+ * The fixture that makes `/discover`'s **personalized** ranking assertable.
  *
  * ## Why a creator has to be seeded at all
  *
@@ -36,8 +36,8 @@ import { ensureDatabaseUrl, rawClient, type RawSql } from "./db";
  * The fixture id, email and display name all carry `runId`, so repeated runs never collide. The
  * **content** cannot be run-scoped, though — it is dictated by the taxonomy — so a leaked fixture
  * from a previous run scores the same 1.0 and can take rank 1 on the id tiebreak, failing the
- * *next* run as an inscrutable ordering assertion. That is seed `resonance-1236`'s failure mode,
- * and it was reproduced building this fixture: a test that times out never runs the `finally` in
+ * *next* run as an inscrutable ordering assertion. That failure mode was reproduced while
+ * building this fixture: a test that times out never runs the `finally` in
  * its own body, so its rows survive. Hence three layers, in order of preference:
  *
  * 1. `cleanup()`, called from an `afterEach` — a hook Playwright still runs after a timeout,
