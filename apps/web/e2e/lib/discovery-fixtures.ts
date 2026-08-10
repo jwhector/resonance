@@ -9,7 +9,7 @@ import { ensureDatabaseUrl, rawClient } from "./db";
  *
  * Two things these tests must prove cannot be produced by driving the product:
  *
- * 1. **A `status: "draft"` profile** (criterion 1, and the slice's original live bug). Nothing
+ * 1. **A `status: "draft"` profile** (the original live bug this guards against). Nothing
  *    in the app can leave a profile in `draft` — `commitCreatorProfile` writes `ready` — so the
  *    only way to prove drafts are excluded is to put one in the database and look for it.
  * 2. **A known ranking order.** The dev database already holds ~20 committed profiles, so

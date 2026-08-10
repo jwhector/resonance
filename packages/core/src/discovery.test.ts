@@ -227,7 +227,7 @@ describe("CreatorResultSchema", () => {
     expect(() => CreatorResultSchema.parse({ ...valid, similarity: 1.01 })).toThrow();
   });
 
-  it("has no avatar field — the slice ships an initials placeholder, not a fabricated column", () => {
+  it("has no avatar field — an initials placeholder, not a fabricated column", () => {
     expect(Object.keys(CreatorResultSchema.shape).sort()).toEqual([
       "displayName",
       "followState",

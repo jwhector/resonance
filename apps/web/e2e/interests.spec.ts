@@ -12,7 +12,7 @@ import { signUpAndVerify, skipInterests } from "./lib/signup";
  * topics on the way in and lands on a `/discover` that has something to suggest — and the member
  * who skips still gets today's idle surface, unchanged.
  *
- * The two paths are the whole point of the slice, and they are asserted as a **contrast on the
+ * Both paths must be proven, and they are asserted as a **contrast on the
  * same URL**: `/discover` with an empty query renders interest-ranked creators for the member who
  * picked, and the idle prompt for the member who did not. Either assertion alone would pass
  * against a broken build — "rows appeared" is also true of an unranked dump, and "idle appeared"
@@ -117,7 +117,7 @@ test("a member picks topics and lands on an interest-ranked /discover", async ({
     await expect(page.getByRole("checkbox", { name: topic.label })).toBeChecked();
   }
 
-  // 4) The slice, on the surface it was spent on: an EMPTY query now ranks creators by the
+  // 4) An EMPTY query now ranks creators by the
   //    member's stored interest vector (`DiscoveryPort` invariant 8). The search box is empty and
   //    the URL carries no `?q=`, so these rows cannot have come from a search.
   await page.goto("/discover");

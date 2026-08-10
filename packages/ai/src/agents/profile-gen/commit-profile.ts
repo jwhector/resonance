@@ -34,7 +34,7 @@ export async function commitCreatorProfile(
   input: CommitProfileInput,
 ): Promise<CommitProfileResult> {
   // Validate at the boundary — the web layer hands us the commit payload after the user edited
-  // the draft and chose a name; types are not validation (golden rule 4).
+  // the draft and chose a name; types are not validation.
   const commit = CommitProfileInputSchema.parse(input);
 
   // No DB transaction wraps these writes: the production neon-http driver has no interactive

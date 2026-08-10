@@ -149,7 +149,7 @@ test("a signed-in member follows a creator and the state survives a reload", asy
   await expect(following).toBeVisible({ timeout: 20_000 });
   await expect(following).toHaveText("Following");
 
-  // Acceptance criterion 3: PERSISTS. A reload re-runs the ranked query server-side, so the
+  // The follow PERSISTS. A reload re-runs the ranked query server-side, so the
   // state can only still be "Following" if the follow edge actually landed in the database.
   await page.reload();
   await expect(
