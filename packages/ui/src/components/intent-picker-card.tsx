@@ -1,26 +1,40 @@
 import * as React from "react";
 import * as RadioGroupPrimitive from "@radix-ui/react-radio-group";
+import { ONBOARDING_INTENTS, type OnboardingIntent } from "@resonance/core";
 import { cn } from "../lib/cn";
 import { Button } from "../primitives/button";
 import { ResonanceMark } from "./resonance-mark";
 
 /**
- * The pre-onboarding intent fork. Two values route into the creator flow, one into the
- * member (discovery) flow — the app owns that mapping, not this component.
+ * The pre-onboarding intent fork. The vocabulary belongs to `@resonance/core`, which several
+ * boundaries (this picker, the web shell, the database, analytics) all have to agree on; it is
+ * re-exported here so a caller rendering the picker can name the value it receives without
+ * taking a second import.
  */
-export type OnboardingIntent = "explore" | "share" | "business";
+export type { OnboardingIntent };
 
 interface IntentOption {
   value: OnboardingIntent;
   label: string;
 }
 
-/** Copy + order from Figma `1519:78312` (manifest screen 01-what-brought-you). */
-export const INTENT_OPTIONS: readonly IntentOption[] = [
-  { value: "explore", label: "I'm exploring/ buying" },
-  { value: "share", label: "I want to share my works" },
-  { value: "business", label: "I have a business, and I want to connect with customers" },
-];
+/**
+ * Copy from Figma `1519:78312` (manifest screen 01-what-brought-you). The design owns the
+ * wording; the set of answers does not live here, so the labels are keyed by intent rather
+ * than listed — a fourth intent then fails to compile until it has copy, instead of quietly
+ * going unrendered.
+ */
+const INTENT_LABELS: Record<OnboardingIntent, string> = {
+  explore: "I'm exploring/ buying",
+  share: "I want to share my works",
+  business: "I have a business, and I want to connect with customers",
+};
+
+/** The options in the order the screen presents them, which is the order the intents are declared. */
+export const INTENT_OPTIONS: readonly IntentOption[] = ONBOARDING_INTENTS.map((value) => ({
+  value,
+  label: INTENT_LABELS[value],
+}));
 
 export interface IntentPickerCardProps extends Omit<
   React.HTMLAttributes<HTMLDivElement>,
