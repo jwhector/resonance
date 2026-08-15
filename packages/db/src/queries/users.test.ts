@@ -70,7 +70,7 @@ describe("setOnboardingIntent", () => {
     expect(await intentOf(db, "u1")).toBe("share");
   });
 
-  it("is idempotent — restating the same intent leaves the row unchanged", async () => {
+  it("restating the same intent leaves the stored answer unchanged", async () => {
     await setOnboardingIntent(db, "u1", "explore");
     await setOnboardingIntent(db, "u1", "explore");
     expect(await intentOf(db, "u1")).toBe("explore");
