@@ -1,8 +1,22 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { IntentPickerCard } from "./intent-picker-card";
+import { ONBOARDING_INTENTS, type OnboardingIntent as CoreIntent } from "@resonance/core";
+import { INTENT_OPTIONS, IntentPickerCard, type OnboardingIntent } from "./intent-picker-card";
 
 const noop = () => {};
+
+describe("INTENT_OPTIONS", () => {
+  it("offers every intent the domain defines, in that order", () => {
+    expect(INTENT_OPTIONS.map((option) => option.value)).toEqual([...ONBOARDING_INTENTS]);
+  });
+
+  it("names the same type the domain does, so no second enum can drift from it", () => {
+    const fromDomain: CoreIntent = "share";
+    const fromUi: OnboardingIntent = fromDomain;
+    const backToDomain: CoreIntent = fromUi;
+    expect(backToDomain).toBe("share");
+  });
+});
 
 describe("IntentPickerCard", () => {
   it("renders the heading and the three intent options", () => {

@@ -45,6 +45,11 @@ The onboarding family (`create-account-card`, `email-verify-card`, `intent-picke
 over a heading block, then a form ending in a `Button size="wide"`. They are all
 presentational — local form state at most, never data or routing.
 
+- **`IntentPickerCard`** — the "What brought you?" fork (Figma `1519:78312`, manifest screen
+  `01-what-brought-you`). The three intents are `@resonance/core`'s vocabulary, not this
+  package's: `OnboardingIntent` is re-exported from core so callers keep one name for it, and
+  `INTENT_OPTIONS` is built from core's `ONBOARDING_INTENTS`. Only the per-option wording is
+  local, because the design owns it and core does not.
 - **`TopicPicker`** — the member's interest selection step (Figma `1554:79520`, manifest
   screen `13-select-topics`). A **controlled** composite over `@resonance/core`'s `Topic`:
   the caller owns the topic list and the selection. Two things about it are load-bearing and
