@@ -5,6 +5,15 @@ export { ResonanceError, NotImplementedError, ValidationError } from "./errors";
 export { type StoragePort, stubStorage } from "./ports/storage";
 export { type MailPort, stubMail } from "./ports/mail";
 export { RoleSchema, type Role, type Id } from "./types";
+// What someone said they came here to do, chosen on the first onboarding screen. `ui` renders
+// the picker, `web` parses the answer back off a URL and routes on it, `db` persists it.
+// Distinct from `Role`, which records status earned by completing creator onboarding.
+export {
+  ONBOARDING_INTENTS,
+  OnboardingIntentSchema,
+  type OnboardingIntent,
+  isCreatorIntent,
+} from "./onboarding";
 export { InterviewMessageSchema, type InterviewMessage } from "./interview";
 export {
   NameOptionSchema,
