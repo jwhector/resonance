@@ -43,12 +43,14 @@ describe("isCreatorIntent", () => {
     expect(isCreatorIntent("explore")).toBe(false);
   });
 
-  it("classifies every intent in the set, so adding one cannot silently fall through", () => {
-    const classified = ONBOARDING_INTENTS.filter(
-      (intent: OnboardingIntent) => isCreatorIntent(intent) || !isCreatorIntent(intent),
-    );
-    expect(classified).toHaveLength(ONBOARDING_INTENTS.length);
-    expect(ONBOARDING_INTENTS.filter(isCreatorIntent)).toEqual(["share", "business"]);
+  it("splits the whole set both ways, so a new intent cannot join silently", () => {
+    // Pinning BOTH sides is what makes this a tripwire: a fourth intent lands in one list or
+    // the other and fails that expectation, forcing whoever adds it to say which it is.
+    const creator = ONBOARDING_INTENTS.filter((intent) => isCreatorIntent(intent));
+    const browsing = ONBOARDING_INTENTS.filter((intent) => !isCreatorIntent(intent));
+
+    expect(creator).toEqual<OnboardingIntent[]>(["share", "business"]);
+    expect(browsing).toEqual<OnboardingIntent[]>(["explore"]);
   });
 });
 
