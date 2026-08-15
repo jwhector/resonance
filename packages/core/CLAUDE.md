@@ -10,6 +10,10 @@ packages speak.
   `ValidationError`. Throw these, not bare strings.
 - `ports/storage.ts` — `StoragePort` interface + `stubStorage` (media deferred, ADR-0007).
 - `types.ts` — `Role` (+ Zod schema), branded `Id<Brand>` helper.
+- `onboarding.ts` — `OnboardingIntentSchema` / `ONBOARDING_INTENTS` / `isCreatorIntent`: the
+  three answers the first onboarding screen offers (`explore` · `share` · `business`). A closed
+  enum because it is read back off a URL. **Not a `Role`** — intent is what someone _said_ they
+  came to do; `creator` is status earned by completing creator onboarding.
 - `interview.ts` — `InterviewMessageSchema` / `InterviewMessage`: the shared chat
   contract (role + text) for the Weave interview, spoken by `ai`, `web`, and `ui`.
 - `profile-draft.ts` — `CreatorProfileDraftSchema` (+ `NameOptionSchema`,
