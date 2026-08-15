@@ -15,7 +15,9 @@ export {
   findSimilarProfiles,
   type CreatorProfileRow,
 } from "./queries/profiles";
-export { setUserRoles } from "./queries/users";
+// `roles` records status earned by completing creator onboarding; `onboarding_intent` records
+// what someone said they came here to do. Separate columns, separate write paths.
+export { setUserRoles, setOnboardingIntent } from "./queries/users";
 
 // Discovery. `searchCreatorProfiles` is the deep ANN read; `createDiscoveryAdapter`
 // wraps it as core's DiscoveryPort so `web`/`ui` depend on the interface and never on this SQL.
