@@ -46,8 +46,10 @@ export async function setUserRoles(db: Db, userId: string, roles: Role[]): Promi
  * is safe precisely because intent is not status: overwriting it can never demote someone,
  * since a completed creator is recorded by their role, which this function does not touch.
  *
- * Re-recording the same intent is a no-op write, so a resubmitted form or a retried action
- * leaves the row as it was.
+ * Re-recording the same intent leaves the stored answer unchanged, so a resubmitted form or a
+ * retried action is safe to repeat. It is not invisible, though: the user row stamps
+ * `updatedAt` on every write, so a restatement still moves that timestamp. Anything that reads
+ * `updatedAt` as "when this user last changed" should expect a restated intent to count.
  */
 export async function setOnboardingIntent(
   db: Db,
