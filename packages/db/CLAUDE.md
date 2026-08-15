@@ -34,7 +34,8 @@ src/
 │   ├── profiles.ts             createCreatorProfile, getCreatorProfileById,
 │   │                           getCreatorProfileByUserId, upsertProfileEmbedding,
 │   │                           findSimilarProfiles (thin wrapper — see below)
-│   └── users.ts                setUserRoles — single write path for user.roles
+│   └── users.ts                setUserRoles, setOnboardingIntent — the single write
+│                               paths for user.roles and user.onboarding_intent
 ├── adapters/
 │   ├── discovery-adapter.ts    createDiscoveryAdapter — core's DiscoveryPort, live impl
 │   └── observation-adapter.ts  createObservationAdapter — core's ObservationPort, live impl
@@ -49,6 +50,7 @@ drizzle/
     0005_rapid_ogun.sql         drizzle-kit generated: topics + member_interests,
                                 embeddings.source_id widened uuid → text
     0006_seed_topics.sql        Hand-written (--custom): the 13 curated topic rows
+    0007_nifty_the_watchers.sql drizzle-kit generated: user.onboarding_intent
 ```
 
 ## Public API
@@ -71,7 +73,8 @@ export {
   findSimilarProfiles,
   type CreatorProfileRow,
 } from "./queries/profiles";
-export { setUserRoles } from "./queries/users"; // overwrite user.roles (single write path)
+// Two separate columns, two separate write paths: earned status vs. stated intent.
+export { setUserRoles, setOnboardingIntent } from "./queries/users";
 
 // Discovery (Slice A)
 export {
@@ -191,6 +194,25 @@ export { createTestDb, type TestDb } from "./testing/create-test-db";
 naming exception**: Better Auth owns these shapes and names. PKs are `text` (Better
 Auth generates string IDs, not UUIDs). The `user` table adds a `roles` column
 (`text`, comma-encoded `Role[]`, default `"member"`) as a Better Auth `additionalField`.
+
+It also carries **`onboarding_intent`** (`text`, one of `@resonance/core`'s
+`ONBOARDING_INTENTS`) — what the person said they came here to do on the first onboarding
+screen. Two things about it are deliberate:
+
+- **It is not a Better Auth `additionalField`, and must not become one.** `roles` is declared
+  there only because `getSession` decodes it into `SessionUser`; nothing in the auth flow
+  reads the intent, so it stays out of the session payload. It is our column on their table,
+  written and read through Drizzle.
+- **Nullable, no default, no backfill.** Intent is what someone _said_; `roles` is status they
+  _earned_ by completing creator onboarding (which is why `commitCreatorProfile` writes the
+  role last). A null intent means "never answered" — every user predating the screen — and a
+  default would fabricate an answer indistinguishable from a real one.
+
+`setOnboardingIntent(db, userId, intent)` is the only write path. It validates through
+`OnboardingIntentSchema` because both callers get the value from something a person can type
+(signup reads it off a URL; the member → creator conversion screen posts a form), and it
+overwrites: the question is asked more than once and the latest answer is the true one.
+Overwriting is safe precisely because intent is not status — it cannot demote anyone.
 
 ### `creator_profiles` (`schema/creator.ts`)
 

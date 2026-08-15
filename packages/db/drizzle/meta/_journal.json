@@ -50,6 +50,13 @@
       "when": 1785308910560,
       "tag": "0006_seed_topics",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1786758198005,
+      "tag": "0007_nifty_the_watchers",
+      "breakpoints": true
     }
   ]
 }

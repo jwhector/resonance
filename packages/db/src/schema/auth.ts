@@ -1,3 +1,4 @@
+import type { OnboardingIntent } from "@resonance/core";
 import { boolean, index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 // Better Auth owns these table names (singular) — the sanctioned naming exception.
@@ -15,6 +16,15 @@ export const user = pgTable("user", {
     .notNull(),
   // additionalField: comma-encoded Role[] (see @resonance/auth roles.ts). Default member.
   roles: text("roles").default("member").notNull(),
+  // What the person said they came here to do on the first onboarding screen. Stated intent,
+  // not earned status — `roles` records the latter, and someone who intends to create is not
+  // yet a creator. Deliberately NOT a Better Auth additionalField: no auth flow reads it, so
+  // it stays off the session payload and is written and read through Drizzle alone.
+  //
+  // Nullable with no default, and existing rows are not backfilled: every user predates this
+  // screen, and null honestly means "never answered". A default would put an answer nobody
+  // gave into the column, and nothing downstream could tell it from a real one.
+  onboardingIntent: text("onboarding_intent").$type<OnboardingIntent>(),
 });
 
 export const session = pgTable(
