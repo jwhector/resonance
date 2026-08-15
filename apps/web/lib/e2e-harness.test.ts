@@ -45,6 +45,8 @@ function fakeMail(id: number) {
 let harnessOn: typeof EHarness;
 let harnessOff: typeof EHarness;
 
+// Generous hookTimeout: re-resolving the module graph twice is ~750ms in isolation but can exceed
+// the 10s default under parallel test-suite CPU contention in CI.
 beforeAll(async () => {
   vi.stubEnv("E2E_HARNESS", "1");
   vi.resetModules();
@@ -55,7 +57,7 @@ beforeAll(async () => {
   harnessOff = await import("./e2e-harness");
 
   vi.unstubAllEnvs();
-});
+}, 30000);
 
 beforeEach(() => {
   vi.clearAllMocks();
