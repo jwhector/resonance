@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  * is tested in `@resonance/db` against real Postgres.
  */
 const setMemberInterests = vi.fn();
+const setOnboardingIntent = vi.fn();
 const getWebSession = vi.fn();
 const interestsEmbedder = vi.fn();
 const redirect = vi.fn((url: string) => {
@@ -17,6 +18,8 @@ const redirect = vi.fn((url: string) => {
 vi.mock("@resonance/db", () => ({
   createDb: () => ({ __db: true }),
   setMemberInterests: (db: unknown, args: unknown) => setMemberInterests(db, args),
+  setOnboardingIntent: (db: unknown, userId: string, intent: unknown) =>
+    setOnboardingIntent(db, userId, intent),
 }));
 vi.mock("next/headers", () => ({ headers: () => new Headers() }));
 vi.mock("next/navigation", () => ({ redirect: (url: string) => redirect(url) }));
@@ -38,6 +41,7 @@ describe("saveInterests", () => {
   it("persists a validated selection against the SESSION's member", async () => {
     await expect(saveInterests({ topicSlugs: ["wellness", "tea-culture"] })).resolves.toEqual({
       ok: true,
+      memberId: "user_member",
     });
 
     expect(setMemberInterests).toHaveBeenCalledWith(
@@ -59,7 +63,10 @@ describe("saveInterests", () => {
   it("records an empty selection rather than skipping the write", async () => {
     // Skipping is supported, and clearing must actually clear — an early return here would leave a
     // stale interest vector still ranking /discover for a member who just removed their topics.
-    await expect(saveInterests({ topicSlugs: [] })).resolves.toEqual({ ok: true });
+    await expect(saveInterests({ topicSlugs: [] })).resolves.toEqual({
+      ok: true,
+      memberId: "user_member",
+    });
 
     expect(setMemberInterests).toHaveBeenCalledWith(
       expect.anything(),
@@ -95,7 +102,9 @@ describe("saveInterestsFromForm — the no-JS path", () => {
     form.append("topicSlugs", "wellness");
     form.append("topicSlugs", "herbalism");
 
-    await expect(saveInterestsFromForm(form)).rejects.toThrow("REDIRECT:/onboarding/creator");
+    await expect(saveInterestsFromForm("share", form)).rejects.toThrow(
+      "REDIRECT:/onboarding/creator",
+    );
     expect(setMemberInterests).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({ topicSlugs: ["wellness", "herbalism"] }),
@@ -103,7 +112,7 @@ describe("saveInterestsFromForm — the no-JS path", () => {
   });
 
   it("treats an unchecked form as the skip case, not a failure", async () => {
-    await expect(saveInterestsFromForm(new FormData())).rejects.toThrow(
+    await expect(saveInterestsFromForm("share", new FormData())).rejects.toThrow(
       "REDIRECT:/onboarding/creator",
     );
     expect(setMemberInterests).toHaveBeenCalledWith(
@@ -115,7 +124,60 @@ describe("saveInterestsFromForm — the no-JS path", () => {
   it("sends an expired session back to the front door rather than 500ing", async () => {
     getWebSession.mockResolvedValue(null);
 
-    await expect(saveInterestsFromForm(new FormData())).rejects.toThrow("REDIRECT:/signup");
+    await expect(saveInterestsFromForm("share", new FormData())).rejects.toThrow(
+      "REDIRECT:/signup",
+    );
     expect(setMemberInterests).not.toHaveBeenCalled();
+    expect(setOnboardingIntent).not.toHaveBeenCalled();
   });
+
+  it("keeps the stated intent on the URL it bounces a rejected selection back to", async () => {
+    const form = new FormData();
+    form.append("topicSlugs", "Not A Slug");
+
+    // Without the intent on the retry URL, a second attempt would route somewhere the first
+    // would not have — the answer would be lost by the act of getting it wrong once.
+    await expect(saveInterestsFromForm("business", form)).rejects.toThrow(
+      "REDIRECT:/interests?intent=business",
+    );
+    expect(setOnboardingIntent).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * The fork, asserted one intent at a time. Where someone lands and what gets stored are two
+ * separate claims about the same submission, so each case pins both.
+ */
+describe("saveInterestsFromForm — the intent fork", () => {
+  it.each([
+    ["share", "/onboarding/creator"],
+    ["business", "/onboarding/creator"],
+    ["explore", "/discover"],
+  ])("stores %s and continues to %s", async (intent, destination) => {
+    await expect(saveInterestsFromForm(intent, new FormData())).rejects.toThrow(
+      `REDIRECT:${destination}`,
+    );
+    expect(setOnboardingIntent).toHaveBeenCalledWith({ __db: true }, "user_member", intent);
+  });
+
+  it("sends someone who stated nothing to /discover, storing no answer for them", async () => {
+    // An account reaches this step without an intent by signing in through a bare link: /start
+    // sends `explore` to /discover and never through sign-up. Writing an intent here would
+    // fabricate an answer indistinguishable from one someone actually gave.
+    await expect(saveInterestsFromForm(undefined, new FormData())).rejects.toThrow(
+      "REDIRECT:/discover",
+    );
+    expect(setOnboardingIntent).not.toHaveBeenCalled();
+    expect(setMemberInterests).toHaveBeenCalled();
+  });
+
+  it.each([["creator"], ["../onboarding/creator"], [""], [42]])(
+    "treats %o as no intent rather than failing the submission",
+    async (forged) => {
+      await expect(saveInterestsFromForm(forged, new FormData())).rejects.toThrow(
+        "REDIRECT:/discover",
+      );
+      expect(setOnboardingIntent).not.toHaveBeenCalled();
+    },
+  );
 });

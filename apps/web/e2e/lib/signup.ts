@@ -1,4 +1,5 @@
 import { type APIRequestContext, type Page, expect } from "@playwright/test";
+import { isCreatorIntent, type OnboardingIntent } from "@resonance/core";
 
 /**
  * The real passwordless front door, driven the way a member drives it — shared by every spec that
@@ -14,13 +15,16 @@ import { type APIRequestContext, type Page, expect } from "@playwright/test";
  */
 
 /**
- * Where `/interests` continues to today.
+ * Where `/interests` continues, given the intent a spec signed up with.
  *
- * Deliberately the existing post-verification destination: member and creator cannot be told
- * apart at that point, because nothing in the app records who is a creator (see
- * `(onboarding)/interests/actions.ts`).
+ * A creator intent goes on to the interview and anything else — including no intent at all —
+ * goes to the member front door. Specs state their intent once, at sign-up, and ask this for the
+ * destination rather than hard-coding one, so a spec cannot assert a landing its own sign-up
+ * would not produce.
  */
-export const AFTER_INTERESTS = /\/onboarding\/creator/;
+export function afterInterests(intent?: OnboardingIntent): RegExp {
+  return intent && isCreatorIntent(intent) ? /\/onboarding\/creator/ : /\/discover/;
+}
 
 /** Fill the 6 OTP cells one digit at a time (each cell is labelled "Digit N of 6"). */
 export async function enterOtp(page: Page, otp: string): Promise<void> {
@@ -34,6 +38,10 @@ export async function enterOtp(page: Page, otp: string): Promise<void> {
  * newly verified account now lands on. The caller decides what to do there: pick topics, or skip
  * with {@link skipInterests}.
  *
+ * `intent` is what the person answered on `/start`, entering sign-up the way that screen sends
+ * them. Omit it for a member: `/start` sends `explore` straight to `/discover`, so a member
+ * genuinely arrives at sign-up with nothing stated.
+ *
  * Returns the generated email so the caller can delete the account afterwards
  * (`deleteUserByEmail`). `prefix` should name the spec, and the caller's run id keeps parallel
  * workers off each other's accounts — Better Auth allows one account per email.
@@ -42,10 +50,11 @@ export async function signUpAndVerify(
   page: Page,
   request: APIRequestContext,
   prefix: string,
+  intent?: OnboardingIntent,
 ): Promise<string> {
   const email = `${prefix}-${Date.now()}@example.com`;
 
-  await page.goto("/signup");
+  await page.goto(intent ? `/signup?intent=${intent}` : "/signup");
   await expect(page.getByRole("heading", { name: "Welcome to Resonance" })).toBeVisible();
   await page.getByLabel("Email").fill(email);
   await page.getByRole("checkbox").click();
@@ -82,9 +91,12 @@ export async function signUpAndVerify(
  * Pressing Continue with nothing selected **is** the skip: the design draws no skip control, and
  * an empty selection is a first-class outcome the contract accepts (`MemberInterestsSchema` takes
  * a minimum of zero). Specs that are not about interests use this to get through the door.
+ *
+ * Pass the same `intent` the account signed up with, since that is what decides where this step
+ * lets out.
  */
-export async function skipInterests(page: Page): Promise<void> {
+export async function skipInterests(page: Page, intent?: OnboardingIntent): Promise<void> {
   await expect(page.getByRole("heading", { name: /Select \d+ topics/ })).toBeVisible();
   await page.getByRole("button", { name: "Continue" }).click();
-  await expect(page).toHaveURL(AFTER_INTERESTS, { timeout: 20_000 });
+  await expect(page).toHaveURL(afterInterests(intent), { timeout: 20_000 });
 }

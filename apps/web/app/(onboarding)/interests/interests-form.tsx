@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import type { Topic, TopicSlug } from "@resonance/core";
+import type { OnboardingIntent, Topic, TopicSlug } from "@resonance/core";
 import { TopicPicker } from "@resonance/ui";
 import { saveInterestsFromForm } from "./actions";
 
@@ -10,6 +10,8 @@ export interface InterestsFormProps {
   topics: readonly Topic[];
   /** Slugs already stored for this member — empty for a new account. */
   initialSelection: readonly TopicSlug[];
+  /** What this person said they came here to do, if they answered on `/start`. */
+  intent?: OnboardingIntent;
 }
 
 /**
@@ -22,8 +24,11 @@ export interface InterestsFormProps {
  * themselves and the step still works with JavaScript disabled. `onSubmit` is therefore not a
  * second submit: it only reflects that one is in flight, which is what stops a double-click from
  * firing two writes while the server round-trips and redirects.
+ *
+ * The intent is **bound** to the action rather than rendered as a hidden field, which keeps it
+ * submitted on the no-JS path without the picker having to grow a slot for arbitrary form fields.
  */
-export function InterestsForm({ topics, initialSelection }: InterestsFormProps) {
+export function InterestsForm({ topics, initialSelection, intent }: InterestsFormProps) {
   const [selection, setSelection] = React.useState<readonly TopicSlug[]>(initialSelection);
 
   // React's documented "adjusting state when props change" pattern. A bare
@@ -42,7 +47,7 @@ export function InterestsForm({ topics, initialSelection }: InterestsFormProps) 
       topics={topics}
       value={selection}
       onValueChange={setSelection}
-      action={saveInterestsFromForm}
+      action={saveInterestsFromForm.bind(null, intent)}
       onSubmit={() => setSubmitting(true)}
       pending={submitting}
     />

@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createDb, getMemberInterests, listTopics } from "@resonance/db";
 import { getWebSession } from "../../../lib/auth";
+import { readIntent } from "../intent-routes";
 import { InterestsForm } from "./interests-form";
 
 /**
@@ -9,6 +10,10 @@ import { InterestsForm } from "./interests-form";
  *
  * Reached straight after email verification, for every new account: roles are additive, so a
  * creator is also a member and gets a personalized `/discover` from the same selection.
+ *
+ * This is also where the answer given on `/start` is finally spent — it arrives on the URL,
+ * whichever verification channel brought the person here, and the form hands it to the action
+ * that stores it and chooses where they go next.
  *
  * Lives in the `(onboarding)` group because the frame draws its own full-page chrome — the
  * Resonance mark over content the `<main>` wrapper centres, with no `AppNav` rail. The
@@ -19,7 +24,12 @@ import { InterestsForm } from "./interests-form";
  */
 export const dynamic = "force-dynamic";
 
-export default async function InterestsPage() {
+export default async function InterestsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ intent?: string }>;
+}) {
+  const { intent } = await searchParams;
   const user = await getWebSession(await headers());
   // Signing in is a prerequisite, not a page state: there is no member to attach a selection to,
   // and the Server Action would refuse anyway. Redirect rather than render a picker that cannot save.
@@ -32,7 +42,11 @@ export default async function InterestsPage() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center px-6">
-      <InterestsForm topics={topics} initialSelection={existing.map((topic) => topic.slug)} />
+      <InterestsForm
+        topics={topics}
+        initialSelection={existing.map((topic) => topic.slug)}
+        intent={readIntent(intent)}
+      />
     </main>
   );
 }

@@ -40,15 +40,17 @@ test("creator can sign up, interview with Weave, generate + commit a profile", a
   page,
   request,
 }) => {
-  // 1) /signup → /verify → the OTP from the test seam → signed in, standing on /interests.
-  //    Unique per run so re-runs never collide on Better Auth's one-account-per-email.
-  accounts.push(await signUpAndVerify(page, request, "e2e-creator"));
+  // 1) /start's "share" answer → /signup → /verify → the OTP from the test seam → signed in,
+  //    standing on /interests. The answer is what carries this account to the interview rather
+  //    than the member front door. Unique per run so re-runs never collide on Better Auth's
+  //    one-account-per-email.
+  accounts.push(await signUpAndVerify(page, request, "e2e-creator", "share"));
 
   // 2) Interest selection sits between verification and the interview, for every new account.
   //    This spec is about the CREATOR path, so it skips the step —
   //    which the picker supports by design: Continue with nothing selected is a valid, empty
   //    selection. `interests.spec.ts` owns driving the picking path.
-  await skipInterests(page);
+  await skipInterests(page, "share");
 
   // 3) Interview: the Weave rail renders. Send a turn; assert the assistant reply SETTLES.
   await expect(page.getByRole("region", { name: "Weave interview" })).toBeVisible();

@@ -9,14 +9,14 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push: routerPush }) }));
 afterEach(() => routerPush.mockReset());
 
 describe("IntentForm", () => {
-  it("routes the two creator intents to /signup", () => {
+  it("sends the share intent to /signup carrying its own answer", () => {
     render(<IntentForm />);
     fireEvent.click(screen.getByRole("radio", { name: "I want to share my works" }));
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
-    expect(routerPush).toHaveBeenCalledWith("/signup");
+    expect(routerPush).toHaveBeenCalledWith("/signup?intent=share");
   });
 
-  it("routes the business intent to /signup", () => {
+  it("keeps the business intent distinct from share rather than collapsing both to 'creator'", () => {
     render(<IntentForm />);
     fireEvent.click(
       screen.getByRole("radio", {
@@ -24,7 +24,7 @@ describe("IntentForm", () => {
       }),
     );
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
-    expect(routerPush).toHaveBeenCalledWith("/signup");
+    expect(routerPush).toHaveBeenCalledWith("/signup?intent=business");
   });
 
   it("routes the member (explore) intent to /discover, not through sign-up", () => {
