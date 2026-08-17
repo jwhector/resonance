@@ -120,73 +120,112 @@ export function resolveMail(): AuthMailPort {
   return stubAuthMail;
 }
 
-// --- OTP observation seam (test/E2E only, inert in production) ------------------------
+// --- Mail observation seam (test/E2E only, inert in production) -----------------------
 //
-// A passive read-back slot for the login codes a *test-injected* fake transport captures.
-// Runtime code NEVER writes here. Registration is EXPLICIT and opt-in: the E2E harness calls
-// `observeLoginCodes(fake)` (from `@resonance/auth/testing`) when it builds its singleton fake.
-// Constructing a fake has NO side effect on this slot — so building a fake anywhere (a unit
-// test, another package) can never hijack the read-back of another fake (no action-at-a-distance).
-// `peekLoginCode` reads whatever buffer was explicitly registered; when nothing has been observed —
-// which is ALWAYS the case in production, since production never builds a fake and never invokes the
-// harness — it is inert (returns undefined) and can never leak a real code.
+// Passive read-back slots for what a *test-injected* fake transport captured — the login codes it
+// was asked to send, and the magic links. Runtime code NEVER writes here. Registration is EXPLICIT
+// and opt-in: the E2E harness calls `observeMail(fake)` (from `@resonance/auth/testing`) when it
+// builds its singleton fake. Constructing a fake has NO side effect on these slots — so building a
+// fake anywhere (a unit test, another package) can never hijack the read-back of another fake (no
+// action-at-a-distance). A peek reads whatever buffer was explicitly registered; when nothing has
+// been observed — which is ALWAYS the case in production, since production never builds a fake and
+// never invokes the harness — it is inert (returns undefined) and can never leak a real code or link.
 //
-// Defense-in-depth: `peekLoginCode` ALSO hard-returns undefined when `NODE_ENV === "production"`,
-// independent of registration. Two unrelated reasons it cannot surface a code in prod: nothing is
-// ever registered there, AND the prod guard short-circuits the read (the isolated E2E harness only
-// ever runs with `NODE_ENV !== "production"`, so this never impairs the legitimate read-back).
+// Defense-in-depth: every peek ALSO hard-returns undefined when `NODE_ENV === "production"`,
+// independent of registration. Two unrelated reasons nothing can surface in prod: nothing is ever
+// registered there, AND the prod guard short-circuits the read (the isolated E2E harness only ever
+// runs with `NODE_ENV !== "production"`, so this never impairs the legitimate read-back).
 //
-// The slot is pinned to `globalThis` because in Next.js dev / route-handler bundles
+// The slots are pinned to `globalThis` because in Next.js dev / route-handler bundles
 // `@resonance/auth` can evaluate in more than one module scope — the Better Auth catch-all
-// that WRITES the code and the route that READS it via `peekLoginCode` — and a plain
-// module-level `const` would give each scope its own buffer. A process-wide slot guarantees
-// the write and the read land on the same array.
+// that WRITES and the test route that READS — and a plain module-level `const` would give each
+// scope its own buffer. A process-wide slot guarantees the write and the read land on the same array.
+//
+// Both kinds share one slot implementation rather than each keeping a copy of this reasoning: the
+// production guard and the cross-scope pinning are subtle enough that a second hand-rolled copy is
+// how one of them silently loses a guard.
 //
 // This is NOT a runtime fake selector (ADR-0018): it selects nothing and dispatches no mail;
-// it only exposes codes a DI-injected fake already captured. Final disposition of this seam
-// and the `/api/test/last-otp` route is a separate, human-gated decision (seed resonance-a4a4).
-type ObservedLoginCodes = ReadonlyArray<{ email: string; otp: string; type: OtpType }>;
-const OBSERVED_CODES_KEY = "__resonance_auth_observed_login_codes__";
+// it only exposes what a DI-injected fake already captured. Final disposition of this seam
+// and the test routes that read it is a separate, human-gated decision.
 
-function observedCodesStore(): Record<string, ObservedLoginCodes | undefined> {
-  return globalThis as unknown as Record<string, ObservedLoginCodes | undefined>;
+/** One `globalThis`-pinned observation slot: the register / clear / read trio, defined once. */
+function observationSlot<T>(key: string) {
+  const store = () => globalThis as unknown as Record<string, ReadonlyArray<T> | undefined>;
+  return {
+    register: (entries: ReadonlyArray<T>) => {
+      store()[key] = entries;
+    },
+    clear: () => {
+      store()[key] = undefined;
+    },
+    /** The most recent entry matching `match`, or `undefined`. Inert in production. */
+    findLast: (match: (entry: T) => boolean): T | undefined => {
+      if (process.env.NODE_ENV === "production") return undefined;
+      const entries = store()[key];
+      if (!entries) return undefined;
+      for (let i = entries.length - 1; i >= 0; i--) {
+        const entry = entries[i];
+        if (entry !== undefined && match(entry)) return entry;
+      }
+      return undefined;
+    },
+  };
 }
 
+type ObservedLoginCode = { email: string; otp: string; type: OtpType };
+type ObservedMagicLink = { email: string; url: string; token: string };
+
+const loginCodes = observationSlot<ObservedLoginCode>("__resonance_auth_observed_login_codes__");
+const magicLinks = observationSlot<ObservedMagicLink>("__resonance_auth_observed_magic_links__");
+
 /**
- * Register the login-code buffer a test-injected fake captures into, so {@link peekLoginCode}
- * can read it back across module scopes. This is the low-level writer; the E2E harness calls it
- * via the intent-named `observeLoginCodes(fake)` on `@resonance/auth/testing`. Registration is
- * always explicit and test/harness-driven — nothing on a shipped runtime path ever calls it, and
- * it is NOT re-exported from the package entrypoint (kept internal to the testing seam).
+ * Register the buffers a test-injected fake captures into, so the peeks below can read them back
+ * across module scopes. This is the low-level writer; the E2E harness calls it via the
+ * intent-named `observeMail(fake)` on `@resonance/auth/testing`. Both buffers are registered
+ * together because they come from the one transport — registering them separately would let a
+ * harness observe half the flow and discover the gap only when a test asks for the other half.
+ *
+ * Registration is always explicit and test/harness-driven — nothing on a shipped runtime path ever
+ * calls it, and it is NOT re-exported from the package entrypoint (kept internal to the testing seam).
  */
-export function registerObservedLoginCodes(codes: ObservedLoginCodes): void {
-  observedCodesStore()[OBSERVED_CODES_KEY] = codes;
+export function registerObservedMail(observed: {
+  codes: ReadonlyArray<ObservedLoginCode>;
+  sent: ReadonlyArray<ObservedMagicLink>;
+}): void {
+  loginCodes.register(observed.codes);
+  magicLinks.register(observed.sent);
 }
 
 /**
- * Clear the observation slot. Test-only hygiene so a suite can assert the inert (nothing
+ * Clear both observation slots. Test-only hygiene so a suite can assert the inert (nothing
  * registered) shape deterministically. Not re-exported from the package entrypoint.
  */
-export function clearObservedLoginCodes(): void {
-  observedCodesStore()[OBSERVED_CODES_KEY] = undefined;
+export function clearObservedMail(): void {
+  loginCodes.clear();
+  magicLinks.clear();
 }
 
 /**
  * Dev/test-only read-back: the most recent login code observed for `email`, or `undefined`.
- * Reads the buffer a fake transport was EXPLICITLY registered for via
- * {@link registerObservedLoginCodes} (the harness calls `observeLoginCodes(fake)`). Returns
- * `undefined` when no fake has been observed — which is always the case in production, since nothing
- * constructs a fake or invokes the harness there — so this never surfaces a real code. As
- * defense-in-depth it ALSO returns `undefined` whenever `NODE_ENV === "production"`, regardless of
- * registration. Do NOT wire it into any production code path.
+ * Reads the buffer a fake transport was EXPLICITLY registered for via {@link registerObservedMail}
+ * (the harness calls `observeMail(fake)`). Returns `undefined` when no fake has been observed —
+ * which is always the case in production, since nothing constructs a fake or invokes the harness
+ * there — so this never surfaces a real code. Do NOT wire it into any production code path.
  */
 export function peekLoginCode(email: string): string | undefined {
-  if (process.env.NODE_ENV === "production") return undefined;
-  const codes = observedCodesStore()[OBSERVED_CODES_KEY];
-  if (!codes) return undefined;
-  for (let i = codes.length - 1; i >= 0; i--) {
-    const entry = codes[i];
-    if (entry?.email === email) return entry.otp;
-  }
-  return undefined;
+  return loginCodes.findLast((entry) => entry.email === email)?.otp;
+}
+
+/**
+ * Dev/test-only read-back: the most recent magic-link URL observed for `email`, or `undefined`.
+ * The same seam and the same guards as {@link peekLoginCode}.
+ *
+ * This exists because the magic link, unlike the code, has no other way to be read: the link is
+ * only ever delivered by email, and Better Auth stores a SHA-256 hash of its token rather than the
+ * token itself, so the URL cannot be reconstructed from the database. Without this a test can
+ * drive only one of the two verification channels.
+ */
+export function peekMagicLink(email: string): string | undefined {
+  return magicLinks.findLast((entry) => entry.email === email)?.url;
 }

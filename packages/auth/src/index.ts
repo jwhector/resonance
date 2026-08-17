@@ -17,13 +17,14 @@ export { getSession } from "./session";
 export { encodeRoles, decodeRoles } from "./roles";
 
 // Live-by-default mail transport factory + resolver, and the auth mail seam type.
-// `peekLoginCode` is a dev/test-only read-back of a DI-injected fake's captured OTPs — inert
+// `peekLoginCode` / `peekMagicLink` are dev/test-only read-backs of a DI-injected fake's captures — inert
 // in production (nothing registers a fake there). The in-memory fake itself lives on the
 // test-only `@resonance/auth/testing` subpath (ADR-0018), NOT on this runtime entrypoint.
 export {
   createResendMail,
   resolveMail,
   peekLoginCode,
+  peekMagicLink,
   type AuthMailPort,
   type OtpType,
 } from "./mail";

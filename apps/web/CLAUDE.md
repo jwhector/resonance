@@ -52,6 +52,8 @@ app/
 ├── api/onboarding/interview/     streaming interview route (live model, ADR-0009)
 ├── api/auth/[...all]/            Better Auth mount (via lib/auth.ts getWebAuth)
 ├── api/test/last-otp/            E2E-ONLY OTP read-back — gated on E2E_HARNESS
+├── api/test/last-magic-link/     E2E-ONLY magic-link read-back — the only way to drive the
+│                                 link channel (the URL exists solely in the email)
 └── layout.tsx · page.tsx · globals.css
 lib/
 ├── auth.ts            getWebAuth() (the one instance the mount serves) + getWebSession() — all
@@ -62,6 +64,8 @@ e2e/
 ├── onboarding-creator.spec.ts    full-flow Playwright (runs under E2E_HARNESS)
 ├── discovery.spec.ts             member discovery front door + follow/unfollow (E2E_HARNESS)
 ├── interests.spec.ts             pick topics → interest-ranked /discover, and the skip path
+├── onboarding-intent.spec.ts     the /start answer surviving BOTH verification channels, the
+│                                 destination it forks to, and the column it lands in
 ├── home.spec.ts                  scaffold smoke test
 └── lib/                          signup.ts — the shared passwordless front door, driven to
                                   /interests · db.ts — fixture DB plumbing · discovery-fixtures.ts
@@ -86,10 +90,13 @@ and `zod`.
   which injects the test-only fakes (`@resonance/ai/testing`, `@resonance/auth/testing`) at the
   composition roots (interview stream, `generateDraft`, `commitProfile`, and the auth mount). It
   is **not** a general fakes flag threaded through the packages (ADR-0018 §4). The harness fake mail
-  is a `globalThis` singleton and registers its OTP buffer for read-back with an **explicit**
-  `observeLoginCodes(fake)` call (never a construction side-effect), so building a fake — or a
-  session read via `getWebSession` — can't clobber the `/api/test/last-otp` read-back (seed
-  resonance-5d4e). The slot holds the **in-flight promise**, not the resolved port, so the parallel
+  is a `globalThis` singleton and registers its captures for read-back with an **explicit**
+  `observeMail(fake)` call (never a construction side-effect), so building a fake — or a
+  session read via `getWebSession` — can't clobber the read-back routes (seed
+  resonance-5d4e). One call registers **both** the login codes and the magic links, so the two
+  verification channels are equally drivable — the link channel has no other way in, since a link
+  only arrives by email and Better Auth stores a hash of its token rather than the token itself.
+  The slot holds the **in-flight promise**, not the resolved port, so the parallel
   auth requests the signup form fires share one construction instead of each building a fake on a
   cold server (seed resonance-86dd). Session reads go through `getWebSession` → `getWebAuth`, so the mount and the
   reads share ONE Better Auth instance per process (seed resonance-eb15).
