@@ -68,7 +68,9 @@ for (const channel of CHANNELS) {
   }) => {
     // No intent stated: `/start` sends `explore` straight to `/discover` and never through
     // sign-up, so a member genuinely arrives here with nothing to carry.
-    const email = await signUpAndVerify(page, request, `e2e-intent-member-${channel}-${RUN_ID}`);
+    const email = await signUpAndVerify(page, request, `e2e-intent-member-${channel}-${RUN_ID}`, {
+      channel,
+    });
     accounts.push(email);
 
     await expect(page).toHaveURL(/\/interests$/, { timeout: 20_000 });
