@@ -1,11 +1,14 @@
 import { redirect } from "next/navigation";
-import { readIntent } from "../intent-routes";
+import { isCreatorIntent } from "@resonance/core";
+import { readIntent, signupUrl } from "../intent-routes";
 import { VerifyForm } from "./verify-form";
 
 /**
  * `/verify` — the "check your email" step. Server shell: reads the `email` query param
  * (set by `/signup`) and hands it to the client `VerifyForm`, which owns the OTP verify +
- * resend calls. If the email is missing the flow can't continue, so bounce back to signup.
+ * resend calls. If the email is missing the flow can't continue, so bounce back to signup —
+ * still carrying a stated creator intent, so whoever said they came to create re-enters
+ * sign-up on the path they chose rather than silently as a member.
  *
  * The `intent` param rides along from `/signup` so that entering the code reaches the same fork
  * the magic link would have. It is parsed here for the same reason it is parsed on `/signup`: a
@@ -18,11 +21,12 @@ export default async function VerifyPage({
   searchParams: Promise<{ email?: string; intent?: string }>;
 }) {
   const { email, intent } = await searchParams;
-  if (!email) redirect("/signup");
+  const stated = readIntent(intent);
+  if (!email) redirect(stated && isCreatorIntent(stated) ? signupUrl(stated) : "/signup");
 
   return (
     <main className="mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center px-6">
-      <VerifyForm email={email} intent={readIntent(intent)} />
+      <VerifyForm email={email} intent={stated} />
     </main>
   );
 }
