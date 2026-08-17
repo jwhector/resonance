@@ -5,7 +5,7 @@ the `@resonance/*` packages and renders them — it holds **no domain logic** (A
 Logic that feels like it belongs here almost always belongs in a package, so it stays
 extraction-ready.
 
-## Status: two slices live
+## Status: three slices live
 
 - **Creator Interview → ProfileGen** (ADR-0013) — the shell wires `ui` ↔ `ai` ↔ `db` behind
   creator auth: passwordless sign-in → Weave interview → ProfileGen draft → commit →
@@ -17,7 +17,13 @@ extraction-ready.
   verified account (roles are additive, so a creator is also a member). Submission is the form's
   **native `action`**, so the step works with JS disabled; `onSubmit` only marks it in flight.
   Pressing Continue with nothing selected is a **valid empty selection**, which is how "skip"
-  works without inventing a control the design does not draw. On `/discover`, an **empty query
+  works without inventing a control the design does not draw. The step is also where the
+  `/start` answer is **spent**: it rides the URL through sign-up and **both** verification
+  channels (every intent-carrying URL is built in `(onboarding)/intent-routes.ts`, so the
+  channels cannot drift), is persisted via `setOnboardingIntent` against the same member in the
+  same submission, and picks the exit — a creator intent (`share`/`business`) continues to
+  `/onboarding/creator`; anything else, including no answer or a forged value, lands `/discover`
+  with nothing written. On `/discover`, an **empty query
   plus a signed-in viewer** omits `text` so the port ranks on stored interests instead
   (`DiscoveryPort` invariant 8); signed out, it is not asked at all. `idle` therefore now means
   "nothing searched **and** nothing to suggest", still distinct from `no-results`.
@@ -28,10 +34,14 @@ Commerce/community routes are still unbuilt; the scaffold home page remains.
 
 ```
 app/
-├── (onboarding)/start           intent fork ("What brought you?", IntentPickerCard) → /signup or /discover
-├── (onboarding)/signup, verify   passwordless front door (form + Better Auth)
+├── (onboarding)/start           intent fork ("What brought you?", IntentPickerCard) → /signup?intent=… or /discover
+├── (onboarding)/intent-routes.ts every intent-carrying onboarding URL, built in one place so the
+│                                 two verification channels cannot drift apart
+├── (onboarding)/signup, verify   passwordless front door (form + Better Auth); both channels carry
+│                                 the /start intent through to /interests
 ├── (onboarding)/interests/       interest selection (TopicPicker) — EVERY newly verified account
-│                                 passes through here; page.tsx · interests-form.tsx · actions.ts
+│                                 passes through here; stores the /start intent and forks the exit;
+│                                 page.tsx · interests-form.tsx · actions.ts
 ├── (app)/layout.tsx              THE SHARED APP SHELL — the 80px `AppNav` rail, once, for
 │                                 every in-app route. Adds no URL segment.
 ├── (app)/discover/               member discovery: page.tsx (RSC, URL state) ·

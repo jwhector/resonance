@@ -2,29 +2,32 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import type { OnboardingIntent } from "@resonance/core";
 import { EmailVerifyCard } from "@resonance/ui";
 import { authClient } from "../../../lib/auth-client";
+import { interestsUrl } from "../intent-routes";
 
-/**
- * Session destination shared with the magic-link callback (see `signup-form`).
- *
- * Every newly verified account goes through interest selection, not just members: roles are
- * additive, so a creator is also a member and a personalized `/discover` comes from the same
- * selection. `/interests` then continues to the creator interview, so this inserts a step rather
- * than rerouting the flow.
- */
-const AFTER_VERIFY = "/interests";
+export interface VerifyFormProps {
+  email: string;
+  /** What this person said they came here to do, carried from `/start` through sign-up. */
+  intent?: OnboardingIntent;
+}
 
 /**
  * Client wrapper over the presentational `EmailVerifyCard`. The OTP path verifies the code
  * via Better Auth's emailOTP sign-in (which sets the session cookie on its response) and then
  * routes to interest selection; the magic-link path is handled entirely by Better Auth's
  * callback, which lands on the same destination. "Try again" re-sends both channels.
+ *
+ * Both of this screen's paths onward carry the intent: the code sign-in, and the magic link a
+ * resend puts back in the inbox. Anyone verifying here reaches the same fork with the same answer
+ * as anyone who clicked the first link.
  */
-export function VerifyForm({ email }: { email: string }) {
+export function VerifyForm({ email, intent }: VerifyFormProps) {
   const router = useRouter();
   const [error, setError] = React.useState<string | null>(null);
   const [pending, setPending] = React.useState(false);
+  const afterVerify = interestsUrl(intent);
 
   async function handleSubmit(code: string) {
     setError(null);
@@ -35,7 +38,7 @@ export function VerifyForm({ email }: { email: string }) {
         setError("That code didn't work. Check it and try again, or resend.");
         return;
       }
-      router.push(AFTER_VERIFY);
+      router.push(afterVerify);
     } catch {
       setError("We couldn't verify that code. Please try again.");
     } finally {
@@ -47,7 +50,7 @@ export function VerifyForm({ email }: { email: string }) {
     setError(null);
     try {
       await Promise.all([
-        authClient.signIn.magicLink({ email, callbackURL: AFTER_VERIFY }),
+        authClient.signIn.magicLink({ email, callbackURL: afterVerify }),
         authClient.emailOtp.sendVerificationOtp({ email, type: "sign-in" }),
       ]);
     } catch {

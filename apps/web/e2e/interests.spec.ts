@@ -5,7 +5,7 @@ import {
   seedInterestFixture,
   type InterestFixture,
 } from "./lib/interest-fixtures";
-import { signUpAndVerify, skipInterests } from "./lib/signup";
+import { afterInterests, signUpAndVerify, skipInterests } from "./lib/signup";
 
 /**
  * End-to-end member interests: a new member picks
@@ -107,7 +107,7 @@ test("a member picks topics and lands on an interest-ranked /discover", async ({
     await pickTopic(page, topic.label);
   }
   await page.getByRole("button", { name: "Continue" }).click();
-  await expect(page).toHaveURL(/\/onboarding\/creator/, { timeout: 20_000 });
+  await expect(page).toHaveURL(afterInterests(), { timeout: 20_000 });
 
   // 3) The selection PERSISTED. Re-entering the step re-reads it from the
   //    database and rehydrates the picker — the chips can only be checked if the write landed, not
