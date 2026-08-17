@@ -6,7 +6,7 @@ import { isCreatorIntent, MemberInterestsSchema } from "@resonance/core";
 import { createDb, setMemberInterests, setOnboardingIntent } from "@resonance/db";
 import { getWebSession } from "../../../lib/auth";
 import { interestsEmbedder } from "../../../lib/e2e-harness";
-import { interestsUrl, readIntent } from "../intent-routes";
+import { interestsUrl, readIntent, signupUrl } from "../intent-routes";
 
 /**
  * The Server Action behind the interest picker.
@@ -97,13 +97,21 @@ const AFTER_INTERESTS = {
  * A refusal here cannot be rendered as state (there is no client to hand a result to), so an
  * unauthenticated or malformed submission redirects to the front door rather than throwing an
  * opaque 500 at a member who has just verified their email. A retry keeps the intent, or the
- * second attempt would quietly land somewhere the first would not have.
+ * second attempt would quietly land somewhere the first would not have. A lapsed session keeps
+ * a **creator** intent for the same reason: whoever said they came to create should re-enter
+ * sign-up on the path they chose, not silently as a member. Only the creator intents ride that
+ * URL — `/start` never sends `explore` through sign-up, so neither does this bounce.
  */
 export async function saveInterestsFromForm(intent: unknown, formData: FormData): Promise<void> {
   const stated = readIntent(intent);
 
   const result = await saveInterests({ topicSlugs: formData.getAll("topicSlugs") });
-  if (!result.ok) redirect(result.reason === "unauthenticated" ? "/signup" : interestsUrl(stated));
+  if (!result.ok) {
+    if (result.reason === "unauthenticated") {
+      redirect(stated && isCreatorIntent(stated) ? signupUrl(stated) : "/signup");
+    }
+    redirect(interestsUrl(stated));
+  }
 
   // Recorded against the member whose topics just landed, in the same submission that routed on
   // it: the URL value decides where this person goes now, and this is what makes their answer

@@ -121,15 +121,34 @@ describe("saveInterestsFromForm — the no-JS path", () => {
     );
   });
 
-  it("sends an expired session back to the front door rather than 500ing", async () => {
-    getWebSession.mockResolvedValue(null);
+  it.each([["share"], ["business"]])(
+    "sends an expired session back to sign-up still carrying its stated %s intent",
+    async (intent) => {
+      getWebSession.mockResolvedValue(null);
 
-    await expect(saveInterestsFromForm("share", new FormData())).rejects.toThrow(
-      "REDIRECT:/signup",
-    );
-    expect(setMemberInterests).not.toHaveBeenCalled();
-    expect(setOnboardingIntent).not.toHaveBeenCalled();
-  });
+      // Whoever said they came to create re-enters sign-up on the path they chose, not silently
+      // as a member — and nothing is written for a session that no longer exists.
+      await expect(saveInterestsFromForm(intent, new FormData())).rejects.toThrow(
+        `REDIRECT:/signup?intent=${intent}`,
+      );
+      expect(setMemberInterests).not.toHaveBeenCalled();
+      expect(setOnboardingIntent).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([[undefined], ["explore"], ["creator"]])(
+    "keeps the expired-session bounce bare when %o was stated",
+    async (stated) => {
+      getWebSession.mockResolvedValue(null);
+
+      // `/start` never sends `explore` through sign-up, so this bounce does not mint
+      // /signup?intent=explore either; a forged value reads as nothing stated.
+      await expect(saveInterestsFromForm(stated, new FormData())).rejects.toThrow(
+        /REDIRECT:\/signup$/,
+      );
+      expect(setOnboardingIntent).not.toHaveBeenCalled();
+    },
+  );
 
   it("keeps the stated intent on the URL it bounces a rejected selection back to", async () => {
     const form = new FormData();
