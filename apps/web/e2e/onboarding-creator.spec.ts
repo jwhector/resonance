@@ -44,7 +44,7 @@ test("creator can sign up, interview with Weave, generate + commit a profile", a
   //    standing on /interests. The answer is what carries this account to the interview rather
   //    than the member front door. Unique per run so re-runs never collide on Better Auth's
   //    one-account-per-email.
-  accounts.push(await signUpAndVerify(page, request, "e2e-creator", "share"));
+  accounts.push(await signUpAndVerify(page, request, "e2e-creator", { intent: "share" }));
 
   // 2) Interest selection sits between verification and the interview, for every new account.
   //    This spec is about the CREATOR path, so it skips the step —

@@ -43,6 +43,27 @@ export function rawClient(db: ReturnType<typeof createDb>): RawSql {
 }
 
 /**
+ * The intent stored against an account, read straight from the column rather than inferred from
+ * where the browser ended up.
+ *
+ * Where someone lands and what was recorded about them are two different claims: routing reads the
+ * value off the URL, so a fork that worked would look identical to one that routed correctly and
+ * wrote nothing. `null` is a real answer here — it means nobody ever stated an intent — so a
+ * missing account throws rather than returning it, keeping "stored nothing" distinct from
+ * "no such user".
+ */
+export async function readOnboardingIntent(email: string): Promise<string | null> {
+  ensureDatabaseUrl();
+  const raw = rawClient(createDb());
+  const rows = (await raw`
+    select onboarding_intent from "user" where email = ${email}
+  `) as Array<{ onboarding_intent: string | null }>;
+  const row = rows[0];
+  if (!row) throw new Error(`readOnboardingIntent: no user row for ${email}`);
+  return row.onboarding_intent;
+}
+
+/**
  * Remove an account created by signing up during a test, addressed by email because Better Auth
  * mints the id. The `user` delete cascades to their creator profile, sessions and follow edges.
  *

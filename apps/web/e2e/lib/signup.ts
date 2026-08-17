@@ -15,6 +15,15 @@ import { isCreatorIntent, type OnboardingIntent } from "@resonance/core";
  */
 
 /**
+ * The two emails sign-up sends, either of which verifies the account.
+ *
+ * They are a real fork in the product, not a test detail: the code is typed on `/verify`, while
+ * the link comes back through the `callbackURL` Better Auth was handed at sign-up. Anything that
+ * has to survive verification has to survive both, so specs name the one they drive.
+ */
+export type VerifyChannel = "code" | "link";
+
+/**
  * Where `/interests` continues, given the intent a spec signed up with.
  *
  * A creator intent goes on to the interview and anything else — including no intent at all —
@@ -42,6 +51,10 @@ export async function enterOtp(page: Page, otp: string): Promise<void> {
  * them. Omit it for a member: `/start` sends `explore` straight to `/discover`, so a member
  * genuinely arrives at sign-up with nothing stated.
  *
+ * `channel` picks which of the two emails is used to verify. Sign-up always sends both, so this
+ * chooses between them rather than changing what happens — and the two must be interchangeable.
+ * Defaults to the code, which needs no inbox reading.
+ *
  * Returns the generated email so the caller can delete the account afterwards
  * (`deleteUserByEmail`). `prefix` should name the spec, and the caller's run id keeps parallel
  * workers off each other's accounts — Better Auth allows one account per email.
@@ -50,7 +63,7 @@ export async function signUpAndVerify(
   page: Page,
   request: APIRequestContext,
   prefix: string,
-  intent?: OnboardingIntent,
+  { intent, channel = "code" }: { intent?: OnboardingIntent; channel?: VerifyChannel } = {},
 ): Promise<string> {
   const email = `${prefix}-${Date.now()}@example.com`;
 
@@ -63,6 +76,15 @@ export async function signUpAndVerify(
   await expect(page).toHaveURL(/\/verify/, { timeout: 15_000 });
   await expect(page.getByRole("heading", { name: "Check your email to continue" })).toBeVisible();
 
+  if (channel === "code") await verifyByCode(page, request, email);
+  else await verifyByLink(page, request, email);
+
+  await expect(page).toHaveURL(/\/interests/, { timeout: 20_000 });
+  return email;
+}
+
+/** Type the 6-digit code off the test seam, the way someone with the email open does. */
+async function verifyByCode(page: Page, request: APIRequestContext, email: string): Promise<void> {
   // Poll: the code is sent asynchronously, so it can land a moment after the redirect.
   let otp = "";
   await expect
@@ -80,9 +102,34 @@ export async function signUpAndVerify(
 
   await enterOtp(page, otp);
   await page.getByRole("button", { name: "Continue" }).click();
+}
 
-  await expect(page).toHaveURL(/\/interests/, { timeout: 20_000 });
-  return email;
+/**
+ * Open the magic link itself, leaving `/verify` behind without touching the code.
+ *
+ * The URL comes from the harness read-back rather than the page, because a real magic link only
+ * ever exists in an inbox. Following it exercises Better Auth's own verify endpoint and the
+ * `callbackURL` it was given at sign-up — which is the whole point: that callback is the only
+ * thing carrying a stated intent on this channel.
+ */
+async function verifyByLink(page: Page, request: APIRequestContext, email: string): Promise<void> {
+  let url = "";
+  await expect
+    .poll(
+      async () => {
+        const res = await request.get(
+          `/api/test/last-magic-link?email=${encodeURIComponent(email)}`,
+        );
+        if (!res.ok()) return null;
+        const body = (await res.json()) as { url: string | null };
+        url = body.url ?? "";
+        return body.url;
+      },
+      { timeout: 15_000 },
+    )
+    .toContain("/magic-link/verify");
+
+  await page.goto(url);
 }
 
 /**
