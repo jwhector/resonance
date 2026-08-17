@@ -1,8 +1,9 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { isCreatorIntent } from "@resonance/core";
 import { createDb, getMemberInterests, listTopics } from "@resonance/db";
 import { getWebSession } from "../../../lib/auth";
-import { readIntent } from "../intent-routes";
+import { readIntent, signupUrl } from "../intent-routes";
 import { InterestsForm } from "./interests-form";
 
 /**
@@ -30,10 +31,14 @@ export default async function InterestsPage({
   searchParams: Promise<{ intent?: string }>;
 }) {
   const { intent } = await searchParams;
+  const stated = readIntent(intent);
   const user = await getWebSession(await headers());
   // Signing in is a prerequisite, not a page state: there is no member to attach a selection to,
-  // and the Server Action would refuse anyway. Redirect rather than render a picker that cannot save.
-  if (!user) redirect("/signup");
+  // and the Server Action would refuse anyway. Redirect rather than render a picker that cannot
+  // save — keeping a stated creator intent on the way out, so whoever said they came to create
+  // re-enters sign-up on the path they chose rather than silently as a member. Only the creator
+  // intents ride that URL: `/start` never sends `explore` through sign-up, so neither does this.
+  if (!user) redirect(stated && isCreatorIntent(stated) ? signupUrl(stated) : "/signup");
 
   const db = createDb();
   // The taxonomy comes from the database, not a constant, so a corrected or extended topic list is
@@ -45,7 +50,7 @@ export default async function InterestsPage({
       <InterestsForm
         topics={topics}
         initialSelection={existing.map((topic) => topic.slug)}
-        intent={readIntent(intent)}
+        intent={stated}
       />
     </main>
   );
