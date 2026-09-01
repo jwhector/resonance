@@ -28,6 +28,15 @@ import { signUpAndVerify, signUpAndVerifyByMagicLink } from "./lib/signup";
  * computed the same way the app computes it would agree with the app even when both are wrong.
  */
 
+/**
+ * Every test here signs a brand-new account through the whole front door, and whichever test
+ * reaches a route first also pays for `next dev` compiling it: 23s cold against ~3s warm, on one
+ * machine, for the same test. The default 30s budget is therefore a coin flip on a cold server —
+ * raised here rather than left to CI's retries to paper over, since a green run that depended on a
+ * retry is not evidence the flow works.
+ */
+test.describe.configure({ timeout: 90_000 });
+
 /** Unique per worker process — each Playwright worker imports this module fresh. */
 const RUN_ID = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 
