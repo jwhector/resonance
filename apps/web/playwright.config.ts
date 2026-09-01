@@ -8,6 +8,15 @@ export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
   retries: process.env.CI ? 2 : 0,
+  // Every spec that drives the passwordless front door signs up a real account, and whichever
+  // test reaches a route first also pays for `next dev` compiling it. Measured against the real
+  // Neon DB: ~23s for the first test, ~3s for the same test warm, ~33s each when five workers hit
+  // a cold server at once. The 30s default sits inside that spread, so the suite passed or failed
+  // on how warm the server happened to be — and `retries` hid it by running attempt two warm,
+  // which makes a green run evidence that the retry passed rather than that the flow works. The
+  // budget belongs here rather than in any one spec: the cost comes from `next dev` being the
+  // server, not from what a spec asserts.
+  timeout: 90_000,
   reporter: "list",
   use: {
     baseURL: "http://localhost:3000",

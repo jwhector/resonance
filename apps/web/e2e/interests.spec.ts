@@ -1,11 +1,15 @@
 import { type Page, expect, test } from "@playwright/test";
-import { deleteUserByEmail } from "./lib/db";
 import {
   INTEREST_FIXTURE_PREFIX,
   seedInterestFixture,
   type InterestFixture,
 } from "./lib/interest-fixtures";
-import { afterInterests, signUpAndVerify, skipInterests } from "./lib/signup";
+import {
+  afterInterests,
+  deleteSignedUpAccounts,
+  signUpAndVerify,
+  skipInterests,
+} from "./lib/signup";
 
 /**
  * End-to-end member interests: a new member picks
@@ -40,11 +44,11 @@ const RUN_ID = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 
  * a worker run one at a time.
  */
 let fixture: InterestFixture | undefined;
-let accounts: string[] = [];
 
 test.afterEach(async () => {
-  for (const email of accounts) await deleteUserByEmail(email);
-  accounts = [];
+  // Accounts are recorded by the sign-up helper at mint time, so one created by a test that then
+  // timed out is cleaned up here too.
+  await deleteSignedUpAccounts();
   await fixture?.cleanup();
   fixture = undefined;
 });
@@ -99,7 +103,7 @@ test("a member picks topics and lands on an interest-ranked /discover", async ({
   const seeded = (fixture = await seedInterestFixture(RUN_ID));
 
   // 1) The real front door, stopping on the interest-selection step.
-  accounts.push(await signUpAndVerify(page, request, `e2e-interests-${RUN_ID}`));
+  await signUpAndVerify(page, request, `e2e-interests-${RUN_ID}`);
   await expect(page.getByRole("heading", { name: /Select \d+ topics/ })).toBeVisible();
 
   // 2) Pick the topics the fixture creator was embedded from.
@@ -144,7 +148,7 @@ test("a member picks topics and lands on an interest-ranked /discover", async ({
 });
 
 test("a member who skips the picker still gets today's idle surface", async ({ page, request }) => {
-  accounts.push(await signUpAndVerify(page, request, `e2e-interests-skip-${RUN_ID}`));
+  await signUpAndVerify(page, request, `e2e-interests-skip-${RUN_ID}`);
 
   // Skipping is pressing Continue with nothing selected — the design draws no skip control, and an
   // empty selection is a first-class outcome rather than an error.

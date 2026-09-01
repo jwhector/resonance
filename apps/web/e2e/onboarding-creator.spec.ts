@@ -1,6 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { deleteUserByEmail } from "./lib/db";
-import { signUpAndVerify, skipInterests } from "./lib/signup";
+import { deleteSignedUpAccounts, signUpAndVerify, skipInterests } from "./lib/signup";
 
 /**
  * End-to-end Creator Onboarding flow (ADR-0013): the real passwordless front door →
@@ -19,22 +18,17 @@ import { signUpAndVerify, skipInterests } from "./lib/signup";
 const CANNED_REPLY = "Thanks for sharing — what first drew you to this work?";
 
 /**
- * Accounts this worker signed up, removed in `afterEach`.
- *
  * This spec is the one that **commits a creator profile**, so leaving its account behind does not
  * just leak a row — it leaks a published, embedded profile that ranks in every subsequent
  * discovery search. 70 of the dev database's 80 profiles were `New Creator` leftovers from this
  * test before the teardown existed, crowding real results off the first page.
  *
- * `afterEach` rather than a `finally` inside the test: Playwright aborts the test body on a
- * timeout, and a `finally` there never runs.
+ * The sign-up helper records the address the moment it mints one, and `afterEach` drains that
+ * record — Playwright still runs hooks after a timeout, where a `finally` in the aborted body
+ * never would, and a timeout inside sign-up is exactly when an account exists that the test never
+ * got to name.
  */
-let accounts: string[] = [];
-
-test.afterEach(async () => {
-  for (const email of accounts) await deleteUserByEmail(email);
-  accounts = [];
-});
+test.afterEach(deleteSignedUpAccounts);
 
 test("creator can sign up, interview with Weave, generate + commit a profile", async ({
   page,
@@ -44,7 +38,7 @@ test("creator can sign up, interview with Weave, generate + commit a profile", a
   //    standing on /interests. The answer is what carries this account to the interview rather
   //    than the member front door. Unique per run so re-runs never collide on Better Auth's
   //    one-account-per-email.
-  accounts.push(await signUpAndVerify(page, request, "e2e-creator", "share"));
+  await signUpAndVerify(page, request, "e2e-creator", "share");
 
   // 2) Interest selection sits between verification and the interview, for every new account.
   //    This spec is about the CREATOR path, so it skips the step —

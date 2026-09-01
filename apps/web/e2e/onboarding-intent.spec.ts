@@ -1,6 +1,6 @@
 import { type Page, expect, test } from "@playwright/test";
-import { deleteUserByEmail, readOnboardingIntent } from "./lib/db";
-import { signUpAndVerify, signUpAndVerifyByMagicLink } from "./lib/signup";
+import { readOnboardingIntent } from "./lib/db";
+import { deleteSignedUpAccounts, signUpAndVerify, signUpAndVerifyByMagicLink } from "./lib/signup";
 
 /**
  * End-to-end onboarding intent: what someone answers on `/start` decides where onboarding lets
@@ -28,29 +28,17 @@ import { signUpAndVerify, signUpAndVerifyByMagicLink } from "./lib/signup";
  * computed the same way the app computes it would agree with the app even when both are wrong.
  */
 
-/**
- * Every test here signs a brand-new account through the whole front door, and whichever test
- * reaches a route first also pays for `next dev` compiling it: 23s cold against ~3s warm, on one
- * machine, for the same test. The default 30s budget is therefore a coin flip on a cold server —
- * raised here rather than left to CI's retries to paper over, since a green run that depended on a
- * retry is not evidence the flow works.
- */
-test.describe.configure({ timeout: 90_000 });
-
 /** Unique per worker process — each Playwright worker imports this module fresh. */
 const RUN_ID = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 
 /**
- * Accounts this worker signed up, removed in `afterEach` rather than at the end of the test body:
- * a Playwright timeout aborts the body at its current `await`, so cleanup written there is exactly
- * the cleanup that never runs on the days it matters.
+ * The sign-up helper records each address it mints, and this drains that record.
+ *
+ * Cleanup lives in `afterEach` rather than at the end of a test body because a timeout aborts the
+ * body at its current `await` — so cleanup written there is exactly the cleanup that never runs on
+ * the days it matters.
  */
-let accounts: string[] = [];
-
-test.afterEach(async () => {
-  for (const email of accounts) await deleteUserByEmail(email);
-  accounts = [];
-});
+test.afterEach(deleteSignedUpAccounts);
 
 /**
  * Press Continue on the interest step with nothing selected.
@@ -68,7 +56,6 @@ test("a creator intent survives the code channel and lands on the interview", as
   request,
 }) => {
   const email = await signUpAndVerify(page, request, `e2e-intent-otp-${RUN_ID}`, "share");
-  accounts.push(email);
 
   await continuePastInterests(page);
 
@@ -86,7 +73,6 @@ test("a creator intent survives the magic-link channel and lands on the intervie
     `e2e-intent-link-${RUN_ID}`,
     "share",
   );
-  accounts.push(email);
 
   await continuePastInterests(page);
 
@@ -98,7 +84,6 @@ test("a creator intent survives the magic-link channel and lands on the intervie
 
 test("a member who opens the magic link reaches the front door", async ({ page, request }) => {
   const email = await signUpAndVerifyByMagicLink(page, request, `e2e-intent-member-${RUN_ID}`);
-  accounts.push(email);
 
   await continuePastInterests(page);
 
@@ -110,7 +95,6 @@ test("a member who opens the magic link reaches the front door", async ({ page, 
 
 test("business is stored as itself rather than collapsed into share", async ({ page, request }) => {
   const email = await signUpAndVerify(page, request, `e2e-intent-business-${RUN_ID}`, "business");
-  accounts.push(email);
 
   await continuePastInterests(page);
 
@@ -123,7 +107,6 @@ test("business is stored as itself rather than collapsed into share", async ({ p
 
 test("a forged intent degrades to the front door and writes nothing", async ({ page, request }) => {
   const email = await signUpAndVerify(page, request, `e2e-intent-forged-${RUN_ID}`);
-  accounts.push(email);
 
   // The value rides a URL anyone can type. The worst it can do is choose an onboarding path
   // `/start` hands out for free — so an unrecognized one must read as no answer at all, and must

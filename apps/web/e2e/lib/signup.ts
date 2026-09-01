@@ -1,5 +1,6 @@
 import { type APIRequestContext, type Page, expect } from "@playwright/test";
 import { isCreatorIntent, type OnboardingIntent } from "@resonance/core";
+import { deleteUserByEmail } from "./db";
 
 /**
  * The real passwordless front door, driven the way a member drives it — shared by every spec that
@@ -32,6 +33,32 @@ export function afterInterests(intent?: OnboardingIntent): RegExp {
   return intent && isCreatorIntent(intent) ? /\/onboarding\/creator/ : /\/discover/;
 }
 
+/**
+ * Every address these helpers have minted in this worker, recorded the moment it is generated
+ * rather than when sign-up finishes.
+ *
+ * A timeout aborts a test at whatever await it is sitting on, and that is frequently one INSIDE
+ * sign-up — after Better Auth has already created the account. A spec that learns the address from
+ * the helper's RETURN VALUE never learns it at all in that case, and the row outlives the run:
+ * that is how a leaked `e2e-discovery-member-…` account survived a timed-out follow test. Recording
+ * at mint time closes the window, because the account cannot exist before the address does.
+ *
+ * Worker-scoped module state is safe here for the same reason the specs already rely on it: each
+ * worker imports this module fresh, and tests within a worker run one at a time.
+ */
+const signedUp: string[] = [];
+
+/**
+ * Delete every account these helpers signed up, and forget them. Wire it directly as
+ * `test.afterEach(deleteSignedUpAccounts)`.
+ *
+ * `afterEach` rather than a `finally` inside a test body: Playwright still runs hooks after a
+ * timeout, and gives them their own budget, where a `finally` in the aborted body never runs.
+ */
+export async function deleteSignedUpAccounts(): Promise<void> {
+  for (const email of signedUp.splice(0)) await deleteUserByEmail(email);
+}
+
 /** Fill the 6 OTP cells one digit at a time (each cell is labelled "Digit N of 6"). */
 export async function enterOtp(page: Page, otp: string): Promise<void> {
   for (let i = 0; i < otp.length; i++) {
@@ -53,6 +80,9 @@ async function requestSignInEmails(
   intent?: OnboardingIntent,
 ): Promise<string> {
   const email = `${prefix}-${Date.now()}@example.com`;
+  // Before the first navigation, not after the last: from here on the account may exist, and
+  // teardown has to know about it even if this call never returns.
+  signedUp.push(email);
 
   await page.goto(intent ? `/signup?intent=${intent}` : "/signup");
   await expect(page.getByRole("heading", { name: "Welcome to Resonance" })).toBeVisible();
