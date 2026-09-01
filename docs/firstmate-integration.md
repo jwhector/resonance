@@ -193,7 +193,7 @@ grep -q loop-guard .claude/settings.json          && echo "hooks present"
 Paste this to spin up a fresh Claude session with full context of this integration:
 
 ```text
-Read CLAUDE.md, docs/agentic-workflow.md, docs/firstmate-integration.md, and HANDOFF.md.
+Read CLAUDE.md, docs/agentic-workflow.md, and docs/firstmate-integration.md.
 
 State of the world: the resonance agentic workflow (seeds + mulch + treehouse +
 no-mistakes + lavish, ADR-0016) is built and committed on branch chore/agentic-workflow.
