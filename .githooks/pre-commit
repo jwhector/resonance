@@ -16,14 +16,41 @@ pnpm exec prettier --check $staged || {
   exit 1
 }
 
+# The workspace a file belongs to — the nearest ancestor directory with a package.json.
+workspace_of() {
+  dir="$(dirname "$1")"
+  while [ "$dir" != "." ] && [ "$dir" != "/" ]; do
+    if [ -f "$dir/package.json" ]; then
+      printf '%s\n' "$dir"
+      return
+    fi
+    dir="$(dirname "$dir")"
+  done
+  printf '.\n'
+}
+
 ts_staged="$(printf '%s\n' "$staged" | grep -E '\.(ts|tsx|js|jsx)$' || true)"
 if [ -n "$ts_staged" ]; then
   echo "pre-commit: eslint on staged TS/JS"
-  # shellcheck disable=SC2086
-  pnpm exec eslint $ts_staged || {
-    echo "✗ Lint errors. Fix, or run: pnpm lint" >&2
-    exit 1
-  }
+  # eslint is a devDependency of each workspace and of none at the repo root, so it has to run FROM
+  # the workspace that owns a file — invoking it at the root finds no binary at all. Files are
+  # grouped by workspace so this stays one eslint start per package rather than one per file.
+  # Root-level files are skipped for the same reason `pnpm lint` never reaches them: there is no
+  # root eslint config to judge them by.
+  for ws in $(printf '%s\n' "$ts_staged" | while read -r f; do workspace_of "$f"; done | sort -u); do
+    files="$(printf '%s\n' "$ts_staged" | while read -r f; do
+      if [ "$(workspace_of "$f")" = "$ws" ]; then printf '%s\n' "${f#"$ws"/}"; fi
+    done)"
+    if [ "$ws" = "." ]; then
+      echo "  skipping (no workspace eslint config): $(printf '%s' "$files" | tr '\n' ' ')"
+      continue
+    fi
+    # shellcheck disable=SC2086
+    pnpm --dir "$ws" exec eslint $files || {
+      echo "✗ Lint errors in $ws. Fix, or run: pnpm lint" >&2
+      exit 1
+    }
+  done
 fi
 
 echo "pre-commit: ok"
