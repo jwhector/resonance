@@ -52,6 +52,7 @@ app/
 ├── api/onboarding/interview/     streaming interview route (live model, ADR-0009)
 ├── api/auth/[...all]/            Better Auth mount (via lib/auth.ts getWebAuth)
 ├── api/test/last-otp/            E2E-ONLY OTP read-back — gated on E2E_HARNESS
+├── api/test/last-magic-link/     E2E-ONLY magic-link read-back — same gate, other channel
 └── layout.tsx · page.tsx · globals.css
 lib/
 ├── auth.ts            getWebAuth() (the one instance the mount serves) + getWebSession() — all
