@@ -187,11 +187,11 @@ function observationSlot<T extends Addressed>(key: string) {
 type ObservedLoginCodes = ReadonlyArray<{ email: string; otp: string; type: OtpType }>;
 type ObservedMagicLinks = ReadonlyArray<{ email: string; url: string; token: string }>;
 
-const observedLoginCodes = observationSlot<{ email: string; otp: string; type: OtpType }>(
+const observedLoginCodes = observationSlot<ObservedLoginCodes[number]>(
   "__resonance_auth_observed_login_codes__",
 );
 
-const observedMagicLinks = observationSlot<{ email: string; url: string; token: string }>(
+const observedMagicLinks = observationSlot<ObservedMagicLinks[number]>(
   "__resonance_auth_observed_magic_links__",
 );
 

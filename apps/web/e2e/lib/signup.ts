@@ -54,9 +54,26 @@ const signedUp: string[] = [];
  *
  * `afterEach` rather than a `finally` inside a test body: Playwright still runs hooks after a
  * timeout, and gives them their own budget, where a `finally` in the aborted body never runs.
+ *
+ * An address is forgotten only once its row is actually gone, and one failed delete does not stop
+ * the others: a transient database error leaves the addresses it did not reach on the ledger for
+ * the next test's hook to retry, rather than orphaning them where nothing can name them again. The
+ * first failure is rethrown afterwards so the run still reports it.
  */
 export async function deleteSignedUpAccounts(): Promise<void> {
-  for (const email of signedUp.splice(0)) await deleteUserByEmail(email);
+  const failures: unknown[] = [];
+
+  for (const email of [...signedUp]) {
+    try {
+      await deleteUserByEmail(email);
+    } catch (error) {
+      failures.push(error);
+      continue;
+    }
+    signedUp.splice(signedUp.indexOf(email), 1);
+  }
+
+  if (failures.length > 0) throw failures[0];
 }
 
 /** Fill the 6 OTP cells one digit at a time (each cell is labelled "Digit N of 6"). */

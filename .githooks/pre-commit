@@ -29,19 +29,24 @@ workspace_of() {
   printf '.\n'
 }
 
+# Whether a workspace owns an eslint flat config, and so has an eslint run to make. The repo root
+# and the shared config packages under tooling/ have none; eslint there fails for want of a config
+# rather than finding a real problem, which is also why `pnpm lint` never reaches their files.
+has_eslint_config() {
+  ls "$1"/eslint.config.* > /dev/null 2>&1
+}
+
 ts_staged="$(printf '%s\n' "$staged" | grep -E '\.(ts|tsx|js|jsx)$' || true)"
 if [ -n "$ts_staged" ]; then
   echo "pre-commit: eslint on staged TS/JS"
   # eslint is a devDependency of each workspace and of none at the repo root, so it has to run FROM
   # the workspace that owns a file — invoking it at the root finds no binary at all. Files are
   # grouped by workspace so this stays one eslint start per package rather than one per file.
-  # Root-level files are skipped for the same reason `pnpm lint` never reaches them: there is no
-  # root eslint config to judge them by.
   for ws in $(printf '%s\n' "$ts_staged" | while read -r f; do workspace_of "$f"; done | sort -u); do
     files="$(printf '%s\n' "$ts_staged" | while read -r f; do
       if [ "$(workspace_of "$f")" = "$ws" ]; then printf '%s\n' "${f#"$ws"/}"; fi
     done)"
-    if [ "$ws" = "." ]; then
+    if ! has_eslint_config "$ws"; then
       echo "  skipping (no workspace eslint config): $(printf '%s' "$files" | tr '\n' ' ')"
       continue
     fi

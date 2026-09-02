@@ -18,8 +18,8 @@ import { E2E_HARNESS } from "../../../../lib/e2e-harness";
  * Gated HARD on {@link E2E_HARNESS} (ADR-0018 §4): outside the isolated E2E harness — and always in
  * production — it 404s and returns nothing, and `peekMagicLink` is itself inert there (no fake is
  * ever constructed), so no real sign-in link can ever be exposed. This route is infra for tests
- * only and must never be relied on by product code (golden rule 4: it still validates its input at
- * the boundary).
+ * only and must never be relied on by product code — it still validates its query string, because
+ * being test-only does not make it any less of a request boundary.
  */
 export const dynamic = "force-dynamic";
 
