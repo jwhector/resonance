@@ -6,10 +6,10 @@ import { deleteUserByEmail } from "./db";
  * The real passwordless front door, driven the way a member drives it — shared by every spec that
  * needs a signed-in account.
  *
- * It is one helper rather than three copies because the front door has a *step* in it:
+ * It is one helper rather than a copy per spec because the front door has a *step* in it:
  * `/interests` sits between email verification and the rest of onboarding for every newly
- * verified account, so all three specs pass through it. Keeping the route names in one place
- * also makes changing where `/interests` continues to a single edit instead of three.
+ * verified account, so every one of those specs passes through it. Keeping the route names in one
+ * place also makes changing where `/interests` continues a single edit rather than one per spec.
  *
  * Sign-up dispatches **two** channels for the one address — a magic link and a 6-digit code — and
  * either completes the account. Both are driven here, from the same submitted form, so a spec
@@ -153,8 +153,9 @@ async function readSentEmail(
  * them. Omit it for a member: `/start` sends `explore` straight to `/discover`, so a member
  * genuinely arrives at sign-up with nothing stated.
  *
- * Returns the generated email so the caller can delete the account afterwards
- * (`deleteUserByEmail`).
+ * Returns the generated email so the caller can name the account it just made — to read a column
+ * back, or seed a fixture against it. Deleting it is not the caller's job: the address is already
+ * on the ledger {@link deleteSignedUpAccounts} drains.
  */
 export async function signUpAndVerify(
   page: Page,

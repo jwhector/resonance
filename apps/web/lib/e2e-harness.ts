@@ -92,8 +92,8 @@ async function webEmbedder(): Promise<Embedder> {
 
 /**
  * Mail transport for the auth mount: the shared in-memory fake under the harness (so the auth
- * handler that WRITES the login code and the `/api/test/last-otp` read-back observe the SAME
- * captured codes), else `undefined` → the caller uses the live `getAuth()`.
+ * handler that WRITES a login email and the `/api/test/` read-back for that channel observe the
+ * SAME captured sends), else `undefined` → the caller uses the live `getAuth()`.
  *
  * We EXPLICITLY register the fake's captured codes AND its captured magic links for read-back, via
  * `observeLoginCodes(fake)` and `observeMagicLinks(fake)` — sign-up dispatches both channels, so a
@@ -103,10 +103,10 @@ async function webEmbedder(): Promise<Embedder> {
  * intentional calls feed `peekLoginCode` and `peekMagicLink`.
  *
  * Singleton pinned to `globalThis` (not a module-level `let`), because in Next.js the auth mount,
- * the RSC/Server-Action session reads, and the `/api/test/last-otp` route can evaluate in different
- * module scopes. Pinning guarantees the fake is built — and
- * both observations registered — exactly ONCE per process, so every scope shares the one fake and the
- * read-back never gets clobbered by a later empty buffer.
+ * the RSC/Server-Action session reads, and the `/api/test/` read-back routes can evaluate in
+ * different module scopes. Pinning guarantees the fake is built — and both observations registered
+ * — exactly ONCE per process, so every scope shares the one fake and the read-backs never get
+ * clobbered by a later empty buffer.
  *
  * The slot holds the in-flight PROMISE, not the resolved port, so the singleton survives concurrent
  * callers. The signup form fires two auth requests in parallel (magic link + OTP send), and on a
