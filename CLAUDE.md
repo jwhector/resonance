@@ -3,6 +3,10 @@
 > **Audience: AI agents and humans doing work in this repo.** This file is loaded
 > automatically as context. Keep it short, true, and high-signal. Detail lives in
 > per-package `CLAUDE.md` files, `docs/adr/`, and `docs/conventions.md`.
+>
+> Only what stays true belongs here: what the product is, how the repo is shaped, the
+> rules, and pointers to detail. Current state — what is in flight, what is next, what
+> is deferred — lives in seeds (`sd ready`), never in this file.
 
 ## What Resonance is
 
@@ -31,10 +35,10 @@ apps/web            Next.js App Router shell (UI, routing, wiring only)
 packages/ui         Design system: shadcn primitives + Figma tokens + bespoke components
 packages/core       Shared types, Zod schemas, domain primitives, ports (interfaces)
 packages/db         Drizzle schema + client + migrations (Neon Postgres + pgvector)
-packages/auth       Better Auth (magic-link), self-hosted on our DB
+packages/auth       Better Auth (magic-link + email OTP), self-hosted on our DB
 packages/ai         AI Gateway client + typed agent/tool registry + prompts + embeddings
-packages/commerce   Orders, publishing, payments (Stripe Connect — modeled, mostly stubbed)
-packages/community  Posts, follows, feed (mostly stubbed)
+packages/commerce   Orders, publishing, payments (Stripe Connect)
+packages/community  Posts, follows, feed
 packages/weave-os   Weave's authored behaviour: versioned YAML corpus + the resolver seam
 tooling/*           Shared tsconfig + eslint config
 docs/adr            Architecture Decision Records — READ THESE before changing architecture
@@ -43,6 +47,10 @@ docs/conventions.md Coding conventions every package follows
 docs/working-with-agents.md  How to run a productive agent session against this repo
 .claude/skills      Recipes: how to do recurring tasks the Resonance way
 ```
+
+How complete any one package is belongs to that package: its own `CLAUDE.md` says what
+is real in it and what is still a typed stub. Read it rather than assuming a surface
+exists.
 
 > **New to a work session here?** Read [docs/working-with-agents.md](docs/working-with-agents.md)
 > first — it covers how to scope a session, use the recipes/MCP/conventions, and keep
@@ -111,12 +119,6 @@ Full rationale for each: `docs/adr/`.
   **Context7** (live library docs — prefer over memory for API usage), **Neon**
   (inspect dev DB), **Playwright** (drive/verify the app).
 
-## Current status
-
-Scaffold phase. The reference vertical slice is **Creator Interview → ProfileGen**
-(see ADR-0013). Most of `commerce` and `community` are typed stubs. When a package
-is a stub, its `CLAUDE.md` says so and lists what's real vs. pending.
-
 ## Agentic workflow
 
 Work runs as one loop (**ADR-0016**): **seed →** `ml prime` **→ worktree → firstmate
@@ -127,7 +129,7 @@ whole loop and returns to mulch as an evidence anchor. **Full reference:**
 
 - **Orchestration — firstmate, one crewmate per package.** Boundaries are the
   parallelization boundary (ADR-0003): each package's work is an isolated crewmate in
-  its own treehouse worktree. `gnhf` is **parked** (not the default).
+  its own treehouse worktree.
 - **Knowledge ownership — one fact, one home, by temperature.** **mulch** (hot, primed)
   = agent-discovered learnings + a `reference` index into the ADRs · **CLAUDE.md** (warm,
   always loaded) = stable rules + pointers · **ADRs** (cold, on-demand) = ratified
@@ -138,11 +140,9 @@ whole loop and returns to mulch as an evidence anchor. **Full reference:**
 - **Review — use lavish** for anything visual (plans, the architecture diagram,
   Figma-derived UI), not ad-hoc HTML.
 
-Current backlog: the ProfileGen slice is decomposed into a seeds plan — `sd plan show pl-97aa`; run `sd ready` to claim the next unblocked step.
-
 ## Project Expertise (Mulch)
 
-This project uses [Mulch](https://github.com/jayminwest/mulch) v0.10.7 for structured expertise management.
+This project uses [Mulch](https://github.com/jayminwest/mulch) for structured expertise management.
 
 **At the start of every session**, run:
 
@@ -197,7 +197,7 @@ Skip if no insight surfaced. Unrecorded learnings are lost; ritual filler record
 
 ## Issue Tracking (Seeds)
 
-This project uses [Seeds](https://github.com/jayminwest/seeds) v0.5.14 for git-native issue tracking.
+This project uses [Seeds](https://github.com/jayminwest/seeds) for git-native issue tracking.
 
 **At the start of every session**, run:
 

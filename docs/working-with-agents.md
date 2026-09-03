@@ -3,8 +3,8 @@
 Resonance is built with **AI-first agentic engineering** (ADR-0014): the repo is
 organized so an AI agent — or a human — can pick up work with minimal context loss and
 produce uniform, reviewable results. This guide is how to run a productive agent
-session against that framework. It's general; the current next-step lives in
-[`HANDOFF.md`](../HANDOFF.md).
+session against that framework. It's general; what is in flight and what is next
+live in seeds (`sd ready`).
 
 > **The end-to-end workflow** — planning, execution, gating, and memory via seeds +
 > mulch + treehouse + no-mistakes — is defined in
@@ -17,7 +17,7 @@ session against that framework. It's general; the current next-step lives in
 **Don't re-explain the project. Point the agent at the docs and name the task.** The
 repo bootstraps the agent itself. A good opening message:
 
-> Read `CLAUDE.md`, `HANDOFF.md`, and the `docs/adr/` index (read in full any ADR
+> Read `CLAUDE.md` and the `docs/adr/` index (read in full any ADR
 > relevant to the task). Then: **\<the task\>**. Before non-trivial code, write a short
 > plan and let me review it. Use the project recipe skills and follow
 > `docs/conventions.md`. Use the Context7 MCP for current library APIs and the Figma
