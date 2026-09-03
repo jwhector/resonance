@@ -23,7 +23,8 @@ src/
 ├── session.ts    getSession(headers) → SessionUser | null  (RSC/Server Actions)
 ├── roles.ts      encodeRoles / decodeRoles (Role[] ↔ comma-encoded text column)
 ├── otp.ts        requestLoginCode(email) — thin server seam over the emailOTP send verb
-├── mail.ts       createResendMail() + resolveMail() (live-by-default) + peekLoginCode (AuthMailPort)
+├── mail.ts       createResendMail() + resolveMail() (live-by-default) + peekLoginCode /
+│                 peekMagicLink read-backs (AuthMailPort)
 ├── testing/fake-mail.ts  createFakeMail() — test-only double, exported at @resonance/auth/testing
 └── index.ts      public re-exports
 ```
@@ -48,8 +49,16 @@ export { getSession }; // (headers: Headers, auth?: Auth) => Promise<SessionUser
 export { encodeRoles, decodeRoles };
 
 // Mail helpers — the live Resend transport, the live-by-default resolver, and the seam type.
-// `peekLoginCode` is a dev/test-only OTP read-back (inert in production).
-export { createResendMail, resolveMail, peekLoginCode, type AuthMailPort, type OtpType };
+// `peekLoginCode` / `peekMagicLink` are dev/test-only read-backs of the two sign-in channels
+// (inert in production).
+export {
+  createResendMail,
+  resolveMail,
+  peekLoginCode,
+  peekMagicLink,
+  type AuthMailPort,
+  type OtpType,
+};
 
 // emailOTP — send a passwordless 6-digit login code (coexists with magic-link).
 export { requestLoginCode }; // (email: string) => Promise<void>
@@ -57,10 +66,11 @@ export { requestLoginCode }; // (email: string) => Promise<void>
 
 ```ts
 // Test-only subpath (ADR-0018) — the in-memory fake double, injected via DI in tests.
-import { createFakeMail, observeLoginCodes } from "@resonance/auth/testing";
+import { createFakeMail, observeLoginCodes, observeMagicLinks } from "@resonance/auth/testing";
 // createAuth({ db, mail: createFakeMail().port })
 // observeLoginCodes(fake) — EXPLICIT opt-in so `peekLoginCode` reads THIS fake's OTPs back
-// (the E2E harness calls it; construction has no side effect — no action-at-a-distance).
+// observeMagicLinks(fake) — the same opt-in for `peekMagicLink`; one transport, two decisions
+// (the E2E harness calls both; construction has no side effect — no action-at-a-distance).
 ```
 
 ## Key design decisions
@@ -117,6 +127,15 @@ harness (ADR-0018 §4): `apps/web` builds the auth instance with a DI-injected `
 calls `observeLoginCodes(fake)` under that harness, and the E2E-only `/api/test/last-otp` route
 (gated on `E2E_HARNESS`, never a general fakes flag) reads the captured code back. Live Resend wiring
 is proven separately by the credential-gated `verify:live` smoke gate (ADR-0018 §3).
+
+**`peekMagicLink(email)`** is the same seam for the other channel, built on the same slot
+primitive and guarded identically. It exists because sign-up dispatches BOTH emails: the code is
+typed on a screen that carries its own URL, while the link comes back through a `callbackURL`
+Better Auth has been holding since sign-up. Those are two separate pieces of threading, so a test
+that can only read the code can only ever prove half the front door — `apps/web`'s
+`/api/test/last-magic-link` route reads the link back for exactly that reason. Observing the two is
+two deliberate calls rather than one: a harness that wants only codes should not silently begin
+handing out sign-in links.
 
 ### emailOTP alongside magic-link
 

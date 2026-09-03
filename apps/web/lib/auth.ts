@@ -8,8 +8,9 @@ import { harnessMailOverride } from "./e2e-harness";
  *
  * Live `getAuth()` by default (mail → live Resend, ADR-0018). Under the E2E harness — and never in
  * production (see `e2e-harness.ts`) — it is instead an isolated instance built via the
- * `createAuth({ db, mail })` DI seam with the in-memory harness fake, so the passwordless flow
- * captures OTPs the `/api/test/last-otp` read-back can observe.
+ * `createAuth({ db, mail })` DI seam with the in-memory harness fake, so both channels of the
+ * passwordless flow — the login code and the magic link — are captured where the `/api/test/`
+ * read-backs can observe them.
  *
  * Async because the harness fake mail is dynamically imported (kept out of the shipped bundle) and
  * importing this module never requires `DATABASE_URL` at build time. The secret is resolved by

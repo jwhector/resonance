@@ -1,6 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { clearObservedLoginCodes, peekLoginCode, resolveMail } from "./mail";
-import { createFakeMail, observeLoginCodes } from "./testing/fake-mail";
+import {
+  clearObservedLoginCodes,
+  clearObservedMagicLinks,
+  peekLoginCode,
+  peekMagicLink,
+  resolveMail,
+} from "./mail";
+import { createFakeMail, observeLoginCodes, observeMagicLinks } from "./testing/fake-mail";
 
 describe("fake mail (test-only double, @resonance/auth/testing)", () => {
   it("captures sent magic links", async () => {
@@ -100,5 +106,73 @@ describe("live/stub transport never feeds the read-back (resonance-5d4e)", () =>
       mail.sendLoginCode({ email: "stub@x.com", otp: "666666", type: "sign-in" }),
     ).rejects.toBeTruthy();
     expect(peekLoginCode("stub@x.com")).toBeUndefined();
+  });
+});
+
+describe("peekMagicLink — the link channel's read-back, observed on the same terms", () => {
+  beforeEach(() => {
+    clearObservedLoginCodes();
+    clearObservedMagicLinks();
+  });
+  afterEach(() => {
+    clearObservedLoginCodes();
+    clearObservedMagicLinks();
+  });
+
+  const link = (email: string, url: string) => ({ email, url, token: url.slice(-1) });
+
+  it("returns undefined when nothing has been observed (the production shape)", () => {
+    expect(peekMagicLink("anyone@x.com")).toBeUndefined();
+  });
+
+  it("does NOT observe a fake merely because it was constructed", async () => {
+    const fake = createFakeMail();
+    await fake.port.sendMagicLink(link("unobserved@x.com", "https://x/verify?token=a"));
+    expect(peekMagicLink("unobserved@x.com")).toBeUndefined();
+  });
+
+  it("reads back the most recent link only after observeMagicLinks(fake) is called", async () => {
+    const fake = createFakeMail();
+    observeMagicLinks(fake);
+    await fake.port.sendMagicLink(link("peek@x.com", "https://x/verify?token=1"));
+    await fake.port.sendMagicLink(link("peek@x.com", "https://x/verify?token=2"));
+
+    expect(peekMagicLink("peek@x.com")).toBe("https://x/verify?token=2");
+    expect(peekMagicLink("nobody@x.com")).toBeUndefined();
+  });
+
+  it("is hard-inert in production even when a fake HAS been observed (defense-in-depth)", async () => {
+    const fake = createFakeMail();
+    observeMagicLinks(fake);
+    await fake.port.sendMagicLink(link("prod@x.com", "https://x/verify?token=p"));
+
+    const savedEnv = process.env.NODE_ENV;
+    try {
+      process.env.NODE_ENV = "production";
+      // A sign-in link is a credential too: the prod guard refuses it regardless of registration.
+      expect(peekMagicLink("prod@x.com")).toBeUndefined();
+    } finally {
+      process.env.NODE_ENV = savedEnv;
+    }
+
+    expect(peekMagicLink("prod@x.com")).toBe("https://x/verify?token=p");
+  });
+
+  it("the two channels are observed independently — one opt-in never implies the other", async () => {
+    // The slots share one primitive, so this is the failure that sharing could introduce: a
+    // collision between their keys would let a harness that asked only for codes start handing
+    // back sign-in links, and vice versa. Observing ONE fake's codes must leave its links unread.
+    const fake = createFakeMail();
+    observeLoginCodes(fake);
+    await fake.port.sendLoginCode({ email: "both@x.com", otp: "777777", type: "sign-in" });
+    await fake.port.sendMagicLink(link("both@x.com", "https://x/verify?token=z"));
+
+    expect(peekLoginCode("both@x.com")).toBe("777777");
+    expect(peekMagicLink("both@x.com")).toBeUndefined();
+
+    // And the reverse: observing the links now makes them readable without disturbing the codes.
+    observeMagicLinks(fake);
+    expect(peekMagicLink("both@x.com")).toBe("https://x/verify?token=z");
+    expect(peekLoginCode("both@x.com")).toBe("777777");
   });
 });
