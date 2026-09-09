@@ -33,7 +33,11 @@ Don't shortcut this; "rigorous" is the point.
    seed/plan instead of creating a second.
 3. **Create the parent seed:** `sd create --title "<feature>" --type feature --priority <n>`.
 4. **Decompose along package boundaries.** `sd plan prompt <id>` → author the plan
-   (context / approach / steps / risks / acceptance). **One step per package touched**,
+   (context / approach / steps / risks / acceptance). **Give each step an early-exit
+   clause**: the discovery that justifies stopping and reporting instead of completing —
+   a materially simpler fix, a blocking unknown, or a conflict with a ratified decision.
+   An executor that hits one stops its seed and escalates; it does not push through.
+   **One step per package touched**,
    with an explicit dependency DAG: foundations first (`core`, `db`), then `ai` + `ui`
    in parallel, then `web`, then `e2e`. Label each step with its package. **Design for
    depth (ADR-0017):** name each step's **interface/seam** and sanity-check its **depth**
