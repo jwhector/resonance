@@ -63,8 +63,9 @@ describe("discoveryQueryFor", () => {
     const query = discoveryQueryFor(current);
     const second = await similarity(query, query + SECOND_FIXTURE_SUFFIX);
 
-    // The adversarial spread: a run one millisecond earlier shares all but one character of its
-    // id, which is the case the original English-phrase query lost to.
+    // The adversarial spread: a run one millisecond earlier differs only in the tail of its id
+    // — here the last timestamp character and one random one — which is the case the original
+    // English-phrase query lost to.
     const leaked = [
       runIdAt(-1, "a1b3"),
       runIdAt(-1_000, "c3d4"),
