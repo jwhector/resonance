@@ -21,9 +21,9 @@
  * ~0.82, so leaked rows outranked it and pushed it off the first page.
  *
  * Expanding the id through a hash fixes it by avalanche: ids one millisecond apart produce tokens
- * that share a mean of roughly 1 of their 40 character positions and never a prefix. What that
- * buys is the margin — a leaked row scores ~0.34 against this run's query while this run's own
- * `second` fixture scores ~0.83, so leaked rows are inert.
+ * that share a mean of roughly 1 of their 40 character positions. What that buys is the margin —
+ * a leaked row scores ~0.34 against this run's query while this run's own `second` fixture
+ * scores ~0.83, so leaked rows are inert.
  */
 
 /** Token width. Long enough to dominate the query text it sits in; short enough to stay legible. */
