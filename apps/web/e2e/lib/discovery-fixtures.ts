@@ -1,6 +1,11 @@
 import { createFakeEmbedder } from "@resonance/ai/testing";
 import { createCreatorProfile, createDb, upsertProfileEmbedding } from "@resonance/db";
 import { ensureDatabaseUrl, rawClient } from "./db";
+import {
+  discoveryQueryFor,
+  FIXTURE_NAME_PREFIX,
+  SECOND_FIXTURE_SUFFIX,
+} from "./discovery-query";
 
 /**
  * Deterministic discovery fixtures for the `/discover` E2E.
@@ -36,6 +41,13 @@ import { ensureDatabaseUrl, rawClient } from "./db";
  * `creator_profiles` and `follows` rows go with them via `ON DELETE cascade`. The database
  * plumbing itself — reaching the same Neon instance from the test process, and the raw SQL
  * escape hatch — is shared with the other fixtures in `./db`.
+ *
+ * ## Why the query text is a high-entropy token
+ *
+ * Cleanup can fail — it has — and the dev database is shared, so fixtures from earlier runs may
+ * still be sitting in it. Those rows must be inert rather than competitors, which is a property
+ * of the query TEXT, not of the display names: ranking reads what was embedded. `./discovery-query`
+ * owns that property and documents the measurements behind it; `discovery-query.test.ts` pins it.
  */
 
 /** One seeded creator. */
@@ -59,6 +71,15 @@ export interface DiscoveryFixture {
   draft: SeededCreator;
   /** The single offering rendered on {@link top}'s profile page. */
   offering: { title: string; description: string };
+  /**
+   * Any names in `names` that are discovery fixtures **from a different run** — rows an earlier
+   * run failed to clean up.
+   *
+   * Assert this is empty alongside the ranking assertions. A leaked row can no longer outrank
+   * this run's fixtures, but its presence still means cleanup is broken, and this reports that
+   * as itself rather than as a confusing ordering failure several runs later.
+   */
+  foreignFixtureNames(names: string[]): string[];
   cleanup(): Promise<void>;
 }
 
@@ -74,9 +95,7 @@ export async function seedDiscoveryFixture(runId: string): Promise<DiscoveryFixt
   const raw = rawClient(db);
   const embedder = createFakeEmbedder();
 
-  // Distinctive enough that it cannot collide with a real profile's text, and well under the
-  // 200-character cap `DiscoveryQuerySchema` enforces.
-  const query = `zzdiscovery ${runId} handthrown stoneware kiln work`;
+  const query = discoveryQueryFor(runId);
   const offering = {
     title: `Stoneware mug set ${runId}`,
     description: "Four hand-thrown mugs, glazed and fired in a small gas kiln.",
@@ -124,14 +143,14 @@ export async function seedDiscoveryFixture(runId: string): Promise<DiscoveryFixt
 
   // `top` and `draft` share the query text exactly — similarity 1.0 for both, so the only thing
   // separating them in the results is the status filter under test.
-  const top = await seed("top", `E2E Top ${runId}`, query, "ready", [offering]);
+  const top = await seed("top", `${FIXTURE_NAME_PREFIX}Top ${runId}`, query, "ready", [offering]);
   const second = await seed(
     "second",
-    `E2E Second ${runId}`,
-    `${query} plus adjacent glaze notes`,
+    `${FIXTURE_NAME_PREFIX}Second ${runId}`,
+    `${query}${SECOND_FIXTURE_SUFFIX}`,
     "ready",
   );
-  const draft = await seed("draft", `E2E Draft ${runId}`, query, "draft");
+  const draft = await seed("draft", `${FIXTURE_NAME_PREFIX}Draft ${runId}`, query, "draft");
 
   return {
     query,
@@ -139,6 +158,11 @@ export async function seedDiscoveryFixture(runId: string): Promise<DiscoveryFixt
     second,
     draft,
     offering,
+    foreignFixtureNames(names) {
+      return names.filter(
+        (name) => name.startsWith(FIXTURE_NAME_PREFIX) && !name.endsWith(` ${runId}`),
+      );
+    },
     async cleanup() {
       // Embeddings have no FK to creator_profiles, so they must go explicitly and first.
       // `source_id` is text — it also keys interest vectors to Better Auth user ids — so the

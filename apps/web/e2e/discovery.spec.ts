@@ -92,6 +92,10 @@ test("a member reaches ranked creators through the front door and opens a profil
   await searchFor(page, fixture.query);
 
   const names = await rankedNames(page);
+  // Fixtures another run failed to clean up. They can no longer outrank this run's rows, but
+  // their presence means cleanup is broken — report that here, where it is legible, instead of
+  // letting it resurface later as an unexplained ordering failure.
+  expect(fixture.foreignFixtureNames(names)).toEqual([]);
   expect(names).toContain(fixture.top.displayName);
   expect(names).toContain(fixture.second.displayName);
   // Ranked, not merely returned: the exact-text match outranks the near match. Relative order
