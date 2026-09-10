@@ -144,13 +144,32 @@ It runs the loop with two human touchpoints and orchestrates the middle itself:
 firstmate is the **escalation** for Phase 2 when you outgrow one session (unattended /
 overnight / cross-harness), not a separate step for normal work.
 
+## Model routing
+
+Inference cost scales with how much of the loop runs on the primary model; most of the
+loop does not need it.
+
+- **Mechanical steps → a low-cost model.** Gate review passes, PR triage, doc sweeps,
+  and audit fan-outs are judgment-light and volume-heavy; route them to a cheap model
+  where the harness allows a per-step model choice.
+- **High-stakes changes → a two-model cross-check.** For changes touching `auth`,
+  `commerce`, credentials, or anything that moves money: run the review under two
+  different models and compare findings before merge. Where the two disagree, the
+  disagreement itself is the finding. Discard the weaker output entirely rather than
+  keeping it in history.
+
 ## Setup + current gaps
 
 - **PATH:** `ml`/`sd`/`treehouse` live in `~/.bun/bin` and `~/.local/bin`. A crewmate's
   shell must have these on PATH or the prime hooks silently no-op.
 - **`gh` CLI:** not installed — no-mistakes' push→PR→CI tail can't run without it (local
-  review/test/lint steps work). Tracked as a seed.
-- **firstmate:** not installed — the fan-out is manual until it is. Install is Phase 3.
+  review/test/lint steps work). Tracked as a seed. (2026-09-09: present and authenticated
+  on the Windows workstation; the gap stands wherever the no-mistakes daemon runs, if
+  that environment differs.)
+- **firstmate:** not installed — the fan-out is manual until it is. **Deferred until a
+  dedicated always-on Linux box exists** (tracked as a seed): installing it on the box
+  rather than the working machine decouples running agents from the machine being sat
+  at, which is the point.
 - **lavish:** available as a skill; install the CLI when you want the annotate loop.
 
 ## Keep the framework true
@@ -163,3 +182,7 @@ The loop only stays valuable if maintained (extends [working-with-agents.md](wor
   the mulch copy.
 - New package → `ml add <name>` + the _Working here_ stanza in its CLAUDE.md.
 - System-shape change → update the architecture diagram in the same change (ADR-0015).
+- **Weekly friction review** (scheduled, not event-driven): once a week, read the open
+  seeds and recent mulch `failure` records, pick the single most recurrent friction, and
+  convert it into one infrastructure seed. One per week, deliberately — a steady
+  compounding rate, not a rewrite.
