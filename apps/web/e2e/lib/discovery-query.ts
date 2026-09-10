@@ -24,13 +24,6 @@
  * tokens sharing no character positions, dropping a leaked row to ~0.34.
  */
 
-/**
- * Display-name prefix shared by every seeded discovery fixture, in every run — and by no other
- * suite's fixtures. `interests.spec.ts` seeds `E2E Interest …` creators into the same database, so
- * a bare `"E2E "` here would report those as discovery rows.
- */
-export const FIXTURE_NAME_PREFIX = "E2E Discovery ";
-
 /** Token width. Long enough to dominate the query text it sits in; short enough to stay legible. */
 const TOKEN_LENGTH = 40;
 

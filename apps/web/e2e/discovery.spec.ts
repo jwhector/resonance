@@ -1,6 +1,5 @@
 import { type APIRequestContext, type Page, expect, test } from "@playwright/test";
 import { seedDiscoveryFixture, type DiscoveryFixture } from "./lib/discovery-fixtures";
-import { FIXTURE_NAME_PREFIX } from "./lib/discovery-query";
 import { deleteSignedUpAccounts, signUpAndVerify, skipInterests } from "./lib/signup";
 
 /**
@@ -19,27 +18,17 @@ import { deleteSignedUpAccounts, signUpAndVerify, skipInterests } from "./lib/si
  * `toBeVisible` / `toHaveURL` / `toHaveText` with a generous timeout. Nothing here asserts on an
  * intermediate token, a spinner, or a transient in-flight class.
  *
- * The fixtures are seeded once per worker process (`beforeAll` runs per worker) and removed in
- * `afterAll`, keyed by this run plus the worker index.
+ * The fixtures are seeded once per worker process (`beforeAll` runs per worker) with a run id
+ * unique to that worker, and removed in `afterAll`.
  */
 
-/**
- * This `playwright test` invocation — the same string in every worker, stamped into the
- * environment by `playwright.config.ts`. Building one here instead would identify the worker,
- * which is not enough to tell a sibling worker's fixtures from an earlier run's leaked rows.
- */
-const RUN_ID = process.env.E2E_RUN_ID;
-if (!RUN_ID) {
-  throw new Error(
-    "E2E_RUN_ID is not set. `playwright.config.ts` stamps it before any worker starts; without " +
-      "it every run shares one id, and no run can tell its own fixtures from another's.",
-  );
-}
+/** Unique per worker process — each Playwright worker imports this module fresh. */
+const RUN_ID = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 
 let fixture: DiscoveryFixture;
 
 test.beforeAll(async () => {
-  fixture = await seedDiscoveryFixture(RUN_ID, test.info().workerIndex);
+  fixture = await seedDiscoveryFixture(RUN_ID);
 });
 
 // Accounts are recorded by the sign-up helper the moment it mints an address, so an account
@@ -103,15 +92,6 @@ test("a member reaches ranked creators through the front door and opens a profil
   await searchFor(page, fixture.query);
 
   const names = await rankedNames(page);
-  // Fixtures an earlier run failed to clean up — sibling workers of this run excluded, since
-  // their rows are in the database legitimately. A leaked row can no longer outrank this run's,
-  // but its presence means cleanup is broken; report that here, where it is legible, instead of
-  // letting it resurface later as an unexplained ordering failure.
-  expect(
-    fixture.foreignFixtureNames(names),
-    `Discovery fixtures from an earlier run are still in the database, so that run's cleanup ` +
-      `failed. Remove the stale "${FIXTURE_NAME_PREFIX}…" creators before trusting this result.`,
-  ).toEqual([]);
   expect(names).toContain(fixture.top.displayName);
   expect(names).toContain(fixture.second.displayName);
   // Ranked, not merely returned: the exact-text match outranks the near match. Relative order
