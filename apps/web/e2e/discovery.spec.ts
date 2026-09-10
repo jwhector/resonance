@@ -1,5 +1,6 @@
 import { type APIRequestContext, type Page, expect, test } from "@playwright/test";
 import { seedDiscoveryFixture, type DiscoveryFixture } from "./lib/discovery-fixtures";
+import { FIXTURE_NAME_PREFIX } from "./lib/discovery-query";
 import { deleteSignedUpAccounts, signUpAndVerify, skipInterests } from "./lib/signup";
 
 /**
@@ -106,7 +107,11 @@ test("a member reaches ranked creators through the front door and opens a profil
   // their rows are in the database legitimately. A leaked row can no longer outrank this run's,
   // but its presence means cleanup is broken; report that here, where it is legible, instead of
   // letting it resurface later as an unexplained ordering failure.
-  expect(fixture.foreignFixtureNames(names)).toEqual([]);
+  expect(
+    fixture.foreignFixtureNames(names),
+    `Discovery fixtures from an earlier run are still in the database, so that run's cleanup ` +
+      `failed. Remove the stale "${FIXTURE_NAME_PREFIX}…" creators before trusting this result.`,
+  ).toEqual([]);
   expect(names).toContain(fixture.top.displayName);
   expect(names).toContain(fixture.second.displayName);
   // Ranked, not merely returned: the exact-text match outranks the near match. Relative order
