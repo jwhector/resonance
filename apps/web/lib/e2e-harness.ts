@@ -92,19 +92,21 @@ async function webEmbedder(): Promise<Embedder> {
 
 /**
  * Mail transport for the auth mount: the shared in-memory fake under the harness (so the auth
- * handler that WRITES the login code and the `/api/test/last-otp` read-back observe the SAME
- * captured codes), else `undefined` → the caller uses the live `getAuth()`.
+ * handler that WRITES a login email and the `/api/test/` read-back for that channel observe the
+ * SAME captured sends), else `undefined` → the caller uses the live `getAuth()`.
  *
- * We EXPLICITLY register the fake's captured codes for read-back via `observeLoginCodes(fake)`.
+ * We EXPLICITLY register the fake's captured codes AND its captured magic links for read-back, via
+ * `observeLoginCodes(fake)` and `observeMagicLinks(fake)` — sign-up dispatches both channels, so a
+ * test that could only read one could only ever prove half the front door.
  * Construction alone registers nothing, so building a fake elsewhere — or a
- * session read routing through `getWebAuth()` — cannot silently hijack the OTP read-back; only this
- * intentional call feeds `peekLoginCode`.
+ * session read routing through `getWebAuth()` — cannot silently hijack either read-back; only these
+ * intentional calls feed `peekLoginCode` and `peekMagicLink`.
  *
  * Singleton pinned to `globalThis` (not a module-level `let`), because in Next.js the auth mount,
- * the RSC/Server-Action session reads, and the `/api/test/last-otp` route can evaluate in different
- * module scopes. Pinning guarantees the fake is built — and
- * `observeLoginCodes` called — exactly ONCE per process, so every scope shares the one fake and the
- * read-back never gets clobbered by a later empty buffer.
+ * the RSC/Server-Action session reads, and the `/api/test/` read-back routes can evaluate in
+ * different module scopes. Pinning guarantees the fake is built — and both observations registered
+ * — exactly ONCE per process, so every scope shares the one fake and the read-backs never get
+ * clobbered by a later empty buffer.
  *
  * The slot holds the in-flight PROMISE, not the resolved port, so the singleton survives concurrent
  * callers. The signup form fires two auth requests in parallel (magic link + OTP send), and on a
@@ -124,9 +126,11 @@ export async function harnessMailOverride(): Promise<AuthMailPort | undefined> {
   if (!E2E_HARNESS) return undefined;
   const store = harnessMailStore();
   store[HARNESS_MAIL_KEY] ??= (async () => {
-    const { createFakeMail, observeLoginCodes } = await import("@resonance/auth/testing");
+    const { createFakeMail, observeLoginCodes, observeMagicLinks } =
+      await import("@resonance/auth/testing");
     const fake = createFakeMail();
     observeLoginCodes(fake);
+    observeMagicLinks(fake);
     return fake.port;
   })().catch((err: unknown) => {
     delete store[HARNESS_MAIL_KEY];

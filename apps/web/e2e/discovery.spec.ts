@@ -1,7 +1,6 @@
 import { type APIRequestContext, type Page, expect, test } from "@playwright/test";
-import { deleteUserByEmail } from "./lib/db";
 import { seedDiscoveryFixture, type DiscoveryFixture } from "./lib/discovery-fixtures";
-import { signUpAndVerify, skipInterests } from "./lib/signup";
+import { deleteSignedUpAccounts, signUpAndVerify, skipInterests } from "./lib/signup";
 
 /**
  * End-to-end member discovery: the real front
@@ -28,22 +27,13 @@ const RUN_ID = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 
 
 let fixture: DiscoveryFixture;
 
-/**
- * Accounts a test signed up, drained in `afterEach` rather than a `finally` inside the test body:
- * a Playwright timeout aborts the body at its current `await` so the `finally` never runs and the
- * member row leaks into the shared dev database.
- * `afterEach` still runs after a timeout and gets its own time budget.
- */
-let accounts: string[] = [];
-
 test.beforeAll(async () => {
   fixture = await seedDiscoveryFixture(RUN_ID);
 });
 
-test.afterEach(async () => {
-  for (const email of accounts) await deleteUserByEmail(email);
-  accounts = [];
-});
+// Accounts are recorded by the sign-up helper the moment it mints an address, so an account
+// created by a test that then timed out is still cleaned up here.
+test.afterEach(deleteSignedUpAccounts);
 
 test.afterAll(async () => {
   await fixture?.cleanup();
@@ -136,7 +126,7 @@ test("a signed-in member follows a creator and the state survives a reload", asy
   page,
   request,
 }) => {
-  accounts.push(await signInFreshMember(page, request));
+  await signInFreshMember(page, request);
   await page.goto("/discover");
   await searchFor(page, fixture.query);
 

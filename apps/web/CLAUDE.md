@@ -52,6 +52,7 @@ app/
 ├── api/onboarding/interview/     streaming interview route (live model, ADR-0009)
 ├── api/auth/[...all]/            Better Auth mount (via lib/auth.ts getWebAuth)
 ├── api/test/last-otp/            E2E-ONLY OTP read-back — gated on E2E_HARNESS
+├── api/test/last-magic-link/     E2E-ONLY magic-link read-back — same gate, other channel
 └── layout.tsx · page.tsx · globals.css
 lib/
 ├── auth.ts            getWebAuth() (the one instance the mount serves) + getWebSession() — all
@@ -62,16 +63,22 @@ e2e/
 ├── onboarding-creator.spec.ts    full-flow Playwright (runs under E2E_HARNESS)
 ├── discovery.spec.ts             member discovery front door + follow/unfollow (E2E_HARNESS)
 ├── interests.spec.ts             pick topics → interest-ranked /discover, and the skip path
+├── onboarding-intent.spec.ts     the /start intent through BOTH verification channels — where
+│                                 /interests lets out, and that the answer is persisted
 ├── home.spec.ts                  scaffold smoke test
-└── lib/                          signup.ts — the shared passwordless front door, driven to
-                                  /interests · db.ts — fixture DB plumbing · discovery-fixtures.ts
+└── lib/                          signup.ts — the shared passwordless front door (either channel),
+                                  driven to /interests, and the account ledger it tears down
+                                  · db.ts — fixture DB plumbing · discovery-fixtures.ts
                                   — ready/draft creator profiles · interest-fixtures.ts — the
                                   creator seeded to match a member's interest text exactly
 ```
 
 Fixture cleanup lives in `afterEach`, never a `finally` inside a test: Playwright aborts the test
 body on a timeout, so a `finally` there silently leaks rows into the shared dev database — the
-cause behind seed `resonance-1236`.
+cause behind seed `resonance-1236`. Signed-up accounts are not a spec's bookkeeping either: the
+signup helper records each address the moment it mints one — before the account can exist — and
+specs wire its `deleteSignedUpAccounts` as their `afterEach`, so a timeout inside sign-up cannot
+orphan a row nothing can name.
 
 Depends on every `@resonance/*` package plus `next`, `react`, `@tanstack/react-query`,
 and `zod`.
@@ -86,10 +93,12 @@ and `zod`.
   which injects the test-only fakes (`@resonance/ai/testing`, `@resonance/auth/testing`) at the
   composition roots (interview stream, `generateDraft`, `commitProfile`, and the auth mount). It
   is **not** a general fakes flag threaded through the packages (ADR-0018 §4). The harness fake mail
-  is a `globalThis` singleton and registers its OTP buffer for read-back with an **explicit**
-  `observeLoginCodes(fake)` call (never a construction side-effect), so building a fake — or a
-  session read via `getWebSession` — can't clobber the `/api/test/last-otp` read-back (seed
-  resonance-5d4e). The slot holds the **in-flight promise**, not the resolved port, so the parallel
+  is a `globalThis` singleton and registers its buffers for read-back with **explicit**
+  `observeLoginCodes(fake)` and `observeMagicLinks(fake)` calls (never a construction side-effect),
+  so building a fake — or a session read via `getWebSession` — can't clobber the
+  `/api/test/last-otp` or `/api/test/last-magic-link` read-backs (seed resonance-5d4e). Two calls
+  because sign-up dispatches both emails — why they stay separate is in `@resonance/auth`'s
+  CLAUDE.md. The slot holds the **in-flight promise**, not the resolved port, so the parallel
   auth requests the signup form fires share one construction instead of each building a fake on a
   cold server (seed resonance-86dd). Session reads go through `getWebSession` → `getWebAuth`, so the mount and the
   reads share ONE Better Auth instance per process (seed resonance-eb15).

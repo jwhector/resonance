@@ -18,11 +18,13 @@ import type * as EHarness from "./e2e-harness";
  */
 const createFakeMail = vi.fn();
 const observeLoginCodes = vi.fn();
+const observeMagicLinks = vi.fn();
 
 vi.mock("@resonance/ai", () => ({ resolveEmbedder: vi.fn() }));
 vi.mock("@resonance/auth/testing", () => ({
   createFakeMail: () => createFakeMail(),
   observeLoginCodes: (fake: unknown) => observeLoginCodes(fake),
+  observeMagicLinks: (fake: unknown) => observeMagicLinks(fake),
 }));
 
 // The singleton is pinned to globalThis so it survives Next.js module scopes; clear it per case.
@@ -78,10 +80,14 @@ describe("harnessMailOverride — one fake per process under concurrency (seed r
 
     expect(createFakeMail).toHaveBeenCalledTimes(1);
     expect(observeLoginCodes).toHaveBeenCalledTimes(1);
+    expect(observeMagicLinks).toHaveBeenCalledTimes(1);
     // The transport both callers send through is the same one whose codes feed peekLoginCode.
     expect(first).toBe(fake.port);
     expect(second).toBe(fake.port);
     expect(observeLoginCodes).toHaveBeenCalledWith(fake);
+    // Both channels observe the SAME fake, or a spec could read a code and a link that belong to
+    // two different transports.
+    expect(observeMagicLinks).toHaveBeenCalledWith(fake);
   });
 
   it("reuses the singleton across later sequential calls", async () => {
@@ -110,5 +116,6 @@ describe("harnessMailOverride — one fake per process under concurrency (seed r
     await expect(harnessOff.harnessMailOverride()).resolves.toBeUndefined();
     expect(createFakeMail).not.toHaveBeenCalled();
     expect(observeLoginCodes).not.toHaveBeenCalled();
+    expect(observeMagicLinks).not.toHaveBeenCalled();
   });
 });

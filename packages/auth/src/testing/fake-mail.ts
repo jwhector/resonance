@@ -5,7 +5,12 @@
 // shipped runtime path. It lives on the `@resonance/auth/testing` subpath (mirroring
 // `@resonance/db/testing`) so production code can never reach it.
 
-import { type AuthMailPort, type OtpType, registerObservedLoginCodes } from "../mail";
+import {
+  type AuthMailPort,
+  type OtpType,
+  registerObservedLoginCodes,
+  registerObservedMagicLinks,
+} from "../mail";
 
 /** The in-memory fake transport plus the buffers it captures into. */
 export interface FakeMail {
@@ -60,4 +65,16 @@ export function createFakeMail(): FakeMail {
  */
 export function observeLoginCodes(fake: Pick<FakeMail, "codes">): void {
   registerObservedLoginCodes(fake.codes);
+}
+
+/**
+ * The magic-link counterpart to {@link observeLoginCodes}: register `fake`'s captured `sent` links
+ * so `peekMagicLink(email)` reads back the URLs THIS fake captured.
+ *
+ * A separate call rather than something `observeLoginCodes` does too, so a harness observes exactly
+ * the channels it means to. One transport captures both, but observing them is two decisions —
+ * and a caller that only ever reads codes should not silently start exposing sign-in links.
+ */
+export function observeMagicLinks(fake: Pick<FakeMail, "sent">): void {
+  registerObservedMagicLinks(fake.sent);
 }

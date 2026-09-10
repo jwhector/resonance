@@ -80,3 +80,25 @@ export async function deleteUserByEmail(email: string): Promise<void> {
   `;
   await raw`delete from "user" where email = ${email}`;
 }
+
+/**
+ * The onboarding intent stored against an account, read straight from the column.
+ *
+ * The redirect a test just followed proves where someone was *sent*; it says nothing about whether
+ * the answer outlived the request that carried it. Only the column can show that, and it is the
+ * whole reason the intent was made data rather than a routing decision — the conversion screen and
+ * the analytics that come later read this, not a URL that has long since gone.
+ *
+ * Throws when no such account exists, so a typo'd fixture email fails as "no account" rather than
+ * quietly reading as "no intent stated" — the two are different facts and only one is a bug.
+ */
+export async function readOnboardingIntent(email: string): Promise<string | null> {
+  ensureDatabaseUrl();
+  const raw = rawClient(createDb());
+  const rows = (await raw`
+    select onboarding_intent from "user" where email = ${email}
+  `) as Array<{ onboarding_intent: string | null }>;
+  if (rows.length === 0)
+    throw new Error(`No account for ${email} — nothing to read an intent from`);
+  return rows[0]?.onboarding_intent ?? null;
+}
