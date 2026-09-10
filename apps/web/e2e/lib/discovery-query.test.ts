@@ -1,5 +1,3 @@
-// @vitest-environment node
-// Pure arithmetic over the embedder — no DOM, so it does not pay for jsdom.
 import { createFakeEmbedder } from "@resonance/ai/testing";
 import { describe, expect, it } from "vitest";
 import { discoveryQueryFor, runQueryToken, SECOND_FIXTURE_SUFFIX } from "./discovery-query";
