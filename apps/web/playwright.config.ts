@@ -4,8 +4,26 @@ import { defineConfig, devices } from "@playwright/test";
  * E2E config (ADR-0011). Boots the app and runs specs in apps/web/e2e.
  * CI installs Chromium and runs `pnpm test:e2e`.
  */
+
+/**
+ * One id for this `playwright test` invocation, the same string in every worker it forks —
+ * workers inherit the runner's environment, and this file is evaluated before the first one
+ * starts.
+ *
+ * An id a spec builds at module scope identifies the WORKER, not the run: each worker re-imports
+ * every spec it runs. A spec that seeds per-worker fixtures then has no way to tell rows a sibling
+ * worker is legitimately using right now from rows an earlier run failed to clean up, and reports
+ * the former as the latter.
+ */
+process.env.E2E_RUN_ID ??= `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+
 export default defineConfig({
   testDir: "./e2e",
+  // Playwright's default pattern also collects `*.test.ts`, which is Vitest's extension here
+  // (docs/conventions.md § Testing) — and `e2e/lib` holds unit tests for the fixture helpers.
+  // Loading one of those in a Playwright worker calls Vitest's `describe` outside a Vitest worker,
+  // which throws and takes the whole E2E run with it.
+  testMatch: "**/*.spec.ts",
   fullyParallel: true,
   retries: process.env.CI ? 2 : 0,
   // Every spec that drives the passwordless front door signs up a real account, and whichever

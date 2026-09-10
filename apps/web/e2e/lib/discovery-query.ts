@@ -24,8 +24,15 @@
  * tokens sharing no character positions, dropping a leaked row to ~0.34.
  */
 
-/** Display-name prefix shared by every seeded discovery fixture, in every run. */
-export const FIXTURE_NAME_PREFIX = "E2E ";
+/**
+ * Display-name prefix shared by every seeded discovery fixture, in every run — and by no other
+ * suite's fixtures. `interests.spec.ts` seeds `E2E Interest …` creators into the same database, so
+ * a bare `"E2E "` here would report those as discovery rows.
+ */
+export const FIXTURE_NAME_PREFIX = "E2E Discovery ";
+
+/** Token width. Long enough to dominate the query text it sits in; short enough to stay legible. */
+const TOKEN_LENGTH = 40;
 
 /**
  * Expand a run id into a high-entropy token: FNV-1a over the id, then xorshift per output
@@ -34,14 +41,14 @@ export const FIXTURE_NAME_PREFIX = "E2E ";
  *
  * Not a security hash; it needs to be deterministic, dependency-free, and to spread.
  */
-export function runQueryToken(runId: string, length = 40): string {
+export function runQueryToken(runId: string): string {
   let h = 2166136261;
   for (let i = 0; i < runId.length; i++) {
     h ^= runId.charCodeAt(i);
     h = Math.imul(h, 16777619);
   }
   let token = "";
-  for (let i = 0; i < length; i++) {
+  for (let i = 0; i < TOKEN_LENGTH; i++) {
     h ^= h << 13;
     h ^= h >>> 17;
     h ^= h << 5;

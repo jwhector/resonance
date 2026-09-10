@@ -18,17 +18,21 @@ import { deleteSignedUpAccounts, signUpAndVerify, skipInterests } from "./lib/si
  * `toBeVisible` / `toHaveURL` / `toHaveText` with a generous timeout. Nothing here asserts on an
  * intermediate token, a spinner, or a transient in-flight class.
  *
- * The fixtures are seeded once per worker process (`beforeAll` runs per worker) with a run id
- * unique to that worker, and removed in `afterAll`.
+ * The fixtures are seeded once per worker process (`beforeAll` runs per worker) and removed in
+ * `afterAll`, keyed by this run plus the worker index.
  */
 
-/** Unique per worker process — each Playwright worker imports this module fresh. */
-const RUN_ID = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+/**
+ * This `playwright test` invocation — the same string in every worker, stamped into the
+ * environment by `playwright.config.ts`. Building one here instead would identify the worker,
+ * which is not enough to tell a sibling worker's fixtures from an earlier run's leaked rows.
+ */
+const RUN_ID = process.env.E2E_RUN_ID ?? "unstamped";
 
 let fixture: DiscoveryFixture;
 
 test.beforeAll(async () => {
-  fixture = await seedDiscoveryFixture(RUN_ID);
+  fixture = await seedDiscoveryFixture(RUN_ID, test.info().workerIndex);
 });
 
 // Accounts are recorded by the sign-up helper the moment it mints an address, so an account
@@ -92,8 +96,9 @@ test("a member reaches ranked creators through the front door and opens a profil
   await searchFor(page, fixture.query);
 
   const names = await rankedNames(page);
-  // Fixtures another run failed to clean up. They can no longer outrank this run's rows, but
-  // their presence means cleanup is broken — report that here, where it is legible, instead of
+  // Fixtures an earlier run failed to clean up — sibling workers of this run excluded, since
+  // their rows are in the database legitimately. A leaked row can no longer outrank this run's,
+  // but its presence means cleanup is broken; report that here, where it is legible, instead of
   // letting it resurface later as an unexplained ordering failure.
   expect(fixture.foreignFixtureNames(names)).toEqual([]);
   expect(names).toContain(fixture.top.displayName);

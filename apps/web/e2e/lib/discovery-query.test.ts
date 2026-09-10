@@ -2,11 +2,7 @@
 // Pure arithmetic over the embedder — no DOM, so it does not pay for jsdom.
 import { createFakeEmbedder } from "@resonance/ai/testing";
 import { describe, expect, it } from "vitest";
-import {
-  discoveryQueryFor,
-  runQueryToken,
-  SECOND_FIXTURE_SUFFIX,
-} from "./discovery-query";
+import { discoveryQueryFor, runQueryToken, SECOND_FIXTURE_SUFFIX } from "./discovery-query";
 
 /**
  * Pins the ranking property `discovery-query.ts` exists to provide, against the real embedder the
@@ -27,11 +23,12 @@ async function similarity(a: string, b: string): Promise<number> {
 }
 
 /**
- * Run ids as the specs build them: `Date.now().toString(36)` plus four random characters. The
- * offsets are the adversarial cases — runs close in time share the most timestamp characters.
+ * Fixture ids as the spec builds them: `Date.now().toString(36)` plus four random characters,
+ * then the worker index. The offsets are the adversarial cases — runs close in time share the
+ * most timestamp characters, and workers within one run differ only in the trailing index.
  */
-const runIdAt = (msOffset: number, random: string): string =>
-  `${(Date.now() + msOffset).toString(36)}${random}`;
+const runIdAt = (msOffset: number, random: string, worker = 0): string =>
+  `${(Date.now() + msOffset).toString(36)}${random}-w${worker}`;
 
 describe("runQueryToken", () => {
   it("is deterministic for a given run id", () => {
@@ -39,8 +36,8 @@ describe("runQueryToken", () => {
   });
 
   it("avalanches: a one-character change rewrites the whole token", () => {
-    const a = runQueryToken("m4x9q1a1b2");
-    const b = runQueryToken("m4x9q1a1b3");
+    const a = runQueryToken("m4x9q1a1b2-w0");
+    const b = runQueryToken("m4x9q1a1b2-w1");
     expect(a).toHaveLength(40);
     expect(b).toHaveLength(40);
     const shared = [...a].filter((ch, i) => ch === b[i]).length;
@@ -67,8 +64,11 @@ describe("discoveryQueryFor", () => {
     const second = await similarity(query, query + SECOND_FIXTURE_SUFFIX);
 
     // The adversarial spread: a run one millisecond earlier shares all but one character of its
-    // id, which is the case the original English-phrase query lost to.
+    // id, which is the case the original English-phrase query lost to. A sibling WORKER of this
+    // run is nearer still — same id but for the trailing index — and its rows are live rather
+    // than leaked, so they must be just as unable to displace this worker's `second`.
     const leaked = [
+      runIdAt(0, "a1b2", 1),
       runIdAt(-1, "a1b3"),
       runIdAt(-1_000, "c3d4"),
       runIdAt(-60_000, "e5f6"),

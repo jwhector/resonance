@@ -1,11 +1,7 @@
 import { createFakeEmbedder } from "@resonance/ai/testing";
 import { createCreatorProfile, createDb, upsertProfileEmbedding } from "@resonance/db";
 import { ensureDatabaseUrl, rawClient } from "./db";
-import {
-  discoveryQueryFor,
-  FIXTURE_NAME_PREFIX,
-  SECOND_FIXTURE_SUFFIX,
-} from "./discovery-query";
+import { discoveryQueryFor, FIXTURE_NAME_PREFIX, SECOND_FIXTURE_SUFFIX } from "./discovery-query";
 
 /**
  * Deterministic discovery fixtures for the `/discover` E2E.
@@ -36,11 +32,12 @@ import {
  *
  * ## Isolation and cleanup
  *
- * Every fixture id, email and display name carries a per-worker `runId`, so parallel workers and
- * repeated runs never collide. `cleanup()` deletes the embeddings and then the users; the
- * `creator_profiles` and `follows` rows go with them via `ON DELETE cascade`. The database
- * plumbing itself — reaching the same Neon instance from the test process, and the raw SQL
- * escape hatch — is shared with the other fixtures in `./db`.
+ * Every fixture id and display name carries both the run and the worker that seeded it, so
+ * parallel workers and repeated runs never collide — and a row still names the run it belongs to,
+ * which is what lets a leak be told apart from a sibling worker's live rows. `cleanup()` deletes
+ * the embeddings and then the users; the `creator_profiles` and `follows` rows go with them via
+ * `ON DELETE cascade`. The database plumbing itself — reaching the same Neon instance from the
+ * test process, and the raw SQL escape hatch — is shared with the other fixtures in `./db`.
  *
  * ## Why the query text is a high-entropy token
  *
@@ -72,8 +69,13 @@ export interface DiscoveryFixture {
   /** The single offering rendered on {@link top}'s profile page. */
   offering: { title: string; description: string };
   /**
-   * Any names in `names` that are discovery fixtures **from a different run** — rows an earlier
-   * run failed to clean up.
+   * Any names in `names` that are discovery fixtures **from a different `playwright test`
+   * invocation** — rows an earlier run failed to clean up.
+   *
+   * Fixtures a SIBLING WORKER of this same run seeded are excluded: `fullyParallel` splits one
+   * spec across worker processes, each seeding its own rows, and those rows are in the database
+   * legitimately for as long as that worker is running. Only the run is compared, never the
+   * worker, which is why the run id has to be shared across workers (`E2E_RUN_ID`).
    *
    * Assert this is empty alongside the ranking assertions. A leaked row can no longer outrank
    * this run's fixtures, but its presence still means cleanup is broken, and this reports that
@@ -86,18 +88,29 @@ export interface DiscoveryFixture {
 /**
  * Seed the three profiles above and return them with a cleanup handle.
  *
- * `runId` should be unique per worker — the caller passes one built in `beforeAll`, which runs
- * once per worker process.
+ * The two arguments separate the two things a fixture id has to do, which a single id cannot:
+ *
+ * - `runId` identifies the `playwright test` invocation and is the SAME in every worker
+ *   (`playwright.config.ts` stamps `E2E_RUN_ID` before any worker starts). It is what
+ *   {@link DiscoveryFixture.foreignFixtureNames} compares, so a sibling worker's rows read as
+ *   this run's rather than as a leak.
+ * - `workerIndex` distinguishes the rows one worker seeds from a sibling's. Every seeded id,
+ *   display name and the query text itself carry both, so two workers never collide and one
+ *   worker's cleanup can never remove another's rows.
  */
-export async function seedDiscoveryFixture(runId: string): Promise<DiscoveryFixture> {
+export async function seedDiscoveryFixture(
+  runId: string,
+  workerIndex: number,
+): Promise<DiscoveryFixture> {
   ensureDatabaseUrl();
   const db = createDb();
   const raw = rawClient(db);
   const embedder = createFakeEmbedder();
 
-  const query = discoveryQueryFor(runId);
+  const rowId = `${runId}-w${workerIndex}`;
+  const query = discoveryQueryFor(rowId);
   const offering = {
-    title: `Stoneware mug set ${runId}`,
+    title: `Stoneware mug set ${rowId}`,
     description: "Four hand-thrown mugs, glazed and fired in a small gas kiln.",
   };
 
@@ -111,7 +124,7 @@ export async function seedDiscoveryFixture(runId: string): Promise<DiscoveryFixt
     status: "ready" | "draft",
     offerings: Array<{ title: string; description: string }> = [],
   ): Promise<SeededCreator> {
-    const userId = `e2e-discovery-${runId}-${slot}`;
+    const userId = `e2e-discovery-${rowId}-${slot}`;
     await raw`
       insert into "user" (id, name, email, email_verified, roles)
       values (${userId}, ${displayName}, ${`${userId}@example.com`}, true, 'member,creator')
@@ -119,7 +132,7 @@ export async function seedDiscoveryFixture(runId: string): Promise<DiscoveryFixt
     `;
     userIds.push(userId);
 
-    const headline = `Ranked ${slot} fixture for ${runId}`;
+    const headline = `Ranked ${slot} fixture for ${rowId}`;
     const profile = await createCreatorProfile(db, {
       userId,
       displayName,
@@ -143,14 +156,14 @@ export async function seedDiscoveryFixture(runId: string): Promise<DiscoveryFixt
 
   // `top` and `draft` share the query text exactly — similarity 1.0 for both, so the only thing
   // separating them in the results is the status filter under test.
-  const top = await seed("top", `${FIXTURE_NAME_PREFIX}Top ${runId}`, query, "ready", [offering]);
+  const top = await seed("top", `${FIXTURE_NAME_PREFIX}Top ${rowId}`, query, "ready", [offering]);
   const second = await seed(
     "second",
-    `${FIXTURE_NAME_PREFIX}Second ${runId}`,
+    `${FIXTURE_NAME_PREFIX}Second ${rowId}`,
     `${query}${SECOND_FIXTURE_SUFFIX}`,
     "ready",
   );
-  const draft = await seed("draft", `${FIXTURE_NAME_PREFIX}Draft ${runId}`, query, "draft");
+  const draft = await seed("draft", `${FIXTURE_NAME_PREFIX}Draft ${rowId}`, query, "draft");
 
   return {
     query,
@@ -159,8 +172,10 @@ export async function seedDiscoveryFixture(runId: string): Promise<DiscoveryFixt
     draft,
     offering,
     foreignFixtureNames(names) {
+      // Every row this RUN seeded, in any worker, ends with `<runId>-w<workerIndex>` — so matching
+      // the run segment alone spares sibling workers and still catches every earlier run.
       return names.filter(
-        (name) => name.startsWith(FIXTURE_NAME_PREFIX) && !name.endsWith(` ${runId}`),
+        (name) => name.startsWith(FIXTURE_NAME_PREFIX) && !name.includes(` ${runId}-w`),
       );
     },
     async cleanup() {
