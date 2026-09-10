@@ -27,7 +27,13 @@ import { deleteSignedUpAccounts, signUpAndVerify, skipInterests } from "./lib/si
  * environment by `playwright.config.ts`. Building one here instead would identify the worker,
  * which is not enough to tell a sibling worker's fixtures from an earlier run's leaked rows.
  */
-const RUN_ID = process.env.E2E_RUN_ID ?? "unstamped";
+const RUN_ID = process.env.E2E_RUN_ID;
+if (!RUN_ID) {
+  throw new Error(
+    "E2E_RUN_ID is not set. `playwright.config.ts` stamps it before any worker starts; without " +
+      "it every run shares one id, and no run can tell its own fixtures from another's.",
+  );
+}
 
 let fixture: DiscoveryFixture;
 

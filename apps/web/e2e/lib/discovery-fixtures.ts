@@ -94,9 +94,12 @@ export interface DiscoveryFixture {
  *   (`playwright.config.ts` stamps `E2E_RUN_ID` before any worker starts). It is what
  *   {@link DiscoveryFixture.foreignFixtureNames} compares, so a sibling worker's rows read as
  *   this run's rather than as a leak.
- * - `workerIndex` distinguishes the rows one worker seeds from a sibling's. Every seeded id,
- *   display name and the query text itself carry both, so two workers never collide and one
- *   worker's cleanup can never remove another's rows.
+ * - `workerIndex` distinguishes the rows one worker seeds from a sibling's. It LEADS the id
+ *   rather than trailing it, because Playwright matches an accessible name by substring: a
+ *   trailing `w1` is a prefix of a trailing `w10`, so worker 1's locators would also resolve
+ *   worker 10's row once both are on the page. Every seeded id, display name and the query text
+ *   itself carry both run and worker, so two workers never collide and one worker's cleanup can
+ *   never remove another's rows.
  */
 export async function seedDiscoveryFixture(
   runId: string,
@@ -107,7 +110,7 @@ export async function seedDiscoveryFixture(
   const raw = rawClient(db);
   const embedder = createFakeEmbedder();
 
-  const rowId = `${runId}-w${workerIndex}`;
+  const rowId = `w${workerIndex}-${runId}`;
   const query = discoveryQueryFor(rowId);
   const offering = {
     title: `Stoneware mug set ${rowId}`,
@@ -172,10 +175,10 @@ export async function seedDiscoveryFixture(
     draft,
     offering,
     foreignFixtureNames(names) {
-      // Every row this RUN seeded, in any worker, ends with `<runId>-w<workerIndex>` — so matching
-      // the run segment alone spares sibling workers and still catches every earlier run.
+      // Every row this RUN seeded ends with the run id, whichever worker seeded it — so matching
+      // that alone spares sibling workers and still catches every earlier run.
       return names.filter(
-        (name) => name.startsWith(FIXTURE_NAME_PREFIX) && !name.includes(` ${runId}-w`),
+        (name) => name.startsWith(FIXTURE_NAME_PREFIX) && !name.endsWith(`-${runId}`),
       );
     },
     async cleanup() {
