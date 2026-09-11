@@ -4,10 +4,14 @@ Screen ⇄ route ⇄ component ⇄ verified Figma node ⇄ status. See [README.m
 the protocol (R1–R4) and the **Capture notes** (the REST path is dead — use the Desktop
 Bridge).
 
-**Two source files.** Screens **01–07** were captured from `UYlkCL7jkCVgKWiqAVlEFp`; screens
-**08–13** from `vC0O5uyMmw1o5vYHmCoOXq` (`Resonance (Copy)`), which is the file the Desktop
-Bridge is connected to. Node ids resolve in both — that is the hazard, not the reassurance.
-Read [PROVENANCE.md](PROVENANCE.md) before adding a citation.
+**Source files.** The trusted source for **new** captures is the dated snapshot
+**`A33kUDiRAatoMDx3L1m2Y4` (`Resonance 9/10/26`)** — see [PROVENANCE.md](PROVENANCE.md).
+Screens **01–07** were captured from `UYlkCL7jkCVgKWiqAVlEFp` and **08–13** from
+`vC0O5uyMmw1o5vYHmCoOXq` (`Resonance (Copy)`); all thirteen remain **copy-derived** until
+re-verified against the trusted snapshot. Node ids resolve in every copy — that is the
+hazard, not the reassurance. Known drift already measured: screen 05's cited node
+`1473:81622` **does not exist** in the trusted snapshot, and the Interview frame sets have
+grown ~40% since the July copies. Read PROVENANCE.md before adding a citation.
 
 ## ★ Golden rule — the Figma is the definitive source of truth (zero drift)
 
@@ -24,15 +28,15 @@ into a rule that overrides the design.
 
 ## Screens
 
-| #   | Screen                                | Figma node   | Route                            | Component                                             | Citation (R1)           | Status                                                                        |
-| --- | ------------------------------------- | ------------ | -------------------------------- | ----------------------------------------------------- | ----------------------- | ----------------------------------------------------------------------------- |
-| 01  | What brought you?                     | `1519:78312` | `/start`                         | `intent-picker-card`                                  | ✅ valid                | 🟢 built to design (cardless/boxed-radio/gray-disabled) · `resonance-c2d2`    |
-| 02  | Create account                        | `1526:78839` | `/signup`                        | `create-account-card`                                 | ✅ valid                | 🟢 reconciled (cardless/mark/gray-disabled/"Continue") · `c7c9`+`dba0`        |
-| 03  | Email verify (OTP)                    | `1526:79050` | `/verify`                        | `email-verify-card`                                   | ✅ valid                | 🟢 reconciled (cardless/OTP/gray-disabled) · `resonance-c7c9`                 |
-| 04  | Interview                             | `1443:78282` | `/onboarding/creator`            | `app-nav` + `weave-interview-rail` + `weave-composer` | ✅ `1443:78283` (fixed) | 🟢 rebuilt to design (start state) · `resonance-6e42`                         |
-| 05  | ProfileGen draft                      | `1473:81622` | `/onboarding/creator` (post-gen) | `profile-draft-panels`                                | ✅ valid                | 🟢 reconciled (woven inline + bottom composer) · `resonance-c7c9`             |
-| 06  | Onboarded                             | `1443:78273` | —                                | —                                                     | n/a                     | 🟡 orphan-design → **DEFER** (blocked on commerce/community stubs, bcd9)      |
-| 07  | Sign in (`Onboarding/Creator/SignIn`) | `1463:71449` | —                                | —                                                     | ✅ valid                | 🟡 orphan-design → **DEFER** · **row corrected, see note** (`resonance-80bf`) |
+| #   | Screen                                | Figma node   | Route                            | Component                                             | Citation (R1)                                                                        | Status                                                                                                     |
+| --- | ------------------------------------- | ------------ | -------------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| 01  | What brought you?                     | `1519:78312` | `/start`                         | `intent-picker-card`                                  | ✅ valid                                                                             | 🟢 built to design (cardless/boxed-radio/gray-disabled) · `resonance-c2d2`                                 |
+| 02  | Create account                        | `1526:78839` | `/signup`                        | `create-account-card`                                 | ✅ valid                                                                             | 🟢 reconciled (cardless/mark/gray-disabled/"Continue") · `c7c9`+`dba0`                                     |
+| 03  | Email verify (OTP)                    | `1526:79050` | `/verify`                        | `email-verify-card`                                   | ✅ valid                                                                             | 🟢 reconciled (cardless/OTP/gray-disabled) · `resonance-c7c9`                                              |
+| 04  | Interview                             | `1443:78282` | `/onboarding/creator`            | `app-nav` + `weave-interview-rail` + `weave-composer` | ✅ `1443:78283` (fixed)                                                              | 🟢 rebuilt to design (start state) · `resonance-6e42`                                                      |
+| 05  | ProfileGen draft                      | `1473:81622` | `/onboarding/creator` (post-gen) | `profile-draft-panels`                                | ⚠️ node missing in trusted snapshot — copy-derived, re-verify under `resonance-e30b` | 🟡 provisional — reconciled against the July copy only (woven inline + bottom composer) · `resonance-c7c9` |
+| 06  | Onboarded                             | `1443:78273` | —                                | —                                                     | n/a                                                                                  | 🟡 orphan-design → **DEFER** (blocked on commerce/community stubs, bcd9)                                   |
+| 07  | Sign in (`Onboarding/Creator/SignIn`) | `1463:71449` | —                                | —                                                     | ✅ valid                                                                             | 🟡 orphan-design → **DEFER** · **row corrected, see note** (`resonance-80bf`)                              |
 
 ### Correction — row 07 (`resonance-80bf`)
 

@@ -53,7 +53,9 @@ design/manifest/
 **0. Verify the bridge before anything else.** `figma_diagnose`, then `figma_get_status`
 with `probe: true`. If the plugin is not connected, open it in Figma Desktop
 (Plugins → Development → Figma Desktop Bridge) — or close and reopen it once — then
-`figma_reconnect`. Confirm the reported `fileName` / `fileKey` is the file you mean to cite.
+`figma_reconnect`. Confirm the reported `fileName` / `fileKey` is the **trusted snapshot**
+named in [PROVENANCE.md](PROVENANCE.md) — a resolving connection to the wrong file is the
+exact hazard that file documents.
 
 **1. Verify the node ids you intend to cite, in-session.**
 
@@ -105,13 +107,14 @@ substitute drift detector.** `exportAsync` at a fixed scale is byte-reproducible
 re-exporting an unchanged frame reproduces the identical hash. Every `design.md` records:
 
 ```
-fileKey:         <key>
+fileKey:         <key — must be the trusted snapshot in PROVENANCE.md>
+snapshotDate:    <the snapshot's date, from PROVENANCE.md>
 nodeId:          <id>
 capturedAt:      <ISO 8601 UTC>
 capturedVia:     Desktop Bridge plugin — figma_execute + node.exportAsync({PNG, SCALE 1})
 designPngSha256: <sha>
 figmaVersionId:  UNAVAILABLE
-provenance:      copy-derived | canonical
+provenance:      snapshot-derived | copy-derived
 ```
 
 ### Bridge gotchas

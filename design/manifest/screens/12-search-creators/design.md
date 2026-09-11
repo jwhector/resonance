@@ -23,7 +23,7 @@ node). Hash matches → frame unchanged in this copy. Hash differs → re-audit 
 anything below.
 
 This is a **copy** of the designer's file. Node ids resolve forever but drift in meaning as
-the original is edited — see [../../PROVENANCE.md](../../PROVENANCE.md) and `resonance-6db8`.
+the original is edited — see [../../PROVENANCE.md](../../PROVENANCE.md).
 Node inventory: [../../metadata/member-search-frames.md](../../metadata/member-search-frames.md).
 
 - **Frame:** 1512×982, bg `#ffffff`
