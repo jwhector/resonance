@@ -1,6 +1,6 @@
 # ADR-0019: Design fidelity via the visual manifest — artifact-anchored parity (R1–R4)
 
-- **Status:** Accepted
+- **Status:** Accepted — amended 2026-09-11 (capture path + provenance model; see Amendment below)
 - **Date:** 2026-07-09
 
 ## Context
@@ -38,8 +38,9 @@ Design fidelity is governed by a **local, human-inspectable visual manifest**
 2. **The manifest makes parity an artifact, per screen/component.** A directory holds
    `design.png` (the Figma render — **the contract**), `design.md` (extracted spec +
    verified `fileKey`/`nodeId`), `app.png` (the running app at the matching route), and
-   `parity.md` (the delta list + verdict). `metadata/` holds the raw `get_metadata` dumps
-   that prove which node ids exist; `_index.md` is the screen ⇄ route ⇄ component ⇄ node map.
+   `parity.md` (the delta list + verdict). `metadata/` holds node-inventory dumps that
+   prove which node ids exist (bridge-derived tree walks; see Amendment); `_index.md` is
+   the screen ⇄ route ⇄ component ⇄ node map.
 
 3. **Four rules (the laundering guards):**
    - **R1 — Verified provenance.** Every Figma node id cited in code MUST appear in a saved
@@ -64,9 +65,9 @@ Design fidelity is governed by a **local, human-inspectable visual manifest**
      `capture-app-manifest` for the whole slice), driven under the `E2E_HARNESS` seam
      (ADR-0018) so captures are deterministic.
 
-5. **Spend the Figma budget once, cheap→expensive.** `get_metadata` → `get_screenshot` →
-   `get_design_context` (verbose — only on the frame you are actively implementing). Never
-   explore with the expensive tool. Audits thereafter read the local manifest and spend
+5. **Capture once, then read local.** Captures come through the Desktop Bridge plugin
+   (see Amendment — the REST funnel this rule originally described is dead), which is
+   local and consumes no API quota. Audits thereafter read the local manifest and spend
    **zero** Figma calls.
 
 Refines ADR-0012 (design system: shadcn + Figma tokens) and complements ADR-0018 (the
@@ -86,6 +87,35 @@ adds no package, service, or data flow, so the architecture diagram (ADR-0015) i
 - **Revisit trigger:** once Code Connect (R4) is adopted for the slice components
   (`resonance-cbbd`), docstring node-id citations become redundant and should be removed in
   favor of the machine-checked map.
+
+## Amendment — 2026-09-11: Desktop Bridge capture + dated-snapshot provenance
+
+The original decision documented a REST capture funnel (`get_metadata` →
+`get_screenshot` → `get_design_context`) and REST-derived metadata dumps. That path is
+dead: `FIGMA_ACCESS_TOKEN` returns `403`, every REST-backed tool with it, and Figma
+version ids are therefore unobtainable. Worse, the manifest's citations pointed at
+stale *copies* of the designer's file, where a node id resolves forever after it has
+stopped describing the designer's current frame — re-registering a fresh snapshot
+measured this directly (a cited node deleted; the interview flow grown ~40%).
+
+The ratified capture and provenance model is now:
+
+1. **Capture via the Desktop Bridge plugin** (`figma_execute` + `node.exportAsync`,
+   `SCALE 1`) — local, quota-free, works on any plan. `metadata/` dumps are
+   bridge-derived tree walks, not `get_metadata` XML.
+2. **The trusted source is a registered, dated snapshot** of the designer's file, not a
+   live file we cannot read. `design/manifest/PROVENANCE.md` is the registry: which
+   `fileKey` is trusted, since when, and what drift was measured when it was registered.
+   Refresh = register a new snapshot, re-verify hashes, re-capture what changed.
+3. **Provenance is pinned by snapshot date + SHA-256 of `design.png`** (byte-reproducible
+   via `exportAsync` at fixed scale). If a working REST token ever returns, version ids
+   are recorded *in addition*, never as a precondition.
+4. **Read-only, and only the trusted snapshot may be cited for new work.** Screens
+   captured from earlier copies keep a visible `copy-derived` flag until re-verified
+   against the current snapshot — R3's "provisional stays visible" applied at file level.
+
+R1–R4 are unchanged; this amendment changes only *how* artifacts are captured and *what
+their citations are pinned to*.
 
 ## Alternatives considered
 

@@ -1,95 +1,115 @@
 # Provenance — which Figma file this manifest actually trusts
 
-> **Short version.** The manifest cites two different Figma files, neither of them the
-> designer's canonical one, and the REST API that would let us version-pin a citation is
-> returning `403`. Everything captured under `resonance-80bf` and later is therefore
-> flagged `provenance: copy-derived` and pinned by a **SHA-256 of `design.png`** instead of
-> a Figma version id. The real fix — read-only access to the canonical file — is filed as a
-> follow-up seed, not done here.
+> **Short version.** The manifest trusts a **dated snapshot** of the designer's file,
+> delivered as a copy and registered here. The current trusted snapshot is
+> **`A33kUDiRAatoMDx3L1m2Y4` — `Resonance 9/10/26`**, taken 2026-09-10. REST is still
+> `403`, so captures are pinned by **SHA-256 of `design.png`** plus the snapshot date,
+> not by a Figma version id. Screens captured from earlier copies keep their
+> `copy-derived` flag until re-verified against the current snapshot.
 
-## The three file keys in play
+## The snapshot model
 
-| fileKey                  | Name                   | Role                                                                                    |
-| ------------------------ | ---------------------- | --------------------------------------------------------------------------------------- |
-| `7FOYLdtzCTITjcPeGKwF31` | original               | The first file the manifest referenced. Starter-tier team, budget-capped (`mx-29478a`). |
-| `UYlkCL7jkCVgKWiqAVlEFp` | Pro-team copy          | What screens **01–07** were captured from, and what `_index.md` still declares.         |
-| `vC0O5uyMmw1o5vYHmCoOXq` | **`Resonance (Copy)`** | What the Desktop Bridge is connected to **today**, and the source of screens **08–13**. |
+We cannot read the designer's live file: the workflow needs the Desktop Bridge plugin
+(REST is dead, see below), and the live file sits in a Starter-tier team whose REST
+budget cap is what pushed us onto copies in the first place. So the working arrangement
+is explicit **dated snapshot handoffs**:
 
-Figma preserves node ids across a copy, so an id resolves in all three. **That is exactly
-the hazard**: an id keeps resolving after it has stopped meaning the same thing.
+1. A snapshot of the designer's file is taken and named with its date
+   (e.g. `Resonance 9/10/26`).
+2. That snapshot is registered here as **the trusted source**. All new captures cite its
+   `fileKey` and record `snapshotDate` in their provenance block.
+3. The snapshot is **frozen**: zero drift on day one, accumulating drift thereafter. The
+   refresh mechanism is a **new snapshot** — register the new key, re-verify hashes,
+   re-capture what changed.
+4. Reads happen through the Desktop Bridge plugin (`figma_execute` + `exportAsync`),
+   which is local and consumes **zero REST quota**. Rate limits do not apply to capture.
 
-## Why this is a copy, and what it costs
+This trades "always current" (which we never actually had) for "honestly dated": a
+citation says *what the design was on the snapshot date*, and the registry below says
+how stale that is.
 
-Nobody made a deliberate decision to design against a copy. The chain was: the canonical
-file sat in a Starter-tier team that hit a low per-team daily cap, so it was copied into a
-Pro-tier team to buy budget (`mx-29478a`); a further working copy — `Resonance (Copy)` — is
-what the Desktop Bridge plugin currently has open.
+## The file keys in play
 
-The cost is **citation rot, and it is silent**. The designer keeps editing the canonical
-file. A copy is a snapshot. Node `1443:78153` resolves in the copy forever, so a citation
-never _fails_ — it just quietly stops describing the frame the designer is now working on.
-No tool errors. Nothing turns red. This is precisely the self-certification failure mode
-ADR-0019 exists to prevent, reintroduced one layer down: instead of asserting parity in
-prose, we would be asserting it against a stale image.
+| fileKey                  | Name                   | Role                                                                                     |
+| ------------------------ | ---------------------- | ---------------------------------------------------------------------------------------- |
+| `A33kUDiRAatoMDx3L1m2Y4` | **`Resonance 9/10/26`** | **Trusted snapshot (2026-09-10).** The source for all new captures.                      |
+| `vC0O5uyMmw1o5vYHmCoOXq` | `Resonance (Copy)`     | **Cache.** Historical source of screens 08–13 (captured 2026-07-26/29). Do not cite for new work. |
+| `UYlkCL7jkCVgKWiqAVlEFp` | Pro-team copy          | Historical source of screens 01–07. Do not cite for new work.                            |
+| `7FOYLdtzCTITjcPeGKwF31` | original               | The designer's live team file lineage (Starter-tier, REST budget-capped, `mx-29478a`).   |
 
-A second, blunter point: **this workflow only ever needs to READ Figma.** A copy buys
-nothing for a read-only consumer. It costs integrity for free.
+Figma preserves node ids across a copy, so an id resolves in **all** of these files.
+**That is exactly the hazard**: an id keeps resolving after it has stopped meaning the
+same thing. Never trust that an id resolved = the id is current; check it against the
+trusted snapshot, by name, in-session.
+
+## Drift is real — measured at snapshot registration (2026-09-11)
+
+Registering `Resonance 9/10/26` immediately demonstrated the rot this file warns about,
+by comparing it with the July copy the manifest had been citing:
+
+- **`1473:81622` no longer exists.** That is the node `_index.md` screen 05 (ProfileGen
+  draft) cites as built-to-design. The designer deleted or replaced the frame. The id
+  still resolves happily in `Resonance (Copy)` — which is precisely why resolving in a
+  stale copy proves nothing.
+- **The interview flow grew ~40%**: `Onboarding/Creator/Interview` 48 → 67 frames,
+  `ProfileGen/Interview` 34 → 51, `Interview/Generated` 2 → 1, total top-level MVP
+  frames 261 → 310.
+- The snapshot has new pages the copy lacks, including **`Weave OS Architecture`**.
+
+Consequence: every citation from screens 01–13 is descriptive of a July copy, not of the
+current design. Re-verification against the trusted snapshot is tracked as its own seed
+(see below); until a screen is re-verified, its rows keep the `copy-derived` flag.
 
 ## REST is dead — `403`
 
 `FIGMA_ACCESS_TOKEN` returns `403`. Every REST-backed tool is unavailable:
 `figma_get_file_data`, `figma_get_file_versions`, `figma_get_file_at_version`,
-`download_assets`, `get_screenshot`, `get_metadata`.
+`download_assets`, `get_screenshot`, `get_metadata`. **Figma version ids are not
+obtainable.** If a working token ever materializes, record version ids *in addition to*
+hashes; do not wait for one.
 
-The consequence that matters here: **Figma version ids are not obtainable.** The natural
-drift detector — "this capture came from version `<id>`" — cannot be recorded at all.
+## The substitute: content-hash pinning + snapshot date
 
-## The substitute: content-hash pinning
-
-Since we cannot pin a version, we pin the bytes. Every `design.md` captured from
-`vC0O5uyMmw1o5vYHmCoOXq` carries a provenance block:
+Every `design.md` captured from the trusted snapshot carries a provenance block:
 
 ```
-fileKey:        vC0O5uyMmw1o5vYHmCoOXq
-nodeId:         1443:78153
-capturedAt:     2026-07-26T23:41:08Z
-designPngSha256: f5c8377d…
-figmaVersionId: UNAVAILABLE — REST 403; content hash is the drift detector
-provenance:     copy-derived
+fileKey:         A33kUDiRAatoMDx3L1m2Y4
+snapshotDate:    2026-09-10
+nodeId:          1443:78282
+capturedAt:      <ISO 8601 UTC>
+capturedVia:     Desktop Bridge plugin — figma_execute + node.exportAsync({PNG, SCALE 1})
+designPngSha256: <sha>
+figmaVersionId:  UNAVAILABLE — REST 403; snapshot date + content hash are the drift detectors
+provenance:      snapshot-derived
 ```
 
 `exportAsync` at a fixed scale is byte-reproducible: re-exporting an unchanged frame
-reproduces the identical PNG and therefore the identical hash (verified for `1443:78153`
-under `resonance-80bf`). So the check is cheap and needs no REST access:
+reproduces the identical PNG and hash (verified for `1443:78153` under `resonance-80bf`).
+Hash matches → the frame is unchanged **within this snapshot**. Hash differs across
+snapshots → the frame moved; re-audit before trusting any spec derived from it.
 
-```bash
-# re-capture the frame via the bridge, then:
-shasum -a 256 design/manifest/screens/12-search-creators/design.png
-```
+## Rules
 
-Hash matches → the frame is unchanged **in this copy**. Hash differs → the frame moved;
-re-audit before trusting any spec derived from it.
+1. **New captures cite only the trusted snapshot** (`A33kUDiRAatoMDx3L1m2Y4`), with the
+   provenance block above. Do not add citations to any other key.
+2. Screens **01–13** stay flagged `copy-derived` until re-verified against the trusted
+   snapshot (tracked by `resonance-e30b`, split out of `resonance-6db8`).
+3. **Read-only.** Never call a Figma write tool against any of these files. A write to a
+   snapshot creates yet another divergent artifact.
+4. Any citation you did not personally resolve in-session against the trusted snapshot is
+   `PROVISIONAL` (README R3).
+5. When a **new snapshot** is registered: add its key to the table above, demote the old
+   one to cache, re-verify hashes for every `verified` screen, and note measured drift in
+   this file.
 
-**What this does NOT detect:** a change the designer made in the _canonical_ file. The copy
-is frozen; its hash will match happily while the real design drifts away. Content hashing
-catches drift _within_ the file we can see. It cannot catch drift _between_ files. Only the
-migration below fixes that.
+## History
 
-## Rules until the migration lands
-
-1. Screens **08–13** are `copy-derived`. Treat every value in them as descriptive of
-   `Resonance (Copy)` at its capture time (08–12 `2026-07-26T23:41:08Z`, 13
-   `2026-07-29T07:04:23Z`), not as the designer's current intent.
-2. Do not add new citations to `UYlkCL7jkCVgKWiqAVlEFp` — it is not the file the bridge is
-   connected to, so a new citation against it cannot be verified in-session.
-3. **Read-only.** Never call a Figma write tool against any of these files. We do not own
-   the canonical file, and a write to a copy creates a fourth divergent artifact.
-4. Any citation you did not personally resolve in-session is `PROVISIONAL` (README R3).
-
-## The fix, and where it is tracked
-
-Tracked by **`resonance-6db8`** — read-only canonical-Figma migration + ADR-0019 amendment.
-Target state: point the bridge at the designer's canonical file with view access, refresh
-`FIGMA_ACCESS_TOKEN` so REST version-pinning works again, version-pin every capture, write
-only ever to a file we own, and demote `Resonance (Copy)` to a cache. Until that lands, this
-document is the honest statement of what the manifest's citations are worth.
+- Screens 01–07 were captured from `UYlkCL7jkCVgKWiqAVlEFp` while REST still worked;
+  08–13 from `vC0O5uyMmw1o5vYHmCoOXq` via the Desktop Bridge. The chain that produced
+  those copies (Starter-tier REST caps → Pro-team copy → working copy) is preserved in
+  git history of this file; the lesson it taught — an id that resolves is not an id that
+  means the same thing — is the reason the snapshot model above exists.
+- The original target of `resonance-6db8` was read-only access to the designer's *live*
+  canonical file with REST version-pinning. The snapshot model was adopted instead
+  (Jared, 2026-09-11): it avoids both the access friction and the REST budget cap, at
+  the cost of honest, dated staleness.

@@ -4,10 +4,14 @@ Screen ⇄ route ⇄ component ⇄ verified Figma node ⇄ status. See [README.m
 the protocol (R1–R4) and the **Capture notes** (the REST path is dead — use the Desktop
 Bridge).
 
-**Two source files.** Screens **01–07** were captured from `UYlkCL7jkCVgKWiqAVlEFp`; screens
-**08–13** from `vC0O5uyMmw1o5vYHmCoOXq` (`Resonance (Copy)`), which is the file the Desktop
-Bridge is connected to. Node ids resolve in both — that is the hazard, not the reassurance.
-Read [PROVENANCE.md](PROVENANCE.md) before adding a citation.
+**Source files.** The trusted source for **new** captures is the dated snapshot
+**`A33kUDiRAatoMDx3L1m2Y4` (`Resonance 9/10/26`)** — see [PROVENANCE.md](PROVENANCE.md).
+Screens **01–07** were captured from `UYlkCL7jkCVgKWiqAVlEFp` and **08–13** from
+`vC0O5uyMmw1o5vYHmCoOXq` (`Resonance (Copy)`); all thirteen remain **copy-derived** until
+re-verified against the trusted snapshot. Node ids resolve in every copy — that is the
+hazard, not the reassurance. Known drift already measured: screen 05's cited node
+`1473:81622` **does not exist** in the trusted snapshot, and the Interview frame sets have
+grown ~40% since the July copies. Read PROVENANCE.md before adding a citation.
 
 ## ★ Golden rule — the Figma is the definitive source of truth (zero drift)
 
