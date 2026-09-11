@@ -87,14 +87,14 @@ than adding a second chip that drifts.
 
 ## Token fidelity — colors + type are EXTRACTED
 
-Colors and typography are **extracted** (from `get_design_context` on the color
+Colors and typography are **extracted** from the Design System color and Fonts frames above
+(originally via `get_design_context`, before REST died; re-read them through the bridge as
+described under _Figma source_). Two things to know:
 
-- Fonts frames above). Two things to know:
-
-* **The neutral ramp is inverted:** `gray-0` = black … `gray-900` = white. Semantic roles
+- **The neutral ramp is inverted:** `gray-0` = black … `gray-900` = white. Semantic roles
   are mapped from the ramp's Figma labels (Text=`gray-300` `#2b2b2b`, Subtext=`gray-600`
   `#a6a6a6`, Border=`gray-700` `#cdcdcd`, Background=`gray-800` `#f2f2f2`).
-* **Font family is "Helvetica Neue"** (not Inter). Type scale + weights (400/500/700) are
+- **Font family is "Helvetica Neue"** (not Inter). Type scale + weights (400/500/700) are
   in `theme.css` (`--text-*`) and mirrored in `tokens/`.
 
 Still design-consistent **defaults** (the design system ships no explicit token frame for
