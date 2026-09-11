@@ -94,7 +94,7 @@ The original decision documented a REST capture funnel (`get_metadata` →
 `get_screenshot` → `get_design_context`) and REST-derived metadata dumps. That path is
 dead: `FIGMA_ACCESS_TOKEN` returns `403`, every REST-backed tool with it, and Figma
 version ids are therefore unobtainable. Worse, the manifest's citations pointed at
-stale *copies* of the designer's file, where a node id resolves forever after it has
+stale _copies_ of the designer's file, where a node id resolves forever after it has
 stopped describing the designer's current frame — re-registering a fresh snapshot
 measured this directly (a cited node deleted; the interview flow grown ~40%).
 
@@ -109,13 +109,13 @@ The ratified capture and provenance model is now:
    Refresh = register a new snapshot, re-verify hashes, re-capture what changed.
 3. **Provenance is pinned by snapshot date + SHA-256 of `design.png`** (byte-reproducible
    via `exportAsync` at fixed scale). If a working REST token ever returns, version ids
-   are recorded *in addition*, never as a precondition.
+   are recorded _in addition_, never as a precondition.
 4. **Read-only, and only the trusted snapshot may be cited for new work.** Screens
    captured from earlier copies keep a visible `copy-derived` flag until re-verified
    against the current snapshot — R3's "provisional stays visible" applied at file level.
 
-R1–R4 are unchanged; this amendment changes only *how* artifacts are captured and *what
-their citations are pinned to*.
+R1–R4 are unchanged; this amendment changes only _how_ artifacts are captured and _what
+their citations are pinned to_.
 
 ## Alternatives considered
 

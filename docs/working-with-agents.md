@@ -82,8 +82,10 @@ build`), don't assert success from inspection.
 - **Credentials:** to _run_ features (not just typecheck/unit-test), fill `.env` from
   `.env.example`. Agents can build and unit/type-test without them; live DB/AI/E2E need
   them.
-- **Figma quota:** if the Professional-plan quota has reset, finalize the provisional
-  design tokens from the real Figma variables (`packages/ui/CLAUDE.md` has the node ids).
+- **Figma tokens:** the provisional design tokens still need finalizing from the real Figma
+  variables. Capture through the Desktop Bridge (local, no REST quota — procedure in
+  `design/manifest/README.md` § Capture notes), citing only the trusted snapshot registered in
+  `design/manifest/PROVENANCE.md`. `packages/ui/CLAUDE.md` has the node ids.
 
 ## Keep the framework true (the maintenance contract)
 

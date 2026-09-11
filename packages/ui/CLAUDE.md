@@ -80,9 +80,10 @@ than adding a second chip that drifts.
   - `_index.md`; codification tracked in `resonance-042f`.
 - Design System page: node `252:288` (Brand `1509:75825`, Gray Scale `1509:75822`,
   Indicators `1509:75823`, Fonts `1429:46784`)
-- **Reading tokens:** `get_variable_defs` is selection-gated in this setup (it reads the
-  desktop selection, ignoring `nodeId` → "nothing selected"). Use **`get_design_context`
-  on a specific frame** instead — the returned code carries resolved hexes / font specs.
+- **Reading tokens:** `get_variable_defs` and `get_design_context` are on the dead REST path
+  (`403`). Read token values through the Desktop Bridge by walking the Design System frames
+  above (`fills`, `fontName`, `fontSize`, `lineHeight`) — step 3 of the README capture notes —
+  citing only the trusted snapshot in PROVENANCE.md.
 
 ## Token fidelity — colors + type are EXTRACTED
 

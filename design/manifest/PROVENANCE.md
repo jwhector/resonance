@@ -25,17 +25,17 @@ is explicit **dated snapshot handoffs**:
    which is local and consumes **zero REST quota**. Rate limits do not apply to capture.
 
 This trades "always current" (which we never actually had) for "honestly dated": a
-citation says *what the design was on the snapshot date*, and the registry below says
+citation says _what the design was on the snapshot date_, and the registry below says
 how stale that is.
 
 ## The file keys in play
 
-| fileKey                  | Name                   | Role                                                                                     |
-| ------------------------ | ---------------------- | ---------------------------------------------------------------------------------------- |
-| `A33kUDiRAatoMDx3L1m2Y4` | **`Resonance 9/10/26`** | **Trusted snapshot (2026-09-10).** The source for all new captures.                      |
-| `vC0O5uyMmw1o5vYHmCoOXq` | `Resonance (Copy)`     | **Cache.** Historical source of screens 08–13 (captured 2026-07-26/29). Do not cite for new work. |
-| `UYlkCL7jkCVgKWiqAVlEFp` | Pro-team copy          | Historical source of screens 01–07. Do not cite for new work.                            |
-| `7FOYLdtzCTITjcPeGKwF31` | original               | The designer's live team file lineage (Starter-tier, REST budget-capped, `mx-29478a`).   |
+| fileKey                  | Name                    | Role                                                                                              |
+| ------------------------ | ----------------------- | ------------------------------------------------------------------------------------------------- |
+| `A33kUDiRAatoMDx3L1m2Y4` | **`Resonance 9/10/26`** | **Trusted snapshot (2026-09-10).** The source for all new captures.                               |
+| `vC0O5uyMmw1o5vYHmCoOXq` | `Resonance (Copy)`      | **Cache.** Historical source of screens 08–13 (captured 2026-07-26/29). Do not cite for new work. |
+| `UYlkCL7jkCVgKWiqAVlEFp` | Pro-team copy           | Historical source of screens 01–07. Do not cite for new work.                                     |
+| `7FOYLdtzCTITjcPeGKwF31` | original                | The designer's live team file lineage (Starter-tier, REST budget-capped, `mx-29478a`).            |
 
 Figma preserves node ids across a copy, so an id resolves in **all** of these files.
 **That is exactly the hazard**: an id keeps resolving after it has stopped meaning the
@@ -65,7 +65,7 @@ current design. Re-verification against the trusted snapshot is tracked as its o
 `FIGMA_ACCESS_TOKEN` returns `403`. Every REST-backed tool is unavailable:
 `figma_get_file_data`, `figma_get_file_versions`, `figma_get_file_at_version`,
 `download_assets`, `get_screenshot`, `get_metadata`. **Figma version ids are not
-obtainable.** If a working token ever materializes, record version ids *in addition to*
+obtainable.** If a working token ever materializes, record version ids _in addition to_
 hashes; do not wait for one.
 
 ## The substitute: content-hash pinning + snapshot date
@@ -109,7 +109,7 @@ snapshots → the frame moved; re-audit before trusting any spec derived from it
   those copies (Starter-tier REST caps → Pro-team copy → working copy) is preserved in
   git history of this file; the lesson it taught — an id that resolves is not an id that
   means the same thing — is the reason the snapshot model above exists.
-- The original target of `resonance-6db8` was read-only access to the designer's *live*
+- The original target of `resonance-6db8` was read-only access to the designer's _live_
   canonical file with REST version-pinning. The snapshot model was adopted instead
   (Jared, 2026-09-11): it avoids both the access friction and the REST budget cap, at
   the cost of honest, dated staleness.
