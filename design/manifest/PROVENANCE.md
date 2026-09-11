@@ -34,7 +34,7 @@ how stale that is.
 | ------------------------ | ----------------------- | ------------------------------------------------------------------------------------------------- |
 | `A33kUDiRAatoMDx3L1m2Y4` | **`Resonance 9/10/26`** | **Trusted snapshot (2026-09-10).** The source for all new captures.                               |
 | `vC0O5uyMmw1o5vYHmCoOXq` | `Resonance (Copy)`      | **Cache.** Historical source of screens 08–13 (captured 2026-07-26/29). Do not cite for new work. |
-| `UYlkCL7jkCVgKWiqAVlEFp` | Pro-team copy           | Historical source of screens 01–07. Do not cite for new work.                                     |
+| `UYlkCL7jkCVgKWiqAVlEFp` | Pro-team copy           | Historical source of screens 01–05 and 07; screen 06 has been re-verified. Do not cite for new work. |
 | `7FOYLdtzCTITjcPeGKwF31` | original                | The designer's live team file lineage (Starter-tier, REST budget-capped, `mx-29478a`).            |
 
 Figma preserves node ids across a copy, so an id resolves in **all** of these files.
@@ -56,9 +56,10 @@ by comparing it with the July copy the manifest had been citing:
   frames 261 → 310.
 - The snapshot has new pages the copy lacks, including **`Weave OS Architecture`**.
 
-Consequence: every citation from screens 01–13 is descriptive of a July copy, not of the
-current design. Re-verification against the trusted snapshot is tracked as its own seed
-(see below); until a screen is re-verified, its rows keep the `copy-derived` flag.
+Consequence: copy-derived citations are descriptive of a July copy, not of the current
+design. Screen 06 was re-verified during creator-onboarding discovery; the remaining
+re-verification is tracked separately. Until a screen is re-verified, its row keeps the
+`copy-derived` flag.
 
 ## REST is dead — `403`
 
@@ -92,8 +93,9 @@ snapshots → the frame moved; re-audit before trusting any spec derived from it
 
 1. **New captures cite only the trusted snapshot** (`A33kUDiRAatoMDx3L1m2Y4`), with the
    provenance block above. Do not add citations to any other key.
-2. Screens **01–13** stay flagged `copy-derived` until re-verified against the trusted
-   snapshot (tracked by `resonance-e30b`, split out of `resonance-6db8`).
+2. Screens **01–05 and 07–13** stay flagged `copy-derived` until re-verified against the
+   trusted snapshot (tracked by `resonance-e30b`, split out of `resonance-6db8`). Screen
+   06 and screens 14–23 are `snapshot-derived`.
 3. **Read-only.** Never call a Figma write tool against any of these files. A write to a
    snapshot creates yet another divergent artifact.
 4. Any citation you did not personally resolve in-session against the trusted snapshot is
@@ -104,7 +106,7 @@ snapshots → the frame moved; re-audit before trusting any spec derived from it
 
 ## History
 
-- Screens 01–07 were captured from `UYlkCL7jkCVgKWiqAVlEFp` while REST still worked;
+- Screens 01–07 were originally captured from `UYlkCL7jkCVgKWiqAVlEFp` while REST still worked;
   08–13 from `vC0O5uyMmw1o5vYHmCoOXq` via the Desktop Bridge. The chain that produced
   those copies (Starter-tier REST caps → Pro-team copy → working copy) is preserved in
   git history of this file; the lesson it taught — an id that resolves is not an id that
@@ -113,3 +115,5 @@ snapshots → the frame moved; re-audit before trusting any spec derived from it
   canonical file with REST version-pinning. The snapshot model was adopted instead
   (Jared, 2026-09-11): it avoids both the access friction and the REST budget cap, at
   the cost of honest, dated staleness.
+- Creator-onboarding discovery (`resonance-d99b`, 2026-09-11) re-verified screen 06 and
+  added snapshot-derived screens 14–23 from the emerging-creator flow.

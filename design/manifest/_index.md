@@ -6,12 +6,12 @@ Bridge).
 
 **Source files.** The trusted source for **new** captures is the dated snapshot
 **`A33kUDiRAatoMDx3L1m2Y4` (`Resonance 9/10/26`)** — see [PROVENANCE.md](PROVENANCE.md).
-Screens **01–07** were captured from `UYlkCL7jkCVgKWiqAVlEFp` and **08–13** from
-`vC0O5uyMmw1o5vYHmCoOXq` (`Resonance (Copy)`); all thirteen remain **copy-derived** until
-re-verified against the trusted snapshot. Node ids resolve in every copy — that is the
-hazard, not the reassurance. Known drift already measured: screen 05's cited node
-`1473:81622` **does not exist** in the trusted snapshot, and the Interview frame sets have
-grown ~40% since the July copies. Read PROVENANCE.md before adding a citation.
+Screens **01–05 and 07** were captured from `UYlkCL7jkCVgKWiqAVlEFp`, and **08–13** from
+`vC0O5uyMmw1o5vYHmCoOXq` (`Resonance (Copy)`); those remain **copy-derived** until
+re-verified. Screen **06** and screens **14–23** are snapshot-derived. Node ids resolve in
+every copy — that is the hazard, not the reassurance. Known drift already measured: screen
+05's cited node `1473:81622` **does not exist** in the trusted snapshot, and the Interview
+frame sets have grown ~40% since the July copies. Read PROVENANCE.md before adding a citation.
 
 ## ★ Golden rule — the Figma is the definitive source of truth (zero drift)
 
@@ -33,10 +33,20 @@ into a rule that overrides the design.
 | 01  | What brought you?                     | `1519:78312` | `/start`                         | `intent-picker-card`                                  | ✅ valid                                                                             | 🟢 built to design (cardless/boxed-radio/gray-disabled) · `resonance-c2d2`                                 |
 | 02  | Create account                        | `1526:78839` | `/signup`                        | `create-account-card`                                 | ✅ valid                                                                             | 🟢 reconciled (cardless/mark/gray-disabled/"Continue") · `c7c9`+`dba0`                                     |
 | 03  | Email verify (OTP)                    | `1526:79050` | `/verify`                        | `email-verify-card`                                   | ✅ valid                                                                             | 🟢 reconciled (cardless/OTP/gray-disabled) · `resonance-c7c9`                                              |
-| 04  | Interview                             | `1443:78282` | `/onboarding/creator`            | `app-nav` + `weave-interview-rail` + `weave-composer` | ✅ `1443:78283` (fixed)                                                              | 🟢 rebuilt to design (start state) · `resonance-6e42`                                                      |
+| 04  | Established-creator interview (legacy capture) | `1443:78282` | `/onboarding/creator` | `app-nav` + `weave-interview-rail` + `weave-composer` | ⚠️ copy-derived; not the approved emerging flow | 🟡 built legacy start state; superseded for this epic by screen 14 |
 | 05  | ProfileGen draft                      | `1473:81622` | `/onboarding/creator` (post-gen) | `profile-draft-panels`                                | ⚠️ node missing in trusted snapshot — copy-derived, re-verify under `resonance-e30b` | 🟡 provisional — reconciled against the July copy only (woven inline + bottom composer) · `resonance-c7c9` |
-| 06  | Onboarded                             | `1443:78273` | —                                | —                                                     | n/a                                                                                  | 🟡 orphan-design → **DEFER** (blocked on commerce/community stubs, bcd9)                                   |
+| 06  | Onboarded                             | `1443:78273` | post-commit creator profile      | completion rail + creator profile                     | ✅ snapshot-derived                                                                  | 🟡 orphan-design → **IN approved onboarding MVP**                                                        |
 | 07  | Sign in (`Onboarding/Creator/SignIn`) | `1463:71449` | —                                | —                                                     | ✅ valid                                                                             | 🟡 orphan-design → **DEFER** · **row corrected, see note** (`resonance-80bf`)                              |
+| 14  | Emerging creator · opening            | `1473:81547` | `/onboarding/creator`            | staged interview shell                                | ✅ snapshot-derived                                                                  | 🟡 orphan-design → **IN approved onboarding MVP**                                                        |
+| 15  | Emerging creator · name               | `1473:81553` | `/onboarding/creator`            | name-stage controls                                   | ✅ snapshot-derived                                                                  | 🟡 orphan-design → **IN approved onboarding MVP**                                                        |
+| 16  | Emerging creator · what to share      | `1473:81556` | `/onboarding/creator`            | answer-stage controls                                 | ✅ snapshot-derived                                                                  | 🟡 orphan-design → **IN approved onboarding MVP**                                                        |
+| 17  | Emerging creator · origin             | `1473:81565` | `/onboarding/creator`            | answer-stage controls                                 | ✅ snapshot-derived                                                                  | 🟡 orphan-design → **IN approved onboarding MVP**                                                        |
+| 18  | Emerging creator · intended experience | `1473:81568` | `/onboarding/creator`           | answer-stage controls                                 | ✅ snapshot-derived                                                                  | 🟡 orphan-design → **IN approved onboarding MVP**                                                        |
+| 19  | Emerging creator · resonance moment   | `1473:81571` | `/onboarding/creator`            | answer-stage controls                                 | ✅ snapshot-derived                                                                  | 🟡 orphan-design → **IN approved onboarding MVP**                                                        |
+| 20  | Emerging creator · resonant people    | `1473:81574` | `/onboarding/creator`            | answer-stage controls                                 | ✅ snapshot-derived                                                                  | 🟡 orphan-design → **IN approved onboarding MVP**                                                        |
+| 21  | Emerging creator · expression style   | `1556:79716` | `/onboarding/creator`            | option-stage controls                                 | ✅ snapshot-derived                                                                  | 🟡 orphan-design → **IN approved onboarding MVP**                                                        |
+| 22  | Emerging creator · summary            | `1485:48994` | `/onboarding/creator`            | confirmation stage                                    | ✅ snapshot-derived                                                                  | 🟡 orphan-design → **IN approved onboarding MVP**                                                        |
+| 23  | Emerging creator · profile foundation | `2065:58399` | `/onboarding/creator`            | inline editable draft                                 | ✅ snapshot-derived                                                                  | 🟡 orphan-design → **IN approved onboarding MVP**                                                        |
 
 ### Correction — row 07 (`resonance-80bf`)
 
@@ -145,6 +155,16 @@ Two things about this row are unlike 01–12:
 | 11 search-posts                          |     ✅     |    ✅     |   — (orphan)    |
 | 12 search-creators                       |     ✅     |    ✅     |  ✅ (+parity)   |
 | 13 select-topics                         |     ✅     |    ✅     |  ✅ (+parity)   |
+| 14 creator-opening                       |     ✅     |    ✅     |   — (orphan)    |
+| 15 creator-name                          |     ✅     |    ✅     |   — (orphan)    |
+| 16 creator-offering                      |     ✅     |    ✅     |   — (orphan)    |
+| 17 creator-origin                        |     ✅     |    ✅     |   — (orphan)    |
+| 18 creator-intended-experience           |     ✅     |    ✅     |   — (orphan)    |
+| 19 creator-resonance-moment              |     ✅     |    ✅     |   — (orphan)    |
+| 20 creator-resonant-people               |     ✅     |    ✅     |   — (orphan)    |
+| 21 creator-expression-style              |     ✅     |    ✅     |   — (orphan)    |
+| 22 creator-summary                       |     ✅     |    ✅     |   — (orphan)    |
+| 23 creator-profile-foundation            |     ✅     |    ✅     |   — (orphan)    |
 
 Row 07's label is now the frame's **real Figma name**. It was previously listed here as
 "07 sign-in" while the screens table above called the same node "Member feed home" — the two
