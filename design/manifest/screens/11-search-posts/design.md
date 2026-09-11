@@ -18,7 +18,7 @@ provenance:      copy-derived
 **Figma version ids are not obtainable** — `FIGMA_ACCESS_TOKEN` returns `403`, so REST
 including `get_file_versions` is dead. **The SHA-256 of `design.png` is the substitute drift
 detector**; `exportAsync` at a fixed scale is byte-reproducible. See
-[../../PROVENANCE.md](../../PROVENANCE.md) and `resonance-6db8`.
+[../../PROVENANCE.md](../../PROVENANCE.md).
 Node inventory: [../../metadata/member-search-frames.md](../../metadata/member-search-frames.md).
 
 - **Frame:** 1512×982, bg `#ffffff`. Content column is **1409** tall — scrolls.
