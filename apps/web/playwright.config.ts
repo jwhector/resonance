@@ -6,6 +6,11 @@ import { defineConfig, devices } from "@playwright/test";
  */
 export default defineConfig({
   testDir: "./e2e",
+  // Playwright's default pattern also collects `*.test.ts`, which is Vitest's extension here
+  // (docs/conventions.md § Testing) — and `e2e/lib` holds unit tests for the fixture helpers.
+  // Loading one of those in a Playwright worker calls Vitest's `describe` outside a Vitest worker,
+  // which throws and takes the whole E2E run with it.
+  testMatch: "**/*.spec.ts",
   fullyParallel: true,
   retries: process.env.CI ? 2 : 0,
   // Every spec that drives the passwordless front door signs up a real account, and whichever

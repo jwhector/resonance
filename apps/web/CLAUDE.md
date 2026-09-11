@@ -69,9 +69,16 @@ e2e/
 └── lib/                          signup.ts — the shared passwordless front door (either channel),
                                   driven to /interests, and the account ledger it tears down
                                   · db.ts — fixture DB plumbing · discovery-fixtures.ts
-                                  — ready/draft creator profiles · interest-fixtures.ts — the
-                                  creator seeded to match a member's interest text exactly
+                                  — ready/draft creator profiles · discovery-query.ts — the
+                                  run-scoped query text those profiles embed, database-free so
+                                  discovery-query.test.ts (Vitest) can pin the ranking margin
+                                  · interest-fixtures.ts — the creator seeded to match a
+                                  member's interest text exactly
 ```
+
+The two runners split `e2e/` by filename, not by directory: Playwright collects only `*.spec.ts`
+and Vitest excludes only those, so a fixture helper under `e2e/lib` can carry a plain `*.test.ts`
+unit test (`playwright.config.ts`, `vitest.config.ts`).
 
 Fixture cleanup lives in `afterEach`, never a `finally` inside a test: Playwright aborts the test
 body on a timeout, so a `finally` there silently leaks rows into the shared dev database — the

@@ -1,6 +1,7 @@
 import { createFakeEmbedder } from "@resonance/ai/testing";
 import { createCreatorProfile, createDb, upsertProfileEmbedding } from "@resonance/db";
 import { ensureDatabaseUrl, rawClient } from "./db";
+import { discoveryQueryFor, SECOND_FIXTURE_SUFFIX } from "./discovery-query";
 
 /**
  * Deterministic discovery fixtures for the `/discover` E2E.
@@ -36,6 +37,13 @@ import { ensureDatabaseUrl, rawClient } from "./db";
  * `creator_profiles` and `follows` rows go with them via `ON DELETE cascade`. The database
  * plumbing itself — reaching the same Neon instance from the test process, and the raw SQL
  * escape hatch — is shared with the other fixtures in `./db`.
+ *
+ * ## Why the query text is a high-entropy token
+ *
+ * Cleanup can fail — it has — and the dev database is shared, so fixtures from earlier runs may
+ * still be sitting in it. Those rows must be inert rather than competitors, which is a property
+ * of the query TEXT, not of the display names: ranking reads what was embedded. `./discovery-query`
+ * owns that property and documents the measurements behind it; `discovery-query.test.ts` pins it.
  */
 
 /** One seeded creator. */
@@ -74,9 +82,7 @@ export async function seedDiscoveryFixture(runId: string): Promise<DiscoveryFixt
   const raw = rawClient(db);
   const embedder = createFakeEmbedder();
 
-  // Distinctive enough that it cannot collide with a real profile's text, and well under the
-  // 200-character cap `DiscoveryQuerySchema` enforces.
-  const query = `zzdiscovery ${runId} handthrown stoneware kiln work`;
+  const query = discoveryQueryFor(runId);
   const offering = {
     title: `Stoneware mug set ${runId}`,
     description: "Four hand-thrown mugs, glazed and fired in a small gas kiln.",
@@ -128,7 +134,7 @@ export async function seedDiscoveryFixture(runId: string): Promise<DiscoveryFixt
   const second = await seed(
     "second",
     `E2E Second ${runId}`,
-    `${query} plus adjacent glaze notes`,
+    `${query}${SECOND_FIXTURE_SUFFIX}`,
     "ready",
   );
   const draft = await seed("draft", `E2E Draft ${runId}`, query, "draft");

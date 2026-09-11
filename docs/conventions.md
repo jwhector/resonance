@@ -172,7 +172,8 @@ ratified decision, **mulch** for an agent-discovered learning, a **seed** for wo
 
 - Unit/integration: **Vitest**, co-located `*.test.ts` next to source.
 - Components: **React Testing Library** (`*.test.tsx`).
-- E2E: **Playwright** in `apps/web/e2e`.
+- E2E: **Playwright** `*.spec.ts` in `apps/web/e2e`. The runners split by filename, so
+  `e2e/lib` helpers may carry Vitest `*.test.ts` unit tests.
 - **Test-only fakes live behind a package's `./testing` subpath** (`@resonance/x/testing`), never
   the main entrypoint, and are supplied via **DI** — never selected by a runtime env flag
   (ADR-0018). Use the `/testing` suffix **uniformly** (`@resonance/db/testing`,
