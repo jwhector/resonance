@@ -9,7 +9,7 @@ product approval narrowed the first usable release to the emerging-creator path.
 - **fileName:** `Resonance 9/10/26`
 - **snapshotDate:** `2026-09-10`
 - **page:** `MVP` (`1413:46640`)
-- **readAt:** `2026-09-11T22:24:17Z`–`2026-09-11T22:41:49Z`
+- **readAt:** `2026-09-11T22:24:17Z`–`2026-09-11T22:41:52Z`
 - **capturedVia:** Desktop Bridge plugin — probed status, read-only tree walks, and
   `node.exportAsync({ PNG, SCALE 1 })`
 - **provenance:** `snapshot-derived`
