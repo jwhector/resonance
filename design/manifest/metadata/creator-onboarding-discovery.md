@@ -42,59 +42,59 @@ this path. The others are profile/cover imagery or Signal/evolution prototypes.
 but deliberately not promoted to another manifest screen. “Deferred” means the design is
 valid evidence but outside the approved first release.
 
-| Node | Classification | Distinguishing evidence |
-| --- | --- | --- |
-| `1474:84342` | transition variant | intent handoff: “I have offerings, no business yet” |
-| `1473:81547` | **distinct: opening** | emerging framing, 5–10 minutes, begin/later actions |
-| `1473:81550` | opening response variant | submitted “Yes Let’s begin” appended to the earlier generic opening |
-| `1473:81553` | **distinct: creator/project name** | name input plus Good to go / I’d like help / Skip |
-| `1473:81619` | name response variant | input filled “Lumen Herb Lab”; creator says “I’m still exploring” |
-| `1473:81556` | **distinct: what to share** | products/services/sessions/experiences prompt |
-| `1473:81559` | what-to-share response variant | drafted dreamwork/herbal/session response shown above prompt |
-| `1473:81562` | what-to-share submitted variant | answer appended; alternate “what do you currently share” copy |
-| `1473:81565` | **distinct: origin** | moment or experience that shaped the work |
-| `1473:81580` | origin response variant | filled personal disconnection/herbalism answer |
-| `1473:81595` | origin submitted variant | answer appended; next-turn placeholder copy |
-| `1473:81568` | **distinct: intended experience** | asks what recipients should experience |
-| `1473:81583` | intended-experience response variant | filled calmer/reflective/inner-guidance answer |
-| `1473:81598` | intended-experience submitted variant | answer appended; next-turn placeholder copy |
-| `1473:81571` | **distinct: resonance moment** | “Yes… this is why I do this” memory/response prompt |
-| `1473:81586` | resonance response variant | filled friend/dream-reflection story |
-| `1473:81601` | resonance submitted variant | answer appended; next-turn placeholder copy |
-| `1473:81574` | **distinct: resonant people** | “Who do you want to connect with?” |
-| `1473:81589` | resonant-people response variant | filled people/context answer |
-| `1473:81604` | resonant-people submitted variant | answer appended; next-turn placeholder copy |
-| `1485:48994` | **distinct: pre-generation summary** | reflective summary plus final optional inclusion |
-| `1485:48997` | summary response variant | filled atmosphere/direction answer |
-| `1485:49000` | summary submitted variant | answer appended; next-turn placeholder copy |
-| `2065:58399` | **distinct: profile foundation** | 3 names, editable headline/About/tags, Good to go / Revise |
-| `2065:68958` | deferred refinement target | target-selection baseline |
-| `2065:69231` | deferred refinement variant | same text, creator-name selection styling differs |
-| `2065:69329` | deferred refinement variant | same text, headline selection styling differs |
-| `2065:69427` | deferred refinement variant | same text, About selection styling differs |
-| `2065:69528` | deferred refinement variant | same text, keyword selection styling differs |
-| `2065:69676` | deferred refinement: name direction | six direction choices |
-| `2067:60016` | deferred refinement: name candidates | three explained names plus regenerate |
-| `2067:60631` | deferred name-candidate variant | same copy; selection/rendering variant |
-| `2065:69924` | deferred refinement: headline direction | six direction choices |
-| `2067:60734` | deferred refinement: headline candidates | options A–C plus regenerate |
-| `2065:70506` | deferred refinement: About direction | transition says current headline is retained |
-| `2065:70661` | deferred About-direction variant | transition says a clearer headline will be explored |
-| `2067:60835` | deferred refinement: About candidates | three voice variants plus regenerate |
-| `2067:60940` | deferred About-candidate variant | same content; minor whitespace/rendering variant |
-| `2065:70771` | deferred refinement: tag direction | long preference-learning transition |
-| `2065:70918` | deferred tag-direction variant | shorter transition; same direction controls |
-| `2067:61396` | deferred refinement: tag candidates | three keyword sets plus regenerate |
-| `2068:61645` | deferred refined foundation | assembled result after target-by-target refinement |
+| Node         | Classification                           | Distinguishing evidence                                             |
+| ------------ | ---------------------------------------- | ------------------------------------------------------------------- |
+| `1474:84342` | transition variant                       | intent handoff: “I have offerings, no business yet”                 |
+| `1473:81547` | **distinct: opening**                    | emerging framing, 5–10 minutes, begin/later actions                 |
+| `1473:81550` | opening response variant                 | submitted “Yes Let’s begin” appended to the earlier generic opening |
+| `1473:81553` | **distinct: creator/project name**       | name input plus Good to go / I’d like help / Skip                   |
+| `1473:81619` | name response variant                    | input filled “Lumen Herb Lab”; creator says “I’m still exploring”   |
+| `1473:81556` | **distinct: what to share**              | products/services/sessions/experiences prompt                       |
+| `1473:81559` | what-to-share response variant           | drafted dreamwork/herbal/session response shown above prompt        |
+| `1473:81562` | what-to-share submitted variant          | answer appended; alternate “what do you currently share” copy       |
+| `1473:81565` | **distinct: origin**                     | moment or experience that shaped the work                           |
+| `1473:81580` | origin response variant                  | filled personal disconnection/herbalism answer                      |
+| `1473:81595` | origin submitted variant                 | answer appended; next-turn placeholder copy                         |
+| `1473:81568` | **distinct: intended experience**        | asks what recipients should experience                              |
+| `1473:81583` | intended-experience response variant     | filled calmer/reflective/inner-guidance answer                      |
+| `1473:81598` | intended-experience submitted variant    | answer appended; next-turn placeholder copy                         |
+| `1473:81571` | **distinct: resonance moment**           | “Yes… this is why I do this” memory/response prompt                 |
+| `1473:81586` | resonance response variant               | filled friend/dream-reflection story                                |
+| `1473:81601` | resonance submitted variant              | answer appended; next-turn placeholder copy                         |
+| `1473:81574` | **distinct: resonant people**            | “Who do you want to connect with?”                                  |
+| `1473:81589` | resonant-people response variant         | filled people/context answer                                        |
+| `1473:81604` | resonant-people submitted variant        | answer appended; next-turn placeholder copy                         |
+| `1485:48994` | **distinct: pre-generation summary**     | reflective summary plus final optional inclusion                    |
+| `1485:48997` | summary response variant                 | filled atmosphere/direction answer                                  |
+| `1485:49000` | summary submitted variant                | answer appended; next-turn placeholder copy                         |
+| `2065:58399` | **distinct: profile foundation**         | 3 names, editable headline/About/tags, Good to go / Revise          |
+| `2065:68958` | deferred refinement target               | target-selection baseline                                           |
+| `2065:69231` | deferred refinement variant              | same text, creator-name selection styling differs                   |
+| `2065:69329` | deferred refinement variant              | same text, headline selection styling differs                       |
+| `2065:69427` | deferred refinement variant              | same text, About selection styling differs                          |
+| `2065:69528` | deferred refinement variant              | same text, keyword selection styling differs                        |
+| `2065:69676` | deferred refinement: name direction      | six direction choices                                               |
+| `2067:60016` | deferred refinement: name candidates     | three explained names plus regenerate                               |
+| `2067:60631` | deferred name-candidate variant          | same copy; selection/rendering variant                              |
+| `2065:69924` | deferred refinement: headline direction  | six direction choices                                               |
+| `2067:60734` | deferred refinement: headline candidates | options A–C plus regenerate                                         |
+| `2065:70506` | deferred refinement: About direction     | transition says current headline is retained                        |
+| `2065:70661` | deferred About-direction variant         | transition says a clearer headline will be explored                 |
+| `2067:60835` | deferred refinement: About candidates    | three voice variants plus regenerate                                |
+| `2067:60940` | deferred About-candidate variant         | same content; minor whitespace/rendering variant                    |
+| `2065:70771` | deferred refinement: tag direction       | long preference-learning transition                                 |
+| `2065:70918` | deferred tag-direction variant           | shorter transition; same direction controls                         |
+| `2067:61396` | deferred refinement: tag candidates      | three keyword sets plus regenerate                                  |
+| `2068:61645` | deferred refined foundation              | assembled result after target-by-target refinement                  |
 
 ### Expression style and completion
 
-| Node | Classification | Distinguishing evidence |
-| --- | --- | --- |
-| `1485:48421` | expression-style variant | three fixed styles plus “Not sure — show me options” |
+| Node         | Classification                 | Distinguishing evidence                                    |
+| ------------ | ------------------------------ | ---------------------------------------------------------- |
+| `1485:48421` | expression-style variant       | three fixed styles plus “Not sure — show me options”       |
 | `1556:79716` | **distinct: expression style** | three styles plus Custom direction; choose-for-me and skip |
-| `1485:48584` | expression response variant | Dreamy & Reflective selected/submitted |
-| `1443:78273` | **distinct: Onboarded** | live profile plus Weave next-step rail |
+| `1485:48584` | expression response variant    | Dreamy & Reflective selected/submitted                     |
+| `1443:78273` | **distinct: Onboarded**        | live profile plus Weave next-step rail                     |
 
 The Onboarded frame is 1512×982 in the trusted snapshot. Its Weave actions are **Create
 profile image**, **Create cover image**, **Refine profile**, and **Finish for now**. These
@@ -116,19 +116,19 @@ The active corpus is
 matches the broad Figma story, but it is intentionally inert and contains documented source
 defects. It is evidence for future conformance, not a safe runtime dependency today.
 
-| Corpus stage | Figma evidence | MVP decision / divergence |
-| --- | --- | --- |
-| `opening` | `1473:81547` | Aligns on framing/time/begin; Figma has no quick/guided/reflective depth selector. |
-| `creator_or_project_name` | `1473:81553`, `1473:81619` | Aligns on provisional name/help/skip. Persist value plus status, not rendered chat. |
-| `what_they_want_to_share` | `1473:81556` | Aligns; corpus also models certainty and one conditional follow-up. MVP needs deterministic skip/continue behavior. |
-| `origin` | `1473:81565` | Aligns and optional. Figma does not expose corpus’s softer alternative. |
-| `intended_experience` | `1473:81568` | Aligns; corpus guardrails distinguish intention from guaranteed outcome. |
-| `resonance_moment` | `1473:81571` | Aligns and optional; corpus adds source weighting. |
-| `resonant_people` | `1473:81574` | Aligns; avoid target-market language per corpus. |
-| `expression_style` | `1556:79716` | Figma uses 3 fixed options + custom/choose/skip; corpus expects 5 adaptive options, up to 2 combined, creator-defined/recommended/skip. Ship the Figma control contract first and keep provider output typed. |
-| `foundation_generation` | `2065:58399` | Public fields align. Figma shows three name candidates but one headline/About set and 4 tags; corpus asks three headline/About candidates, 5–10 tags, supporting summaries, foundability feedback, regenerate, and save-later. MVP uses the Figma foundation plus direct editing and structured resume. |
-| `collaborative_refinement` | `2065:68958`–`2068:61645` | Rich Figma and corpus support exists, but explicitly deferred. `Revise with Weave` must be hidden/disabled with honest copy, not wired to a partial flow. |
-| `completion` | `1443:78273` | Aligns exactly on four next actions. MVP implements Finish for now; image/cover/refine remain later capability boundaries. |
+| Corpus stage               | Figma evidence             | MVP decision / divergence                                                                                                                                                                                                                                                                               |
+| -------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `opening`                  | `1473:81547`               | Aligns on framing/time/begin; Figma has no quick/guided/reflective depth selector.                                                                                                                                                                                                                      |
+| `creator_or_project_name`  | `1473:81553`, `1473:81619` | Aligns on provisional name/help/skip. Persist value plus status, not rendered chat.                                                                                                                                                                                                                     |
+| `what_they_want_to_share`  | `1473:81556`               | Aligns; corpus also models certainty and one conditional follow-up. MVP needs deterministic skip/continue behavior.                                                                                                                                                                                     |
+| `origin`                   | `1473:81565`               | Aligns and optional. Figma does not expose corpus’s softer alternative.                                                                                                                                                                                                                                 |
+| `intended_experience`      | `1473:81568`               | Aligns; corpus guardrails distinguish intention from guaranteed outcome.                                                                                                                                                                                                                                |
+| `resonance_moment`         | `1473:81571`               | Aligns and optional; corpus adds source weighting.                                                                                                                                                                                                                                                      |
+| `resonant_people`          | `1473:81574`               | Aligns; avoid target-market language per corpus.                                                                                                                                                                                                                                                        |
+| `expression_style`         | `1556:79716`               | Figma uses 3 fixed options + custom/choose/skip; corpus expects 5 adaptive options, up to 2 combined, creator-defined/recommended/skip. Ship the Figma control contract first and keep provider output typed.                                                                                           |
+| `foundation_generation`    | `2065:58399`               | Public fields align. Figma shows three name candidates but one headline/About set and 4 tags; corpus asks three headline/About candidates, 5–10 tags, supporting summaries, foundability feedback, regenerate, and save-later. MVP uses the Figma foundation plus direct editing and structured resume. |
+| `collaborative_refinement` | `2065:68958`–`2068:61645`  | Rich Figma and corpus support exists, but explicitly deferred. `Revise with Weave` must be hidden/disabled with honest copy, not wired to a partial flow.                                                                                                                                               |
+| `completion`               | `1443:78273`               | Aligns exactly on four next actions. MVP implements Finish for now; image/cover/refine remain later capability boundaries.                                                                                                                                                                              |
 
 Minimum generation inputs should follow the corpus: offering expression and intended
 experience are required; origin, resonance moment, resonant people, and expression style

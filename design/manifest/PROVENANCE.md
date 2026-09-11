@@ -30,12 +30,12 @@ how stale that is.
 
 ## The file keys in play
 
-| fileKey                  | Name                    | Role                                                                                              |
-| ------------------------ | ----------------------- | ------------------------------------------------------------------------------------------------- |
-| `A33kUDiRAatoMDx3L1m2Y4` | **`Resonance 9/10/26`** | **Trusted snapshot (2026-09-10).** The source for all new captures.                               |
-| `vC0O5uyMmw1o5vYHmCoOXq` | `Resonance (Copy)`      | **Cache.** Historical source of screens 08–13 (captured 2026-07-26/29). Do not cite for new work. |
+| fileKey                  | Name                    | Role                                                                                                 |
+| ------------------------ | ----------------------- | ---------------------------------------------------------------------------------------------------- |
+| `A33kUDiRAatoMDx3L1m2Y4` | **`Resonance 9/10/26`** | **Trusted snapshot (2026-09-10).** The source for all new captures.                                  |
+| `vC0O5uyMmw1o5vYHmCoOXq` | `Resonance (Copy)`      | **Cache.** Historical source of screens 08–13 (captured 2026-07-26/29). Do not cite for new work.    |
 | `UYlkCL7jkCVgKWiqAVlEFp` | Pro-team copy           | Historical source of screens 01–05 and 07; screen 06 has been re-verified. Do not cite for new work. |
-| `7FOYLdtzCTITjcPeGKwF31` | original                | The designer's live team file lineage (Starter-tier, REST budget-capped, `mx-29478a`).            |
+| `7FOYLdtzCTITjcPeGKwF31` | original                | The designer's live team file lineage (Starter-tier, REST budget-capped, `mx-29478a`).               |
 
 Figma preserves node ids across a copy, so an id resolves in **all** of these files.
 **That is exactly the hazard**: an id keeps resolving after it has stopped meaning the
