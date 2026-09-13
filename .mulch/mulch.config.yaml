@@ -12,6 +12,7 @@ domains:
   web: {}
   e2e: {}
   weave-os: {}
+  design: {}
 governance:
   max_entries: 100
   warn_entries: 150
