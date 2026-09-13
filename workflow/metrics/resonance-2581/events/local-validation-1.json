@@ -4,7 +4,7 @@
   "phase": "test",
   "reason": "new-code",
   "run": "local-1",
-  "head": "eebf121b2842f7e7f29741ac20269bfc224e394e",
+  "head": "0c5ecddede0a07dc8ee6e3de3b1a2021594dca1d",
   "harness": "none",
   "requested_model": null,
   "resolved_model": null,

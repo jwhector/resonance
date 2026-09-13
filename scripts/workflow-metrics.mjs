@@ -174,7 +174,6 @@ export function validateFeature(feature) {
   choice(feature.coverage, ["partial", "complete"], "coverage");
   if (feature.diff !== null) {
     keys(feature.diff, ["files", "packages", "added", "deleted", "binary_files"], "diff");
-    for (const key of Object.keys(feature.diff)) count(feature.diff[key], `diff.${key}`);
     for (const key of ["files", "packages", "added", "deleted", "binary_files"])
       count(feature.diff[key], key);
   }
