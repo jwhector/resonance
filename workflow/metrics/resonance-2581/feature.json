@@ -4,10 +4,16 @@
   "size": "M",
   "risk": "normal",
   "started_at": "2026-09-13T20:36:00.187Z",
-  "ended_at": null,
+  "ended_at": "2026-09-13T20:41:25.303Z",
   "base": "eebf121b2842f7e7f29741ac20269bfc224e394e",
-  "head": null,
-  "outcome": "in_progress",
+  "head": "150ab436d7d4a410f1a4c13121637c7a5cbcb308",
+  "outcome": "blocked",
   "coverage": "partial",
-  "diff": null
+  "diff": {
+    "files": 36,
+    "packages": 0,
+    "added": 1474,
+    "deleted": 734,
+    "binary_files": 0
+  }
 }
