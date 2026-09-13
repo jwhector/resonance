@@ -40,6 +40,17 @@ features (and agents building them) replicate rather than reinvent.
   human-gated jobs: `runAgentStream` returns an HTTP stream and `runAgentStructured` is
   capped at `stopWhen: stepCountIs(1)`. ADR-0020 §6 records the request-scoped vs.
   job-scoped boundary and rejects adding a third loop entry point to the shared runner.
+- **Amendment (ADR-0022, 2026-09-13) — creator onboarding's stage behaviour is not an agent,
+  and its prompts do not come from the corpus.** Deciding what the interview asks next is a
+  deterministic stage machine behind `CreatorOnboardingBehavior`, not an `AgentDefinition`
+  run through the shared runner: it performs no model call, so there is nothing for the
+  registry to route. Only one step of the flow is an agent — generating the profile
+  foundation, which keeps using ProfileGen through `runAgentStructured` unchanged.
+  That narrows the ADR-0020 amendment above for this flow specifically: onboarding's stage
+  prose is authored by the product-owned `snapshot-v1` provider and **does not** pass through
+  `resolveWeaveOs(…)`, because the corpus remains inert and diverges from the approved
+  design. The registry shape, the runner, and the corpus-sourced prompt direction for
+  genuine agents are all unchanged. See ADR-0022.
 
 ## When to revisit (add Vercel Workflow / WDK)
 

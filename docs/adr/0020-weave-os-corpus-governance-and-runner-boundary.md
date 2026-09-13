@@ -232,6 +232,22 @@ callers must learn which of three incompatible lifetimes they are buying (ADR-00
 - **Revisit trigger for §6:** when the job-scoped executor's shape is known — after
   `resonance-bc11` — ratify it in its own ADR, including whether it is Vercel Workflow/WDK
   or something smaller. Do not let it accrete inside `@resonance/ai` in the meantime.
+- **Amendment (ADR-0022, 2026-09-13) — the first usable creator onboarding ships without
+  reading the corpus, and that is deliberate.** The "tracked gap between spec and runtime"
+  above now has a concrete consumer that chose not to close it. Discovery against the trusted
+  `Resonance 9/10/26` snapshot found that
+  `corpus/active/emerging_creator_onboarding.yaml` v1.1 matches the broad story but carries
+  documented source defects and diverges materially at expression style, foundation candidate
+  counts, collaborative refinement, and completion behaviour. So onboarding implements the
+  snapshot-derived stages directly, behind its own versioned `CreatorOnboardingBehavior` seam,
+  and no runtime path calls `resolveWeaveOs(…)`, parses a corpus file, or touches the
+  Evolution Engine.
+  Nothing in this ADR is superseded: the corpus, its resolver seam, and its governance all
+  stand, and the resolver remains the path a **later** Weave OS onboarding adapter takes.
+  Whether that adapter consumes, retranscribes, or replaces
+  `emerging_creator_onboarding.yaml` is deliberately left open until the MVP contract and its
+  conformance tests exist — the same "don't design blind" reasoning §6 applies to the
+  executor. The divergence is a recorded debt, not an oversight. See ADR-0022.
 
 ## Alternatives considered
 
