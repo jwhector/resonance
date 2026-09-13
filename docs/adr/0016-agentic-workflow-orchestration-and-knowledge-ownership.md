@@ -1,6 +1,6 @@
 # ADR-0016: Agentic workflow — firstmate orchestration + knowledge ownership
 
-- **Status:** Accepted
+- **Status:** Sections 1, 3 and 4 superseded by [ADR-0021](0021-portable-workflow-and-efficiency-measurement.md); knowledge ownership remains accepted.
 - **Date:** 2026-07-06
 
 ## Context

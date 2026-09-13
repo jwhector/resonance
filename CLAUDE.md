@@ -1,7 +1,7 @@
 # Resonance — Root Context
 
 > **Audience: AI agents and humans doing work in this repo.** This file is loaded
-> automatically as context. Keep it short, true, and high-signal. Detail lives in
+> automatically in Claude Code; other harnesses enter through AGENTS.md. Keep it short, true, and high-signal. Detail lives in
 > per-package `CLAUDE.md` files, `docs/adr/`, and `docs/conventions.md`.
 >
 > Only what stays true belongs here: what the product is, how the repo is shaped, the
@@ -114,31 +114,20 @@ Full rationale for each: `docs/adr/`.
 - `pnpm install` — install everything
 - `pnpm dev` — run the app + watch packages
 - `pnpm typecheck && pnpm lint && pnpm test` — what CI gates on
-- Local edits trigger format/lint/typecheck via Claude Code hooks (`.claude/settings.json`)
+- Claude edits trigger best-effort formatting and workspace lint via hooks (`.claude/settings.json`)
 - MCP servers are wired in `.mcp.json`: **Figma** (design source of truth),
   **Context7** (live library docs — prefer over memory for API usage), **Neon**
   (inspect dev DB), **Playwright** (drive/verify the app).
 
 ## Agentic workflow
 
-Work runs as one loop (**ADR-0016**): **seed →** `ml prime` **→ worktree → firstmate
-crewmate → no-mistakes gate → lavish review →** `ml record`. The seed id threads the
-whole loop and returns to mulch as an evidence anchor. **Full reference:**
-[docs/agentic-workflow.md](docs/agentic-workflow.md). To run an entire slice end-to-end
-(plan → conditional parallel build → your review), invoke the `/feature` skill.
-
-- **Orchestration — firstmate, one crewmate per package.** Boundaries are the
-  parallelization boundary (ADR-0003): each package's work is an isolated crewmate in
-  its own treehouse worktree.
-- **Knowledge ownership — one fact, one home, by temperature.** **mulch** (hot, primed)
-  = agent-discovered learnings + a `reference` index into the ADRs · **CLAUDE.md** (warm,
-  always loaded) = stable rules + pointers · **ADRs** (cold, on-demand) = ratified
-  decision + _why_ · **seeds** = work. An ADR holds the _why_, not the operative rule;
-  don't restate a fact across stores — link. Full rule: ADR-0016.
-- **Gates layer, don't stack.** The on-save hook does format/lint/typecheck (fast,
-  local); the **no-mistakes** push gate and CI run `pnpm typecheck && pnpm lint && pnpm test`, scoped to Turbo-affected packages. Don't run the suite twice per change.
-- **Review — use lavish** for anything visual (plans, the architecture diagram,
-  Figma-derived UI), not ad-hoc HTML.
+Read [docs/agentic-workflow.md](docs/agentic-workflow.md) before implementation.
+This shared workflow applies to every harness (ADR-0021): one delivery owner,
+one integrated PR by default, independent helpers when useful, and one formal gate.
+Use [the feature recipe](.claude/skills/feature/SKILL.md) for substantial work.
+[Review policy](docs/workflow-review.md) owns model requirements and external gate setup;
+[measurements](docs/workflow-metrics.md) owns token/time collection and the audit skill.
+Claude hooks are conveniences, not evidence that another harness ran checks.
 
 ## Project Expertise (Mulch)
 
@@ -233,4 +222,4 @@ Use `sd plan` when work is large or ambiguous enough that an LLM benefits from s
 
 1. Close completed issues: `sd close <id>`
 2. File issues for remaining work: `sd create --title "..."`
-3. Sync and push: `sd sync && git push`
+3. The integration owner syncs tracker changes and follows the shared shipping workflow when authorized; builders return their work without pushing.

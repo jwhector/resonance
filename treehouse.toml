@@ -1,8 +1,7 @@
 # treehouse — reusable git-worktree pool for parallel agents (ADR-0016).
 # One worktree per crewmate; the pool stays dependency-warm between runs.
 
-# Keep max_trees ≥ (packages + apps + a few) so every crewmate in a fan-out gets
-# its own worktree. `pnpm check:workspace` flags it if this drifts below the count.
+# Pool capacity, independent of the number of packages or active agents.
 max_trees = 16
 root = ""   # empty = $HOME/.treehouse (keeps worktrees out of the repo tree)
 

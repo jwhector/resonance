@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
-# loop-guard.sh — Stop / SubagentStop hook (ADR-0016).
+# loop-guard.sh — Stop hook (ADR-0016).
 #
 # When a session touched product source but skipped the loop bracket — no mulch
 # record written, or the work isn't linked to a claimed seed — nudge the author.
-# A crewmate (SubagentStop) is blocked so it self-corrects before returning; the
-# main session gets a soft, non-blocking reminder. Force hard mode anywhere with
-# LOOP_GUARD_BLOCK=1.
+# Hard mode is opt-in through LOOP_GUARD_BLOCK=1, not automatically attached to subagents.
 #
 # Deliberately a nudge, not a hard gate: mulch's own guidance is "skip if nothing
 # surfaced" rather than write ritual filler, so a genuinely empty session must be
@@ -36,7 +34,7 @@ git status --porcelain -- .mulch/expertise 2>/dev/null | grep -q . \
 text="Loop bracket incomplete (ADR-0016):${reasons}"
 
 # Crewmate → block to self-correct; main session → soft reminder (shown to you).
-if [ "$(jqr '.hook_event_name')" = "SubagentStop" ] || [ "${LOOP_GUARD_BLOCK:-0}" = "1" ]; then
+if [ "${LOOP_GUARD_BLOCK:-0}" = "1" ]; then
   jq -n --arg r "$(printf '%b' "$text")" '{decision:"block", reason:$r}'
 else
   printf '%b\n' "$text" >&2

@@ -64,18 +64,10 @@ for (const c of scan) {
   }
 }
 
-// The treehouse pool should be able to give every context its own worktree (+headroom).
+// Pool capacity is independent of package count and harness concurrency.
 if (existsSync("treehouse.toml")) {
-  const m = readFileSync("treehouse.toml", "utf8").match(/^\s*max_trees\s*=\s*(\d+)/m);
-  if (m) {
-    const max = Number(m[1]);
-    const need = contexts.length + 2;
-    if (max < need) {
-      issues.push(
-        `treehouse max_trees=${max} < contexts+2=${need} — bump max_trees in treehouse.toml`,
-      );
-    }
-  }
+  const match = readFileSync("treehouse.toml", "utf8").match(/^\s*max_trees\s*=\s*(\d+)/m);
+  if (!match || Number(match[1]) < 1) issues.push("treehouse max_trees must be positive");
 }
 
 if (issues.length === 0) {

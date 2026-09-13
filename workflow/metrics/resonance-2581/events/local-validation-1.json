@@ -1,0 +1,18 @@
+{
+  "id": "local-validation-1",
+  "invocation": "workflow-tests-1",
+  "phase": "test",
+  "reason": "new-code",
+  "run": "local-1",
+  "head": "eebf121b2842f7e7f29741ac20269bfc224e394e",
+  "harness": "none",
+  "requested_model": null,
+  "resolved_model": null,
+  "effort": null,
+  "started_at": "2026-09-13T20:39:33.542Z",
+  "ended_at": "2026-09-13T20:39:34.718Z",
+  "source": "manual",
+  "tokens": null,
+  "outcome": "passed",
+  "worktree_dirty": true
+}

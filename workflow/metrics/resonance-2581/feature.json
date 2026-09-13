@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "id": "resonance-2581",
+  "size": "M",
+  "risk": "normal",
+  "started_at": "2026-09-13T20:36:00.187Z",
+  "ended_at": null,
+  "base": "eebf121b2842f7e7f29741ac20269bfc224e394e",
+  "head": null,
+  "outcome": "in_progress",
+  "coverage": "partial",
+  "diff": null
+}

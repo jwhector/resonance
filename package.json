@@ -19,7 +19,11 @@
     "check:workspace": "node scripts/check-workspace-integrity.mjs",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,css}\"",
-    "clean": "turbo run clean && rm -rf node_modules"
+    "clean": "turbo run clean && rm -rf node_modules",
+    "workflow:metrics": "node scripts/workflow-metrics.mjs",
+    "workflow:post-edit": "node scripts/post-edit.mjs",
+    "test:workflow": "node --test scripts/workflow-metrics.test.mjs scripts/post-edit.test.mjs",
+    "workflow:validate": "node scripts/workflow-metrics.mjs validate"
   },
   "devDependencies": {
     "@resonance/ai": "workspace:*",

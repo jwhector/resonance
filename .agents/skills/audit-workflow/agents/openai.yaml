@@ -1,0 +1,4 @@
+interface:
+  display_name: "Audit Workflow"
+  short_description: "Compare workflow time and tokens with feature size"
+  default_prompt: "Use $audit-workflow to audit this repo's measured workflow efficiency."

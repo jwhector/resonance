@@ -29,6 +29,9 @@ jobs:
       - name: Workspace integrity
         run: pnpm check:workspace
 
+      - name: Workflow tooling and metric validation
+        run: pnpm test:workflow && pnpm workflow:validate
+
       - name: Format check
         run: pnpm format:check
 

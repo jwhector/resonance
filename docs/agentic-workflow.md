@@ -1,188 +1,100 @@
-# The Resonance agentic workflow (end to end)
+# The Resonance development workflow
 
-How work moves through this repo — from an idea to reviewed, gated, remembered code.
-This operationalizes the agentic context model (ADR-0014) with a concrete tool stack
-and a single loop (ADR-0016). **Read this before running a slice.** For session
-hygiene within the loop, see [working-with-agents.md](working-with-agents.md); for the
-_why_ behind the choices, see [ADR-0016](adr/0016-agentic-workflow-orchestration-and-knowledge-ownership.md).
+This is the operational source for all harnesses: Claude Code, Codex, and other
+agents or humans. ADR-0021 supersedes ADR-0016's orchestration and gate layering;
+knowledge ownership remains unchanged. Tool availability is checked locally.
 
-## The loop, in one line
+## One feature, one delivery owner
 
-```
-plan ──▶ prime ──▶ claim ──▶ isolate ──▶ build ──▶ gate ──▶ review ──▶ record ──▶ (unblocks next)
-seeds     mulch     seeds    treehouse   skills   no-mistakes  lavish   mulch
-```
+Plan → build (helpers when useful) → integrate → gate → human review → record.
 
-A single thread — the **seed id** — runs the whole length and returns to mulch as an
-evidence anchor. That thread is what keeps the tools coherent instead of being a pile
-of disconnected CLIs.
+Default to one integrated branch and PR for a coherent feature. Separate PRs are
+appropriate for independently shippable parts, not merely because two packages
+were touched. A small fix can run inline without a feature plan or subagents.
+Read-only questions do not require a seed, code gate, commit, or push.
 
-## The tool stack
+1. **Orient.** Read root/package context as needed. Run `ml prime` and `sd prime`
+   once if available and not already injected. Load only relevant Mulch domains.
+   Generic tool-generated Bun/check/push instructions do not override this repo's
+   pnpm commands, delivery ownership, or the user's scope. If tools are missing,
+   retain the task and findings in the handoff rather than claiming they were recorded.
+2. **Plan.** Reuse or claim a Seeds task for implementation. For substantial work,
+   settle scope, acceptance criteria, package interfaces, dependencies, and early
+   exits with the user. Ask about consequential ambiguity. Record S/M/L size and
+   risk before building using [workflow-metrics.md](workflow-metrics.md).
+   Existing explicit approval counts; do not ask for the same approval twice.
+3. **Build.** Use the matching recipe. Delegate only bounded independent work when
+   the harness permits it and saved time justifies startup/context cost. A single
+   task runs inline. Multiple ready tasks are an opportunity, not a mandatory fan-out.
+   Start with at most two builders; increase only for independently useful work and
+   within the harness's actual limit. Treehouse's pool size is not an agent limit.
+4. **Isolate and integrate.** Prefer a warm Treehouse lease when available; otherwise
+   use the harness's worktree support or a Git worktree. Start from the integration
+   branch's current commit explicitly: built-in worktrees may default to main.
+   Give each writer an explicit file scope, base commit, acceptance criteria, and
+   instructions to return changes/tests/metrics without pushing or starting a gate.
+   Shared lockfiles, trackers, root config, and cross-package interfaces belong to
+   the integration owner. Read-only helpers can share a checkout.
+   Integrate completed changes and test their interfaces before dependent tasks
+   start. Local integration unblocks dependencies within this feature; dependencies
+   delivered by separate PRs require merge. Close a child only after its changes
+   are integrated and accepted. Keep the parent open until delivery is complete.
+5. **Validate once through the owner.** Run focused tests while building. Exercise
+   changed behavior with /verify; reuse valid evidence for the same commit rather
+   than running a second full suite as a ritual. Commit coherent changes, then the
+   owner drives `no-mistakes axi run --intent "<goal, constraints, accepted decisions>"`
+   when shipping is authorized. Follow the installed skill for active-run custody.
+   The gate owns formal code review, test, document/lint, push, PR, and CI. Do not
+   prepend a standalone /code-review or ask every builder to run a gate.
+   [Review policy](workflow-review.md) specifies models and justified extra passes.
+6. **Handoff.** Report acceptance evidence, outstanding risks, PR state, review
+   passes and reasons, and measurement completeness. Plan approval and final review
+   are the usual human touchpoints; unresolved decisions and separate-PR merge
+   dependencies can need additional input. Visual review uses Lavish when available;
+   screenshots, diagrams, and written feedback are a portable fallback.
+7. **Record.** Save only useful new knowledge in Mulch. Close completed Seeds tasks
+   and record the feature outcome and sanitized measurements. Do not invent notes
+   merely to satisfy a hook. A metadata-only final measurement update does not start
+   another product review cycle. Validate its schema before committing it.
 
-Layered on the **AXI** CLI-design substrate (token-efficient tools the kunchenguid
-pieces all speak):
+## Checks have different jobs
 
-| Layer   | Tool             | Role                                                       | Status                       |
-| ------- | ---------------- | ---------------------------------------------------------- | ---------------------------- |
-| Plan    | **seeds** (`sd`) | Git-native issues + `sd plan` decomposition (the backlog)  | installed                    |
-| Context | **mulch** (`ml`) | Cross-session expertise, primed each session; ADR index    | installed, 10 domains        |
-| Isolate | **treehouse**    | Reusable git-worktree pool, one clean tree per agent       | installed (`treehouse.toml`) |
-| Execute | **firstmate**    | One "first mate" dispatches parallel crewmates             | **not yet installed**        |
-| Gate    | **no-mistakes**  | Push gate: review→test→lint→docs→PR→CI in its own worktree | installed (daemon running)   |
-| Review  | **lavish**       | Annotate-and-send-feedback on rich HTML artifacts          | skill available; CLI TBD     |
+| Layer         | Job                                                      | Trigger                                                                               |
+| ------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Edit feedback | Prettier and workspace ESLint, best effort; no typecheck | Claude edit hook, or explicit `pnpm workflow:post-edit` with tool-event JSON on stdin |
+| Pre-commit    | Formatting and lint for staged paths                     | Opt-in `git config core.hooksPath .githooks` per clone                                |
+| Development   | Focused behavior tests and affected-flow verification    | Relevant changes                                                                      |
+| Shipping gate | One owned formal review and validation pipeline          | Owner submits committed feature                                                       |
+| CI            | Independent checks of the published commit               | PR updates and pushes to main                                                         |
+| Live smoke    | Credential-gated external-service checks                 | Nightly or manual workflow                                                            |
 
-`gnhf` (unattended single-objective grinds) is deliberately **parked** — firstmate is
-the single orchestrator (ADR-0016).
+CI is intentionally independent of local evidence. The current `pnpm typecheck`,
+`lint`, `test`, and `build` scripts select the workspace through Turbo; they are
+not automatically restricted to Git-affected packages. Caching can avoid repeated
+execution. Do not claim affected-only checks without explicit filtering and a
+reliable base commit. Keep full CI while measuring opportunities to narrow it.
 
-## Two rhythms
+## Harness adapters and optional tools
 
-Keep these separate — conflating them is what makes agent work feel chaotic:
+- **Codex / AGENTS.md readers:** root AGENTS.md links shared context. The repo's
+  `.codex/agents/reviewer.toml` selects the formal review model when that role is used.
+- **Claude Code:** CLAUDE.md links this workflow; `.claude/settings.json` supplies
+  session/edit/stop hooks. `.claude/agents/reviewer.md` defines its review role.
+- **Other harnesses:** read AGENTS.md and recipes directly; use equivalent tools,
+  explicit file scopes, and the same measurement format. Follow the reviewer
+  availability policy before substituting a model.
+- **Firstmate:** optional for overnight or multi-session supervision. Its workers
+  follow the same builder contract; it does not change who owns delivery.
+- **No-mistakes:** external shipping executor. Its harness/model selection is
+  separate from the calling agent and repo subagent definitions. See setup guidance
+  in workflow-review.md. Missing configuration is reported, not silently treated
+  as a qualifying review.
 
-- **Planning** — infrequent, human-led, judgment-heavy. Shape a slice, decompose it
-  into seeds. A handful of times per slice, not per task.
-- **Execution** — frequent, agent-driven, rule-governed. One seed → done, on repeat.
+## Knowledge and maintenance
 
-Planning fills the backlog; execution drains it.
-
-## A unit of work, stage by stage
-
-Following one seed from `ready` to `done`:
-
-1. **Session start → warm (automatic).** `ml prime` + `sd prime` fire on the
-   SessionStart hook. The agent lands with the mulch domain manifest, the seeds
-   context, and always-loaded CLAUDE.md. No cold start.
-2. **Claim (manual, governed).** `sd ready` → pick an unblocked seed →
-   `sd update <id> --status in_progress`. The seed's package label is the routing
-   signal — which package, which context, which mulch domain.
-3. **Scope context — hot by default, cold on demand.** `ml prime <domain>` (or
-   `--files <path>`) loads just that domain's records. Open the package `CLAUDE.md`.
-   **Only if** a mulch `reference` record flags a ratified decision do you open the ADR
-   — the cold path, paid for exactly when you're changing that decision.
-4. **Isolate (treehouse).** At scale each seed claims a worktree from the pool
-   (`treehouse get`; `post_create` runs `pnpm install`). `merge=union` on the mulch +
-   seeds JSONL means parallel trees never collide.
-5. **Build (agent + skill).** Invoke the matching recipe (`add-db-migration`, etc.) —
-   each opens with a **Loop bracket** reminding you to prime and record. The on-save
-   hook auto-formats/lints/typechecks every edit.
-6. **Gate (you trigger → pipeline runs).** Push through no-mistakes. It runs
-   review→test→lint→docs→PR→CI in its own worktree, auto-fixes mechanical findings, and
-   escalates judgment calls. Because the on-save hook kept things clean, it rarely
-   bounces on format/lint.
-7. **Review, if visual (human-in-loop).** For a diagram, Figma component, or generated
-   output — the agent emits HTML, you annotate in lavish, it iterates.
-8. **Record + close (manual, governed).** `ml record <domain> --evidence-seeds <id>`
-   for anything non-obvious; if it hardened into a permanent rule, promote it to
-   CLAUDE.md/ADR and delete the mulch copy (one fact, one home). Then `sd close <id>` —
-   which **auto-unblocks** downstream seeds. Loop back to `sd ready`.
-
-## Automatic vs. governed vs. manual
-
-| Behavior                     | How it's enforced                                                            |
-| ---------------------------- | ---------------------------------------------------------------------------- |
-| Prime context each session   | **Automatic** — `ml prime` + `sd prime` SessionStart hooks                   |
-| Format/lint/typecheck        | **Automatic** — `post-edit.sh` PostToolUse hook, on every edit               |
-| Gate pipeline once triggered | **Automatic** — no-mistakes daemon runs all steps + auto-fix + CI watch      |
-| Parallel-write safety        | **Automatic** — `merge=union` on mulch + seeds JSONL                         |
-| DAG unblocking               | **Automatic** — closing a seed frees its dependents in `sd ready`            |
-| Claim seed / prime / record  | **Governed** — skill Loop brackets + package stanzas + `loop-guard.sh` nudge |
-| Loop-bracket completeness    | **Governed** — `loop-guard.sh` Stop hook nudges (blocks crewmates)           |
-| What to record / promote     | **Manual** — human/agent judgment (mulch is passive; nothing auto-captures)  |
-| Gate approval escalations    | **Manual** — you answer no-mistakes' judgment-call gates                     |
-| Visual review                | **Manual** — lavish annotate loop                                            |
-
-## Knowledge lives in four stores, by temperature
-
-One fact, one home — separated by _how hot_ it is (ADR-0016):
-
-- **Hot — mulch** (`.mulch/`): primed every session, scoped, structured. Agent-discovered
-  operational knowledge **and `reference` records that index the ADRs** by domain.
-- **Warm — CLAUDE.md** (root + package): always loaded, curated operating rules + pointers.
-- **Cold — ADRs** (`docs/adr/`): the ratified decision + _why_ + alternatives. Read rarely,
-  on demand, when you're changing a decision. **Not a retrieval layer** — mulch's job is
-  to make opening one rare.
-- **seeds** (`.seeds/`): work, not knowledge. Links to the above.
-
-The anti-pattern to police: the same operative rule restated in two hot stores or inside
-an ADR. The ADR holds the _why_; the operational extract lives once in the hot/warm layer.
-
-## From one agent to a fleet
-
-**The default fleet is `/feature`'s own orchestration.** When a plan parallelizes, the
-skill fans out **worktree-isolated subagents** — one per package, leased from treehouse,
-each running the loop and shipping through its own gate — all from a single session. No
-extra tooling; this covers most features.
-
-**firstmate is the escalation** for when you outgrow one session: unattended / overnight
-runs, cross-harness crewmates, `/afk` zero-token supervision, scale beyond one session's
-context. It reads `sd ready`, spawns one crewmate per package-labelled seed in a treehouse
-worktree, each self-governing via the repo's hooks. The seed DAG makes both paths safe —
-a dependent can't start before its dependency merges, and package boundaries keep parallel
-agents off each other's files.
-
-**Configuring it:** the gh + tmux + lavish + PATH prereqs are done; the step-by-step (get
-the tooling onto the branch firstmate clones, launch it, and the operating block +
-crewmate prompt to paste into firstmate's `AGENTS.md`) is in
-[firstmate-integration.md](firstmate-integration.md). Crewmates are independent Claude
-sessions running in the repo, so they inherit our hooks/skills/CLAUDE.md and self-govern
-— the `loop-guard` **Stop** hook already covers each crewmate (set `LOOP_GUARD_BLOCK=1`
-in its env to make the nudge blocking); `SubagentStop` is not involved.
-
-## Running the whole thing: the `/feature` skill
-
-`/feature` (`.claude/skills/feature/`) is the single entry point for a feature or slice.
-It runs the loop with two human touchpoints and orchestrates the middle itself:
-
-1. **Rigorous plan (you're in the loop)** — it stress-tests the feature with you, then
-   decomposes it into a seeds plan with a dependency DAG. You approve before execution.
-2. **Conditional parallel execution** — it drains the DAG in waves: a single ready seed
-   runs inline; multiple ready seeds fan out to **worktree-isolated subagents** (one per
-   package, leased from treehouse), each shipping through its own no-mistakes gate and
-   recording findings. Orchestration happens **only when the plan parallelizes**.
-3. **Review handoff (you're back in the loop)** — it surfaces the finished feature via
-   lavish for your review, applies feedback, then closes.
-
-firstmate is the **escalation** for Phase 2 when you outgrow one session (unattended /
-overnight / cross-harness), not a separate step for normal work.
-
-## Model routing
-
-Inference cost scales with how much of the loop runs on the primary model; most of the
-loop does not need it.
-
-- **Mechanical steps → a low-cost model.** Gate review passes, PR triage, doc sweeps,
-  and audit fan-outs are judgment-light and volume-heavy; route them to a cheap model
-  where the harness allows a per-step model choice.
-- **High-stakes changes → a two-model cross-check.** For changes touching `auth`,
-  `commerce`, credentials, or anything that moves money: run the review under two
-  different models and compare findings before merge. Where the two disagree, the
-  disagreement itself is the finding. Discard the weaker output entirely rather than
-  keeping it in history.
-
-## Setup + current gaps
-
-- **PATH:** `ml`/`sd`/`treehouse` live in `~/.bun/bin` and `~/.local/bin`. A crewmate's
-  shell must have these on PATH or the prime hooks silently no-op.
-- **`gh` CLI:** not installed — no-mistakes' push→PR→CI tail can't run without it (local
-  review/test/lint steps work). Tracked as a seed. (2026-09-09: present and authenticated
-  on the Windows workstation; the gap stands wherever the no-mistakes daemon runs, if
-  that environment differs.)
-- **firstmate:** not installed — the fan-out is manual until it is. **Deferred until a
-  dedicated always-on Linux box exists** (tracked as a seed): installing it on the box
-  rather than the working machine decouples running agents from the machine being sat
-  at, which is the point.
-- **lavish:** available as a skill; install the CLI when you want the annotate loop.
-
-## Keep the framework true
-
-The loop only stays valuable if maintained (extends [working-with-agents.md](working-with-agents.md)):
-
-- New ratified decision → **ADR**, and index it with a mulch `reference` record.
-- Discovered tactical learning → **mulch** (`ml record`), anchored to its domain + seed.
-- A learning that hardens into a permanent rule → promote to **CLAUDE.md/ADR**, delete
-  the mulch copy.
-- New package → `ml add <name>` + the _Working here_ stanza in its CLAUDE.md.
-- System-shape change → update the architecture diagram in the same change (ADR-0015).
-- **Weekly friction review** (scheduled, not event-driven): once a week, read the open
-  seeds and recent mulch `failure` records, pick the single most recurrent friction, and
-  convert it into one infrastructure seed. One per week, deliberately — a steady
-  compounding rate, not a rewrite.
+Mulch owns tactical discoveries and ADR references; CLAUDE.md owns durable product
+rules; ADRs own ratified decisions and rationale; Seeds owns work. Link rather
+than duplicate. Keep package context and the architecture diagram current when
+product shape changes. Dev-workflow changes alone do not alter the runtime diagram.
+Use audit-workflow to review measured friction and choose a small evidence-backed
+improvement; do not load all logs or launch audits on every edit.
