@@ -3,6 +3,7 @@ import type { InterviewMessage } from "@resonance/core";
 import { cn } from "../lib/cn";
 import { Button } from "../primitives/button";
 import { WeaveComposer } from "./weave-composer";
+import { WeaveMark } from "./weave-mark";
 
 /**
  * WeaveInterviewRail — the full-bleed Weave onboarding-interview surface (Figma interview
@@ -45,18 +46,6 @@ export interface WeaveInterviewRailProps extends Omit<
   showComposer?: boolean;
   /** Rendered after the transcript, inside the scroll area (inline CTA / generated draft). */
   children?: React.ReactNode;
-}
-
-/** The circular Weave mark: a spectrum ring around a light center. Placeholder for the real asset (resonance-cbbb). */
-function WeaveMark() {
-  return (
-    <span
-      aria-hidden="true"
-      className="grid size-7 shrink-0 place-items-center rounded-full bg-brand-gradient"
-    >
-      <span className="size-3 rounded-full bg-surface" />
-    </span>
-  );
 }
 
 function Message({ message }: { message: InterviewMessage }) {

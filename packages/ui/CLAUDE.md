@@ -61,6 +61,21 @@ presentational — local form state at most, never data or routing.
   form POST or a Server Action, working without JS); without an `action` the picker is purely
   controlled and submission is intercepted, firing only the `onSubmit` callback.
 
+- **`CreatorOnboardingStage`** — the staged creator interview (manifest screens
+  `14-creator-opening` … `23-creator-profile-foundation` and the `06-onboarded` rail, ADR-0022).
+  **One renderer for every stage**: it draws `@resonance/core`'s `StageRenderModel` and decides
+  layout from `input.kind` (`none`/`text`/`choice`/`foundation`) and the offered actions, never
+  from the stage name — only `completion` switches to the rail layout. Props: `model`,
+  `onAction(action, input?)` (input rides on `submit` only), `onFinish` (any `finish` action —
+  navigation, not a transition), `pending`, `error`, `completionSummary`. Load-bearing
+  absences: no composer `+`/microphone (`WeaveComposer showDeferredAffordances={false}`), no
+  Revise with Weave, no header collapse/close; `coming_soon` actions render labelled,
+  `aria-disabled`, and inert. Two conventions the model does not spell out: a paragraph ending
+  in `?` renders bold, and with `allowCustomText` the **last** choice is the free-text one. The
+  foundation validates with `CommitProfileInputSchema` before enabling submit. Supersedes
+  `WeaveInterviewRail` + `ProfileDraftPanels` for creator onboarding once `apps/web` switches.
+  `RadioCard` (in `primitives/radio.tsx`) is its dot-less boxed radio option.
+
 `tagVariants` (in `primitives/tag.tsx`) is exported alongside `Tag` because the chip's look
 and the chip's semantics have different owners — a read-only chip is a `listitem`, a chip that
 toggles a choice must be a form control. Compose `tagVariants` onto the right element rather
