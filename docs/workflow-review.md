@@ -24,10 +24,12 @@ the owner reconciles findings and records disagreements. If reconciliation chang
 code, obtain current evidence from both reviewers for the final candidate. Preserve
 accepted decisions in the handoff so rereviews do not reopen them without new evidence.
 
-When the gate cannot pin or report its resolved model, run it anyway, record
-`resolved_model: null`, and name the gap in the handoff; do not stop to ask. An unpinned
-reviewer is an accepted operating state until the operator pins one, and an unknown
-resolved model still keeps the run out of baselines ([workflow-metrics.md](workflow-metrics.md)).
+When the gate cannot pin or report its resolved model, or reports a model other than
+the required one, run it anyway, record the actual `resolved_model` (`null` when
+unknown), and name the substitution or gap in the handoff; do not stop to ask. That
+handoff disclosure is what keeps a downgrade from being silent. An unpinned reviewer is
+an accepted operating state until the operator pins one, and an unknown or substituted
+resolved model keeps the run out of baselines ([workflow-metrics.md](workflow-metrics.md)).
 The one case that still pauses is a high-risk change whose second-model cross-check has
 no available provider at all.
 
