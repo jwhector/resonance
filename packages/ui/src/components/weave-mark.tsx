@@ -6,7 +6,7 @@ export function WeaveMark() {
   return (
     <span
       aria-hidden="true"
-      className="grid size-7 shrink-0 place-items-center rounded-full bg-brand-gradient"
+      className="grid size-6 shrink-0 place-items-center rounded-full bg-brand-gradient"
     >
       <span className="size-3 rounded-full bg-surface" />
     </span>

@@ -54,7 +54,8 @@ function ComposerAction({ label, children }: { label: string; children: React.Re
       aria-label={label}
       title={label}
       disabled
-      className="grid size-8 shrink-0 place-items-center rounded-md text-subtle"
+      // A 32px target laid out in the 20px actions row the frame draws.
+      className="-m-1.5 grid size-8 shrink-0 place-items-center rounded-md text-subtle"
     >
       {children}
     </button>
@@ -90,12 +91,14 @@ export function WeaveComposer({
   }
 
   const fieldClass =
-    "border-0 bg-transparent px-1 text-body-lg shadow-none focus-visible:ring-0 focus-visible:ring-offset-0";
+    "border-0 bg-transparent px-0 py-0 text-body-lg shadow-none placeholder:text-muted focus-visible:ring-0 focus-visible:ring-offset-0";
 
+  // Sized to the 96px `Input/Wide` frame: a 1px `#cdcdcd` border, an 8px radius, one 24px text
+  // line and a 20px actions row. PROVISIONAL: the inner offsets are measured from the screenshot.
   return (
     <form
       className={cn(
-        "flex flex-col gap-1 rounded-lg bg-surface-muted px-4 py-3",
+        "flex flex-col gap-4.5 rounded-md border border-border bg-surface-muted px-4 pb-4.5 pt-3.5",
         disabled && "opacity-60",
         className,
       )}
@@ -119,7 +122,7 @@ export function WeaveComposer({
           disabled={disabled}
           maxLength={maxLength}
           rows={1}
-          className={cn("min-h-9 resize-none", fieldClass)}
+          className={cn("min-h-6 resize-none", fieldClass)}
         />
       ) : (
         <TextInput
@@ -129,13 +132,13 @@ export function WeaveComposer({
           aria-label={ariaLabel ?? placeholder}
           disabled={disabled}
           maxLength={maxLength}
-          className={cn("h-9", fieldClass)}
+          className={cn("h-6", fieldClass)}
         />
       )}
 
       <div
         className={cn(
-          "flex items-center",
+          "flex h-5 items-center",
           showDeferredAffordances ? "justify-between" : "justify-end",
         )}
       >
@@ -155,7 +158,7 @@ export function WeaveComposer({
           </ComposerAction>
         )}
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-4">
           {showDeferredAffordances && (
             <ComposerAction label="Voice input">
               <svg
@@ -178,25 +181,30 @@ export function WeaveComposer({
             type="submit"
             aria-label="Send to Weave"
             disabled={!canSend}
-            className={cn(
-              "grid size-9 shrink-0 place-items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
-              canSend
-                ? "bg-primary text-on-primary hover:bg-primary-strong"
-                : "bg-border text-subtle",
-            )}
+            // A 36px target around the frame's 20px disc, laid out in the 20px actions row.
+            className="group -m-2 grid size-9 shrink-0 place-items-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-              className="size-5"
+            <span
+              className={cn(
+                "grid size-5 place-items-center rounded-full transition-colors",
+                canSend
+                  ? "bg-primary text-on-primary group-hover:bg-primary-strong"
+                  : "bg-muted text-surface-muted",
+              )}
             >
-              <path d="M12 19V5M5 12l7-7 7 7" />
-            </svg>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={3}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+                className="size-3.5"
+              >
+                <path d="M12 19V5M5 12l7-7 7 7" />
+              </svg>
+            </span>
           </button>
         </div>
       </div>

@@ -113,7 +113,9 @@ function ActionsRow({
           ? "flex-col items-stretch gap-3"
           : hasPrimary
             ? "flex-wrap items-center gap-4"
-            : "flex-col items-start gap-3",
+            : "flex-col items-start gap-1.5",
+        // The frames leave 22px above the actions row rather than the 24px between other blocks.
+        !rail && "-mt-0.5",
       )}
     >
       {actions.map((action) => {
@@ -153,7 +155,7 @@ function ActionsRow({
                 "inline-flex items-center gap-2 rounded-sm text-body-lg font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-50",
                 // The rail draws its text action centred and in the muted grey (`1443:78273`).
                 rail
-                  ? "justify-center self-center text-muted hover:text-foreground"
+                  ? "mt-3 justify-center self-center text-muted hover:text-foreground"
                   : "text-primary hover:underline",
                 inert,
               )}
@@ -345,7 +347,7 @@ function StageBody({
       <div
         className={cn(
           "flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-10 pb-8",
-          rail ? "pt-9" : "pt-11",
+          rail ? "pt-6" : "pt-10",
         )}
       >
         {/* The frames draw no progress indicator, so progress is announced, not shown. */}
@@ -375,7 +377,7 @@ function StageBody({
               value={text}
               onChange={(event) => setText(event.target.value)}
               disabled={busy}
-              className="h-14 px-4 text-body-lg"
+              className="h-14 px-4 text-body-lg placeholder:text-muted"
             />
           </form>
         )}
@@ -452,11 +454,12 @@ export function CreatorOnboardingStage({ className, ...props }: CreatorOnboardin
       className={cn("flex h-full min-h-0 flex-col overflow-hidden bg-surface", className)}
     >
       {/* PROVISIONAL: header height and inset are read off the screenshots (63px with a 40px
-          inset in the interview, 75px with a 24px inset in the rail). */}
+          inset in the interview, 76px with a 24px inset in the rail, both including the
+          `#cdcdcd` divider). */}
       <header
         className={cn(
-          "flex shrink-0 items-center gap-3 border-b border-gray-750",
-          rail ? "h-19 px-6" : "h-16 px-10",
+          "flex shrink-0 items-center gap-3 border-b border-border",
+          rail ? "h-19 px-6" : "h-15.75 px-10",
         )}
       >
         <WeaveMark />
