@@ -18,6 +18,12 @@
 //                  ordering, ADR-0010). Proves it landed via findSimilarProfiles (the pgvector ANN
 //                  read) + a user.roles read, then deletes everything it created so the gate is
 //                  idempotent and leaves no residue.
+//   • onboarding — the staged creator-onboarding path (ADR-0022) through the same service the web
+//                  layer calls: snapshot-v1 behaviour + the database session store + the LIVE
+//                  foundation generator. A throwaway creator's structured answers reach the
+//                  summary, a real model generates the foundation, and the one-statement publish
+//                  lands; proves the profile is findable, the role was added and the stored session
+//                  kept no answers, then deletes everything.
 //
 // CREDENTIAL-GATED: with no credentials it SKIPS and exits 0, so it is safe in the credential-free
 // fast loop and no-secret CI (forks, PRs). It only does real work when the required secrets are
@@ -76,7 +82,15 @@ try {
 // objects, used solely to seed a throwaway `user` row and to delete the throwaway rows in cleanup
 // (there is no public "create user" / "delete profile" helper — auth owns signup).
 const [
-  { createDb, user, creatorProfiles, embeddings, findSimilarProfiles },
+  {
+    createDb,
+    createCreatorOnboardingStore,
+    user,
+    creatorProfiles,
+    creatorOnboardingSessions,
+    embeddings,
+    findSimilarProfiles,
+  },
   ai,
   { resolveMail },
   { eq, sql },
@@ -97,6 +111,9 @@ const {
   runAgentStructured,
   profileGenAgent,
   commitCreatorProfile,
+  createCreatorOnboardingService,
+  snapshotV1CreatorOnboardingBehavior,
+  generateCreatorFoundation,
 } = ai;
 
 // --- Run all checks in PARALLEL. Each is isolated (its own try/catch) so one failure never masks
@@ -219,7 +236,100 @@ const results = await Promise.all([
       await db.delete(user).where(eq(user.id, userId));
     }
   }),
-  // 6) migrations — SCHEMA DRIFT. Every other check exercises code against whatever schema the
+  // 6) onboarding — the staged flow's live boundary (ADR-0022). The deterministic E2E runs this
+  //    path with a fake generator; only here does a real model turn structured answers into a
+  //    foundation that must survive FoundationGenerationResultSchema, and only here does the
+  //    one-statement publish run against Neon's HTTP driver rather than PGlite.
+  check("onboarding", async () => {
+    const db = createDb();
+    const embedder = resolveEmbedder();
+    const store = createCreatorOnboardingStore({ db, embedder });
+    const service = createCreatorOnboardingService({
+      behavior: snapshotV1CreatorOnboardingBehavior,
+      store,
+      generateFoundation: (request) => generateCreatorFoundation(request),
+      newSessionId: () => crypto.randomUUID(),
+    });
+    const userId = `verify-live-onb-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    const actor = { userId };
+    const secret = "verify:live private origin answer";
+    await db.insert(user).values({
+      id: userId,
+      name: "verify:live onboarding",
+      email: `${userId}@verify-live.invalid`,
+    });
+    try {
+      // Seed a session already at the summary with the gating answers, through the real store.
+      const start = snapshotV1CreatorOnboardingBehavior.start({ sessionId: crypto.randomUUID() });
+      const answer = (text) => ({ status: "answered", answer: { kind: "text", text } });
+      const seeded = await store.save(actor, {
+        ...start,
+        currentStage: "summary",
+        slots: {
+          offering: answer("Small-batch herbal tea blends and slow evening tasting circles"),
+          origin: answer(secret),
+          intended_experience: answer("Calmer, more present, a little more curious"),
+        },
+      });
+      if (seeded.outcome !== "saved") throw new Error("could not seed the onboarding session");
+
+      const key = () => `verify-live-${crypto.randomUUID()}`;
+      const foundation = await service.transition(actor, {
+        action: "submit",
+        expectedRevision: seeded.session.revision,
+        idempotencyKey: key(),
+      });
+      if (foundation.render.input.kind !== "foundation") {
+        throw new Error(`expected a generated foundation, got notice ${foundation.notice}`);
+      }
+      const draft = foundation.render.input.draft;
+      const profile = {
+        displayName: draft.nameOptions[0].name,
+        headline: draft.headline,
+        bio: draft.bio,
+        tags: draft.tags,
+      };
+
+      const done = await service.transition(actor, {
+        action: "submit",
+        expectedRevision: foundation.revision,
+        idempotencyKey: key(),
+        input: { kind: "foundation", profile },
+      });
+      if (done.status !== "completed") throw new Error(`publish did not complete: ${done.notice}`);
+
+      const [published] = await db
+        .select({ id: creatorProfiles.id })
+        .from(creatorProfiles)
+        .where(eq(creatorProfiles.userId, userId));
+      const { embedding: probe } = await embedder.embedProfile({ ...profile, offerings: [] });
+      const hits = await findSimilarProfiles(db, probe, 5);
+      if (!published || !hits.some((h) => h.id === published.id)) {
+        throw new Error("published onboarding profile not found via findSimilarProfiles");
+      }
+      const [row] = await db.select({ roles: user.roles }).from(user).where(eq(user.id, userId));
+      if (!(row?.roles ?? "").split(",").includes("creator")) {
+        throw new Error("creator role missing after onboarding publish");
+      }
+      const [stored] = await db
+        .select({ state: creatorOnboardingSessions.state })
+        .from(creatorOnboardingSessions)
+        .where(eq(creatorOnboardingSessions.userId, userId));
+      if (JSON.stringify(stored?.state ?? {}).includes(secret)) {
+        throw new Error("completed onboarding session still holds a private answer");
+      }
+      return `live foundation (${draft.nameOptions.length} name option(s)) → one-statement publish → pgvector → role ok`;
+    } finally {
+      const [profile] = await db
+        .select({ id: creatorProfiles.id })
+        .from(creatorProfiles)
+        .where(eq(creatorProfiles.userId, userId));
+      if (profile) await db.delete(embeddings).where(eq(embeddings.sourceId, profile.id));
+      // Cascades to creator_profiles and creator_onboarding_sessions.
+      await db.delete(user).where(eq(user.id, userId));
+    }
+  }),
+  // 7) migrations — SCHEMA DRIFT. Every other check exercises code against whatever schema the
   //    target database happens to have; none of them notice that the database is BEHIND the
   //    committed migrations. Slice A shipped `follows` (0003) to main and left dev unmigrated, so
   //    anonymous discovery worked while every AUTHENTICATED search 500'd — the sub-select that
