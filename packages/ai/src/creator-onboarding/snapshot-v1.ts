@@ -371,12 +371,14 @@ function applyTextStage(
     );
   }
 
-  // Submit. An optional stage submitted empty is refused as invalid rather than treated as a
-  // skip: Skip is the explicit control for declining, and the two must stay distinguishable.
+  // Submit. An optional stage submitted with nothing typed means "nothing to add", which is the
+  // same as Skip, matching the summary.
   const read = readText(command.input, { maxLength: spec.maxLength, required });
   if ("reason" in read) return reject(read.reason);
-  if (read.text === null) return reject("invalid_input");
-  return recordAndAdvance(session, answered({ kind: "text", text: read.text }));
+  return recordAndAdvance(
+    session,
+    read.text === null ? { status: "skipped" } : answered({ kind: "text", text: read.text }),
+  );
 }
 
 function applyExpressionStyle(
@@ -512,9 +514,7 @@ export const snapshotV1CreatorOnboardingBehavior: CreatorOnboardingBehavior = {
     if ((session as CreatorOnboardingSession).status === "completed") {
       return reject("already_completed");
     }
-    // From the summary on first generation, or from the foundation when a retried generation
-    // lands after an earlier one already did.
-    if (session.currentStage !== "summary" && session.currentStage !== "foundation") {
+    if (session.currentStage !== "summary") {
       return reject("unsupported_action");
     }
     if (missingRequired(session.slots)) return reject("required_input_missing");

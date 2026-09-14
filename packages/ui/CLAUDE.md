@@ -66,7 +66,7 @@ presentational — local form state at most, never data or routing.
   **One renderer for every stage**: it draws `@resonance/core`'s `StageRenderModel` and decides
   layout from `input.kind` (`none`/`text`/`choice`/`foundation`) and the offered actions, never
   from the stage name — only `completion` switches to the rail layout. Props: `model`,
-  `onAction(action, input?)` (input rides on `submit` only), `onFinish` (any `finish` action —
+  `onAction(action, input?)` (input rides on `submit`, and on `request_help` when text is typed), `onFinish` (any `finish` action —
   navigation, not a transition), `pending`, `error`, `completionSummary`. Load-bearing
   absences: no composer `+`/microphone (`WeaveComposer showDeferredAffordances={false}`), no
   Revise with Weave, no header collapse/close; `coming_soon` actions render labelled,

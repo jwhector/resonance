@@ -337,7 +337,9 @@ function StageBody({
   function activate(action: CreatorOnboardingActionModel) {
     if (action.id === "finish") onFinish();
     else if (action.id === "submit") submit();
-    else onAction(action.id);
+    else if (action.id === "request_help" && answer.input?.kind === "text") {
+      onAction(action.id, answer.input);
+    } else onAction(action.id);
   }
 
   const longForm = input.kind === "text" && input.multiline;

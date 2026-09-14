@@ -256,12 +256,11 @@ describe("snapshot-v1 creator onboarding behaviour", () => {
       ).toMatchObject({ outcome: "rejected", reason: "required_input_missing" });
     });
 
-    it("replaces the draft when a retried generation lands at the foundation", () => {
-      const replacement = { ...DRAFT, headline: "A second take" };
-      const result = expectAdvanced(
-        behavior.acceptFoundation(at("foundation"), { draft: replacement }),
-      );
-      expect(result.session.draft).toEqual(replacement);
+    it("accepts a foundation only from the summary", () => {
+      expect(behavior.acceptFoundation(at("foundation"), { draft: DRAFT })).toMatchObject({
+        outcome: "rejected",
+        reason: "unsupported_action",
+      });
     });
   });
 
@@ -386,12 +385,16 @@ describe("snapshot-v1 creator onboarding behaviour", () => {
       }
     });
 
-    it("refuses an empty submit on an optional stage, since Skip is the way to decline", () => {
-      expect(behavior.apply(at("origin"), command())).toMatchObject({
-        outcome: "rejected",
-        reason: "invalid_input",
-      });
-    });
+    it.each(["creator_name", "origin", "resonance_moment", "resonant_people"] as const)(
+      "treats an empty submit on optional %s as nothing to add",
+      (stage) => {
+        for (const input of [undefined, text("   ")]) {
+          const next = expectAdvanced(behavior.apply(at(stage), command({ input }))).session;
+          expect(next.slots[stage]).toEqual({ status: "skipped" });
+          expect(next.currentStage).toBe(CREATOR_ONBOARDING_STAGES[indexOf(stage) + 1]);
+        }
+      },
+    );
 
     it("refuses a name longer than the public display name allows", () => {
       const result = behavior.apply(at("creator_name"), command({ input: text("x".repeat(121)) }));

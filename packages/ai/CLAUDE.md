@@ -40,9 +40,9 @@ src/
                            commit-profile.ts (persists the committed draft)
 ```
 
-The legacy `creator-interview` agent and transcript-driven `profileGenAgent` still back the
-current `/onboarding/creator` route; the staged runtime below replaces them once the web layer
-is rewired.
+The legacy `creator-interview` agent, transcript-driven `profileGenAgent` and
+`commitCreatorProfile` are superseded by the staged runtime below and are no longer used by
+`apps/web`; they remain only for the verify-live checks until cleanup seed `resonance-37cb`.
 
 ## Public API
 
@@ -100,9 +100,12 @@ export {
   transcribed from design screens 14–23 and 06 into `snapshot-v1.copy.ts`. Semantics a caller
   relies on: only `offering` and `intended_experience` are required (they offer no Skip); the
   opening's `later` keeps the session at the opening with the opening slot `skipped`; the
-  summary's `submit` (empty or not) and `skip` both return `generate`; `request_help` on the name
+  summary's `submit` (empty or not) and `skip` both return `generate`; a `submit` with no (or
+  whitespace-only) text on an optional text stage records the slot `skipped` and advances, while
+  a required stage rejects it as `required_input_missing`; `request_help` on the name
   stage records `{ choiceId: "help_wanted", customText? }`; `choose_for_me` records
-  `{ choiceId: "weave_chooses" }`; `acceptFoundation` works from `summary` or `foundation`.
+  `{ choiceId: "weave_chooses" }`; `acceptFoundation` works only from `summary` (any other stage
+  is `unsupported_action`).
   A session pinned to another version **throws** `UnsupportedBehaviorVersionError` from every
   method; a foundation-stage session with no draft throws `CreatorOnboardingStateError`.
 - **`generateCreatorFoundation(request, deps?)`** — structured answers (each paired with its

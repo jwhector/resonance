@@ -223,6 +223,16 @@ describe("CreatorOnboardingStage — text input", () => {
     expect(onAction).toHaveBeenNthCalledWith(2, "request_help");
   });
 
+  it("carries a typed name with a help request, but never with Skip", () => {
+    const { onAction } = setup(creatorName);
+    const field = screen.getByRole("textbox", { name: /what’s the name/i });
+    fireEvent.change(field, { target: { value: "  Moonroot " } });
+    fireEvent.click(screen.getByRole("button", { name: "I’d like help" }));
+    fireEvent.click(screen.getByRole("button", { name: "Skip" }));
+    expect(onAction).toHaveBeenNthCalledWith(1, "request_help", { kind: "text", text: "Moonroot" });
+    expect(onAction).toHaveBeenNthCalledWith(2, "skip");
+  });
+
   it("takes long-form answers in the bottom composer, via send or the submit action", () => {
     const { onAction } = setup(offering);
     const composer = screen.getByRole("textbox", { name: "Talk to Weave" });
