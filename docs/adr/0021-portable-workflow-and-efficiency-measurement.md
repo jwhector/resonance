@@ -48,8 +48,7 @@ to ask before substituting an unavailable reviewer model. In practice the extern
 neither pins nor reports the model it resolved, so the question could not be answered
 with evidence, and when asked it was waved through. The rule is now: run, record the
 resolved model (null when unknown), report the gap or substitution, and keep such runs
-out of baselines. The
-model requirement itself and the second-model cross-check for high-risk work stand.
+out of baselines. The model requirement itself and the second-model cross-check for high-risk work stand.
 Operative text: [workflow-review.md](../workflow-review.md).
 
 ## Alternatives

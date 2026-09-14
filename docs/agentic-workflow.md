@@ -95,7 +95,7 @@ reliable base commit. Keep full CI while measuring opportunities to narrow it.
   session/edit/stop hooks. `.claude/agents/reviewer.md` defines its review role.
 - **Other harnesses:** read AGENTS.md and recipes directly; use equivalent tools,
   explicit file scopes, and the same measurement format. Follow the reviewer
-  availability policy before substituting a model.
+  availability policy when the required model is unavailable or substituted.
 - **Firstmate:** optional for overnight or multi-session supervision. Its workers
   follow the same builder contract; it does not change who owns delivery.
 - **No-mistakes:** external shipping executor. Its harness/model selection is
