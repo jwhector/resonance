@@ -1,3 +1,7 @@
+# Prettier writes LF; without this, autocrlf checkouts report every formatted file as
+# modified with an empty diff.
+* text=auto eol=lf
+
 .mulch/expertise/*.jsonl merge=union
 .seeds/issues.jsonl merge=union
 .seeds/templates.jsonl merge=union

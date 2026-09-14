@@ -15,7 +15,9 @@ checks across harnesses. This guide covers session hygiene.
   for UI parity and live behavior; distinguish real execution from test doubles.
 - Reuse valid checks unless changes or failures invalidate them. The shipping gate
   owns formal review; CI independently checks the published commit.
-- Record useful discoveries and maintain package context; avoid ritual memory.
+- Record useful discoveries and maintain package context; avoid ritual memory. A
+  package `CLAUDE.md` entry per module stays within about eight lines; the module's doc
+  comment and its ADR hold the rest.
 - Record [workflow measurements](workflow-metrics.md) and use audit-workflow to
   identify evidence-backed improvements.
 

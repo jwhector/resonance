@@ -10,7 +10,11 @@ Plan → build (helpers when useful) → integrate → gate → human review →
 
 Default to one integrated branch and PR for a coherent feature. Separate PRs are
 appropriate for independently shippable parts, not merely because two packages
-were touched. A small fix can run inline without a feature plan or subagents.
+were touched. A plan's child steps are work units, not PR units: siblings that only
+share a contract already on `main` (for example the `db`, `ai` and `ui` steps of one
+feature) build on one integration branch and pass one gate together. Ship a step alone
+only when something else needs it merged first. A small fix can run inline without a
+feature plan or subagents.
 Read-only questions do not require a seed, code gate, commit, or push.
 
 1. **Orient.** Read root/package context as needed. Run `ml prime` and `sd prime`
@@ -41,9 +45,13 @@ Read-only questions do not require a seed, code gate, commit, or push.
    are integrated and accepted. Keep the parent open until delivery is complete.
 5. **Validate once through the owner.** Run focused tests while building. Exercise
    changed behavior with /verify; reuse valid evidence for the same commit rather
-   than running a second full suite as a ritual. Commit coherent changes, then the
-   owner drives `no-mistakes axi run --intent "<goal, constraints, accepted decisions>"`
-   when shipping is authorized. Follow the installed skill for active-run custody.
+   than running a second full suite as a ritual. Record learnings and measurements
+   **before** submitting, so `.mulch/`, `.seeds/` and `workflow/metrics/` ride the same
+   candidate the gate reviews and a learning never costs a second run. Commit coherent
+   changes, then the owner drives
+   `no-mistakes axi run --intent "<goal, constraints, accepted decisions, standing consents>"`
+   when shipping is authorized. Follow the installed skill for active-run custody and
+   [review policy](workflow-review.md) for which gate questions to decide yourself.
    The gate owns formal code review, test, document/lint, push, PR, and CI. Do not
    prepend a standalone /code-review or ask every builder to run a gate.
    [Review policy](workflow-review.md) specifies models and justified extra passes.
@@ -52,10 +60,12 @@ Read-only questions do not require a seed, code gate, commit, or push.
    are the usual human touchpoints; unresolved decisions and separate-PR merge
    dependencies can need additional input. Visual review uses Lavish when available;
    screenshots, diagrams, and written feedback are a portable fallback.
-7. **Record.** Save only useful new knowledge in Mulch. Close completed Seeds tasks
-   and record the feature outcome and sanitized measurements. Do not invent notes
-   merely to satisfy a hook. A metadata-only final measurement update does not start
-   another product review cycle. Validate its schema before committing it.
+7. **Close.** Close completed Seeds tasks and record the feature outcome. Learnings
+   that surface during the gate itself go on top of the same branch: a diff confined to
+   `.mulch/`, `.seeds/` or `workflow/metrics/` is published with the PR without another
+   product review cycle, and if the gate cannot publish it, push it directly and say so
+   in the handoff. Validate the measurement schema before committing it. Do not invent
+   notes merely to satisfy a hook.
 
 ## Checks have different jobs
 

@@ -34,7 +34,9 @@ These were seeded from the founding design interview (2026-06-16).
 ## Writing a new ADR
 
 Copy [0000-template.md](0000-template.md), give it the next number, fill it in,
-and add a row above. Don't edit an Accepted ADR's decision after the fact — write a
+and add a row above. Keep each numbered decision to a sentence or two unless it was
+contested; the argument belongs in Context or Alternatives, not in the decision list.
+Don't edit an Accepted ADR's decision after the fact — write a
 new one that supersedes it and mark the old one `Superseded by ADR-NNNN`.
 
 **Index it for agents.** After writing an ADR, add a mulch `reference` record in the
@@ -43,9 +45,13 @@ this keeps the hot-path index self-healing as decisions accrue:
 
 ```bash
 ml record <domain> --type reference --classification foundational \
-  --name "ratified decisions (ADR index)" --files docs/adr/NNNN-<slug>.md \
+  --name "ADR-NNNN <short-slug>" --files docs/adr/NNNN-<slug>.md \
   --dir-anchor <path> --tags "adr,ratified-decision" \
   --description "<one-line decision> — open ADR-NNNN before changing."
 ```
 
-Pass `--files` explicitly, or `ml` auto-fills `files[]` with the whole changeset.
+Name the record after the ADR. `ml record` upserts by name and replaces `--files` and
+`--description`, so reusing a shared name such as `ratified decisions (ADR index)`
+overwrites the domain's existing index instead of extending it. Records already carrying
+that shared name stay as they are. Pass `--files` explicitly, or `ml` auto-fills
+`files[]` with the whole changeset.

@@ -19,15 +19,17 @@ Use conversation or available visual tooling; no particular plugin is required.
 ## Execute
 
 One owner builds inline or delegates independent scopes using available native tools.
-Default to one integration branch and one PR. Each builder receives the exact base,
+Default to one integration branch and one PR; plan children are work units, not PR
+units, so independent siblings share that branch and gate. Each builder receives the exact base,
 owned paths, interface contract and tests expected. Builders return changes, evidence,
 and usage/timing identifiers; they do not ship or start no-mistakes. Recipes' delivery
 instructions belong to the integration owner, not every invocation of a recipe.
 Integrate prerequisite code before dependent work; use merge checkpoints only for
 dependencies deliberately delivered in separate PRs. Avoid parallel tracker/lockfile edits.
 
-The owner verifies integrated behavior, updates relevant docs and submits once
-to the shipping gate when authorized. Follow
+The owner verifies integrated behavior, updates relevant docs, records learnings and
+measurements so they ride the same candidate, and submits once to the shipping gate
+when authorized with scope and standing consents stated in `--intent`. Follow
 [review policy](../../../docs/workflow-review.md) for Opus/Terra, second-model reviews,
 fix rounds and the external no-mistakes configuration boundary.
 
