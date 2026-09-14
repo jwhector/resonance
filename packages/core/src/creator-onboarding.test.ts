@@ -58,8 +58,8 @@ const OPTIONAL_STAGES = CREATOR_ONBOARDING_STAGES.filter(
 function makeFakeBehavior(): CreatorOnboardingBehavior {
   const indexOf = (stage: CreatorOnboardingStage) => CREATOR_ONBOARDING_STAGES.indexOf(stage);
 
-  function render(session: ActiveCreatorOnboardingSession): StageRenderModel {
-    const stage = session.currentStage;
+  function render(session: CreatorOnboardingSession): StageRenderModel {
+    const stage = session.status === "completed" ? "completion" : session.currentStage;
     const progress = {
       stageNumber: indexOf(stage) + 1,
       stageCount: CREATOR_ONBOARDING_STAGE_COUNT,
@@ -115,7 +115,10 @@ function makeFakeBehavior(): CreatorOnboardingBehavior {
       return {
         stage,
         prompt: ["Here is a first foundation."],
-        input: { kind: "foundation", draft: session.draft ?? DRAFT },
+        input: {
+          kind: "foundation",
+          draft: (session.status === "in_progress" ? session.draft : null) ?? DRAFT,
+        },
         actions: [
           { id: "submit", label: "Good to go", emphasis: "primary", availability: "available" },
         ],
@@ -174,11 +177,12 @@ function makeFakeBehavior(): CreatorOnboardingBehavior {
     };
   }
 
-  function apply(
-    session: ActiveCreatorOnboardingSession,
-    command: TransitionCommand,
-  ): TransitionResult {
+  function apply(session: CreatorOnboardingSession, command: TransitionCommand): TransitionResult {
     const current = render(session);
+
+    if (session.status === "completed") {
+      return { outcome: "rejected", reason: "already_completed", render: current };
+    }
 
     if (command.expectedRevision !== session.revision) {
       return { outcome: "rejected", reason: "stale_revision", render: current };
@@ -247,11 +251,7 @@ function makeFakeBehavior(): CreatorOnboardingBehavior {
       if (missing.length > 0) {
         return { outcome: "rejected", reason: "required_input_missing", render: current };
       }
-      const next: ActiveCreatorOnboardingSession = {
-        ...session,
-        slots,
-        revision: session.revision + 1,
-      };
+      const next: ActiveCreatorOnboardingSession = { ...session, slots };
       return {
         outcome: "generate",
         session: next,
@@ -264,7 +264,6 @@ function makeFakeBehavior(): CreatorOnboardingBehavior {
       ...session,
       slots,
       currentStage: nextStage,
-      revision: session.revision + 1,
     };
     return { outcome: "advanced", session: next, render: render(next) };
   }
@@ -287,7 +286,6 @@ function makeFakeBehavior(): CreatorOnboardingBehavior {
         ...session,
         currentStage: "foundation",
         draft: result.draft,
-        revision: session.revision + 1,
       };
       return { outcome: "advanced", session: next, render: render(next) };
     },
@@ -297,7 +295,6 @@ function makeFakeBehavior(): CreatorOnboardingBehavior {
 /** The second adapter at the store seam: one in-memory row per actor, no database. */
 function makeFakeStore(): CreatorOnboardingSessionStore {
   const rows = new Map<string, CreatorOnboardingSession>();
-  const completions = new Map<string, CreatorOnboardingCompletion>();
 
   return {
     load: (actor) => Promise.resolve(rows.get(actor.userId) ?? null),
@@ -313,11 +310,10 @@ function makeFakeStore(): CreatorOnboardingSessionStore {
       rows.set(actor.userId, saved);
       return Promise.resolve({ outcome: "saved", session: saved });
     },
-    complete: (actor, args) => {
-      const key = `${actor.userId}:${args.idempotencyKey}`;
-      const replay = completions.get(key);
-      if (replay) {
-        return Promise.resolve({ ...replay, alreadyCompleted: true });
+    complete: (actor, args): Promise<CreatorOnboardingCompletion> => {
+      const stored = rows.get(actor.userId);
+      if (stored?.status === "completed") {
+        return Promise.resolve({ session: stored, alreadyCompleted: true });
       }
       const completed = CompletedCreatorOnboardingSessionSchema.parse({
         status: "completed",
@@ -325,15 +321,10 @@ function makeFakeStore(): CreatorOnboardingSessionStore {
         behaviorVersion: "snapshot-v1",
         completedAt: "2026-09-13T23:00:00.000Z",
         committedProfile: args.profile,
-        revision: (rows.get(actor.userId)?.revision ?? 0) + 1,
+        revision: (stored?.revision ?? 0) + 1,
       });
       rows.set(actor.userId, completed);
-      const completion: CreatorOnboardingCompletion = {
-        session: completed,
-        alreadyCompleted: false,
-      };
-      completions.set(key, completion);
-      return Promise.resolve(completion);
+      return Promise.resolve({ session: completed, alreadyCompleted: false });
     },
   };
 }
@@ -605,6 +596,53 @@ describe("the behaviour seam, driven through a deterministic adapter", () => {
     expect(committed).toMatchObject({ outcome: "commit", profile: PROFILE });
   });
 
+  it("leaves the revision for the store to advance", () => {
+    const session = behavior.start({ sessionId: "s1" });
+    const result = behavior.apply(session, command({ action: "begin" }));
+    if (result.outcome !== "advanced") throw new Error("expected an advance");
+    expect(result.session.currentStage).toBe("creator_name");
+    expect(result.session.revision).toBe(session.revision);
+
+    const withDraft = behavior.acceptFoundation(result.session, { draft: DRAFT });
+    if (withDraft.outcome !== "advanced") throw new Error("expected the foundation stage");
+    expect(withDraft.session.revision).toBe(session.revision);
+  });
+
+  it("renders the completion rail for a completed session after a reload", () => {
+    const completed = CompletedCreatorOnboardingSessionSchema.parse({
+      status: "completed",
+      sessionId: "s1",
+      behaviorVersion: "snapshot-v1",
+      completedAt: "2026-09-13T23:00:00.000Z",
+      committedProfile: PROFILE,
+      revision: 4,
+    });
+    const rail = behavior.render(completed);
+    expect(StageRenderModelSchema.safeParse(rail).success).toBe(true);
+    expect(rail.stage).toBe("completion");
+    expect(rail.actions.map((a) => [a.id, a.availability])).toEqual([
+      ["finish", "available"],
+      ["create_profile_image", "coming_soon"],
+      ["create_cover_image", "coming_soon"],
+      ["refine_profile", "coming_soon"],
+    ]);
+  });
+
+  it("rejects every action on a completed session as already completed", () => {
+    const completed = CompletedCreatorOnboardingSessionSchema.parse({
+      status: "completed",
+      sessionId: "s1",
+      behaviorVersion: "snapshot-v1",
+      completedAt: "2026-09-13T23:00:00.000Z",
+      committedProfile: PROFILE,
+      revision: 4,
+    });
+    for (const action of CREATOR_ONBOARDING_ACTIONS) {
+      const result = behavior.apply(completed, command({ action, expectedRevision: 4 }));
+      expect(result).toMatchObject({ outcome: "rejected", reason: "already_completed" });
+    }
+  });
+
   it("will not generate while a required answer is still missing", () => {
     const session: ActiveCreatorOnboardingSession = {
       ...behavior.start({ sessionId: "s1" }),
@@ -674,6 +712,27 @@ describe("the store seam, driven through an in-memory adapter", () => {
     expect(second.session).toEqual(first.session);
   });
 
+  it("completes an already-completed session once, whatever the idempotency key", async () => {
+    const store = makeFakeStore();
+    const behavior = makeFakeBehavior();
+    await store.save(ACTOR, behavior.start({ sessionId: "s1" }));
+
+    const first = await store.complete(ACTOR, {
+      sessionId: "s1",
+      profile: PROFILE,
+      idempotencyKey: "idem-tab-one",
+    });
+    const second = await store.complete(ACTOR, {
+      sessionId: "s1",
+      profile: { ...PROFILE, displayName: "Someone Else" },
+      idempotencyKey: "idem-tab-two",
+    });
+
+    expect(second.alreadyCompleted).toBe(true);
+    expect(second.session).toEqual(first.session);
+    await expect(store.load(ACTOR)).resolves.toMatchObject({ committedProfile: PROFILE });
+  });
+
   it("leaves no raw answer recoverable after completion", async () => {
     const store = makeFakeStore();
     const behavior = makeFakeBehavior();
@@ -694,6 +753,32 @@ describe("the store seam, driven through an in-memory adapter", () => {
     const after = await store.load(ACTOR);
     expect(after?.status).toBe("completed");
     expect(JSON.stringify(after)).not.toContain("a private memory");
+  });
+});
+
+describe("the two seams, driven together", () => {
+  it("advances across a save and reload without going stale", async () => {
+    const store = makeFakeStore();
+    const behavior = makeFakeBehavior();
+
+    const first = await store.save(ACTOR, behavior.start({ sessionId: "s1" }));
+    expect(first.outcome).toBe("saved");
+
+    const loaded = await store.load(ACTOR);
+    if (loaded?.status !== "in_progress") throw new Error("expected an active session");
+    const result = behavior.apply(
+      loaded,
+      command({ action: "begin", expectedRevision: loaded.revision }),
+    );
+    if (result.outcome !== "advanced") throw new Error("expected an advance");
+
+    const second = await store.save(ACTOR, result.session);
+    expect(second.outcome).toBe("saved");
+
+    const reloaded = await store.load(ACTOR);
+    if (reloaded?.status !== "in_progress") throw new Error("expected an active session");
+    expect(reloaded.currentStage).toBe("creator_name");
+    expect(reloaded.revision).toBe(loaded.revision + 1);
   });
 });
 

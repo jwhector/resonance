@@ -106,9 +106,12 @@ and model prompts containing them are never logged.
 ### 7. Writes are revision-checked and completion is idempotent
 
 Every `TransitionCommand` carries `expectedRevision` and an `idempotencyKey`. A mismatch is
-rejected rather than merged, so a retried request cannot double-advance a stage. `complete` is
-idempotent per key: publishing the profile, clearing raw answers, and recording completion
-happen atomically, and a replay returns the original completion with `alreadyCompleted: true`.
+rejected rather than merged, so a retried request cannot double-advance a stage. The store is
+the single owner of the revision counter: behaviour returns the next session at the revision it
+was derived from, and only a successful `save` bumps it. `complete` publishes the profile,
+clears raw answers, and records completion atomically; once a session is completed, any later
+`complete` — with the same idempotency key or a different one — returns the existing completion
+with `alreadyCompleted: true` and never republishes or overwrites it.
 
 ### 8. Identity is never client-supplied
 
@@ -134,7 +137,10 @@ Two different treatments, deliberately:
 - **Disabled and labelled.** The completion rail (`1443:78273`) draws four next steps; only
   Finish for now works. The other three are emitted with `availability: "coming_soon"` so the
   renderer disables and labels them. They are real boundaries to real future flows, so hiding
-  them would misrepresent the product as much as wiring them to nothing would.
+  them would misrepresent the product as much as wiring them to nothing would. `render` and
+  `apply` accept a completed session, so the rail survives a reload: a completed session
+  renders it, and `apply` rejects every action on it as `already_completed`. Finish for now is
+  navigation the UI handles, not a state transition. `acceptFoundation` stays active-only.
 
 ### 11. Public profile validation does not change
 

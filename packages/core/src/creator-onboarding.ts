@@ -166,7 +166,9 @@ export type CreatorOnboardingSlots = z.infer<typeof CreatorOnboardingSlotsSchema
  *
  * `revision` is the optimistic-concurrency token. It is server-authoritative: a command
  * states the revision it believed it was acting on, and a mismatch is rejected rather than
- * merged, so a retried or replayed request cannot double-advance a stage.
+ * merged, so a retried or replayed request cannot double-advance a stage. Only the store
+ * advances it: behaviour returns the next session at the same revision, and a successful save
+ * bumps it.
  */
 export const ActiveCreatorOnboardingSessionSchema = z.object({
   status: z.literal("in_progress"),
@@ -392,8 +394,8 @@ export type FoundationGenerationResult = z.infer<typeof FoundationGenerationResu
  * The result of finishing onboarding.
  *
  * `alreadyCompleted` is how a caller tells a fresh commit from a replayed one without
- * guessing. Completion is idempotent: committing twice yields the same session and the
- * second call reports that it changed nothing.
+ * guessing. Completion is idempotent: once a session is completed, every later commit —
+ * whatever its idempotency key — yields the same session and reports that it changed nothing.
  */
 export const CreatorOnboardingCompletionSchema = z.object({
   session: CompletedCreatorOnboardingSessionSchema,
@@ -441,22 +443,27 @@ export type TransitionResult =
  * 2. `render` is a pure function of the session: the same session renders the same model, so
  *    a reload shows the creator exactly what they left.
  * 3. `apply` never mutates its argument; it returns the next state.
- * 4. `apply` rejects a command whose `expectedRevision` differs from `session.revision`, and
- *    a rejection leaves the session untouched.
+ * 4. `apply` and `acceptFoundation` never change `revision`: the next session carries the
+ *    revision it was derived from, and only {@link CreatorOnboardingSessionStore.save} bumps
+ *    it. `apply` rejects a command whose `expectedRevision` differs from `session.revision`,
+ *    and a rejection leaves the session untouched.
  * 5. Only the stages in {@link CREATOR_ONBOARDING_GENERATION_REQUIRES} gate `generate`.
  *    Every other stage may be skipped without blocking it.
  * 6. An action absent from the current render's `actions` is `unsupported_action`; one
  *    present but `coming_soon` is `unavailable_action`. Neither advances the session.
- * 7. No method performs I/O, calls a model, or reads the Weave OS corpus.
+ * 7. A completed session renders the completion rail — Finish for now `available`, the
+ *    image and refinement actions `coming_soon` — and `apply` rejects every action on it as
+ *    `already_completed`. Finish for now is navigation the UI handles, not a transition.
+ * 8. No method performs I/O, calls a model, or reads the Weave OS corpus.
  */
 export type CreatorOnboardingBehavior = {
   readonly version: CreatorOnboardingBehaviorVersion;
   /** A fresh session at the opening stage, pinned to this adapter's version. */
   start(args: { sessionId: string }): ActiveCreatorOnboardingSession;
-  /** What to draw for the session's current stage. */
-  render(session: ActiveCreatorOnboardingSession): StageRenderModel;
+  /** What to draw for the session's current stage, or the completion rail once it is done. */
+  render(session: CreatorOnboardingSession): StageRenderModel;
   /** Apply one creator action. */
-  apply(session: ActiveCreatorOnboardingSession, command: TransitionCommand): TransitionResult;
+  apply(session: CreatorOnboardingSession, command: TransitionCommand): TransitionResult;
   /** Fold a validated generated foundation in and move to the foundation stage. */
   acceptFoundation(
     session: ActiveCreatorOnboardingSession,
@@ -491,10 +498,12 @@ export type SessionSaveResult =
  * 2. Stored state is parsed with {@link CreatorOnboardingSessionSchema} on read.
  *    Unparseable or unknown-version state is an error, never a silently repaired session.
  * 3. `save` rejects a session whose `revision` is not the stored one, returning the current
- *    state rather than overwriting it. A successful save advances `revision`.
- * 4. `complete` is idempotent per `idempotencyKey`: publishing the profile, clearing the raw
- *    answers and recording completion happen atomically, and a replay returns the original
- *    completion with `alreadyCompleted: true` without republishing.
+ *    state rather than overwriting it. A successful save advances `revision`, and nothing
+ *    else does.
+ * 4. `complete` publishes the profile, clears the raw answers and records completion
+ *    atomically. Once the session is completed, any later `complete` — with the same
+ *    `idempotencyKey` or a different one — returns the existing completion with
+ *    `alreadyCompleted: true`, and never republishes or overwrites the stored completion.
  * 5. After `complete`, no raw answer or draft remains recoverable through this interface —
  *    guaranteed by the shape of {@link CompletedCreatorOnboardingSessionSchema}.
  */
