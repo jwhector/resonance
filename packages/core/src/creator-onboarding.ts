@@ -267,22 +267,36 @@ export type CreatorOnboardingChoice = z.infer<typeof CreatorOnboardingChoiceSche
  * What the stage asks the creator to supply. Four kinds cover all eleven captured stages,
  * which is why `ui` needs one renderer rather than eleven components.
  */
-export const CreatorOnboardingStageInputSchema = z.discriminatedUnion("kind", [
-  z.object({ kind: z.literal("none") }),
-  z.object({
-    kind: z.literal("text"),
-    placeholder: z.string().min(1).max(200),
-    multiline: z.boolean(),
-    maxLength: z.number().int().positive().max(4000),
-    required: z.boolean(),
-  }),
-  z.object({
-    kind: z.literal("choice"),
-    options: z.array(CreatorOnboardingChoiceSchema).min(1).max(10),
-    allowCustomText: z.boolean(),
-  }),
-  z.object({ kind: z.literal("foundation"), draft: CreatorProfileDraftSchema }),
-]);
+export const CreatorOnboardingStageInputSchema = z
+  .discriminatedUnion("kind", [
+    z.object({ kind: z.literal("none") }),
+    z.object({
+      kind: z.literal("text"),
+      placeholder: z.string().min(1).max(200),
+      multiline: z.boolean(),
+      maxLength: z.number().int().positive().max(4000),
+      required: z.boolean(),
+    }),
+    z.object({
+      kind: z.literal("choice"),
+      options: z.array(CreatorOnboardingChoiceSchema).min(1).max(10),
+      /**
+       * The option whose selection invites the creator's own words ("Custom direction",
+       * `1556:79716`), or `null` when no option does. Named by id rather than implied by
+       * position, so a provider can order its options however it likes.
+       */
+      customTextChoiceId: z.string().min(1).max(64).nullable(),
+    }),
+    z.object({ kind: z.literal("foundation"), draft: CreatorProfileDraftSchema }),
+  ])
+  // Checked on the union because a discriminated-union member cannot carry a refinement.
+  .refine(
+    (input) =>
+      input.kind !== "choice" ||
+      input.customTextChoiceId === null ||
+      input.options.some((option) => option.id === input.customTextChoiceId),
+    { message: "customTextChoiceId must name one of the options", path: ["customTextChoiceId"] },
+  );
 export type CreatorOnboardingStageInput = z.infer<typeof CreatorOnboardingStageInputSchema>;
 
 /**

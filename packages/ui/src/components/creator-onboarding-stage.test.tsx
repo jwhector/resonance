@@ -67,7 +67,7 @@ const expression = model({
   prompt: ["What overall expression style feels closest to what you’re creating?"],
   input: {
     kind: "choice",
-    allowCustomText: true,
+    customTextChoiceId: "custom",
     options: [
       { id: "calm_clean", label: "Calm & Clean" },
       { id: "dreamy_reflective", label: "Dreamy & Reflective" },
@@ -314,10 +314,29 @@ describe("CreatorOnboardingStage — expression choices", () => {
     });
   });
 
+  it("reveals the custom field for the option the model names, wherever it sits", () => {
+    const customFirst = model({
+      ...expression,
+      input: {
+        kind: "choice",
+        customTextChoiceId: "custom",
+        options: [
+          { id: "custom", label: "Custom direction" },
+          { id: "calm_clean", label: "Calm & Clean" },
+        ],
+      },
+    });
+    setup(customFirst);
+    fireEvent.click(screen.getByRole("radio", { name: "Calm & Clean" }));
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("radio", { name: "Custom direction" }));
+    expect(screen.getByRole("textbox", { name: "Custom direction" })).toBeInTheDocument();
+  });
+
   it("offers no custom field when the model does not allow custom text", () => {
     const noCustom = model({
       ...expression,
-      input: { ...expression.input, allowCustomText: false },
+      input: { ...expression.input, customTextChoiceId: null },
     });
     setup(noCustom);
     fireEvent.click(screen.getByRole("radio", { name: "Custom direction" }));

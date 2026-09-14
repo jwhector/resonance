@@ -199,13 +199,12 @@ function ActionsRow({
 
 /**
  * Expression-style choices (`1556:79716`): stacked 500px outlined options, single-select with
- * radio-group semantics. When the model allows custom text, the **last** option is the
- * creator's own direction and choosing it reveals a field — the design draws "Custom
- * direction" last, and the contract marks custom text per stage rather than per option.
+ * radio-group semantics. Choosing the option the model names as `customTextChoiceId` ("Custom
+ * direction" in the design) reveals a field for the creator's own words.
  */
 function ChoiceInput({
   options,
-  allowCustomText,
+  customTextChoiceId,
   choiceId,
   customText,
   onChoice,
@@ -214,7 +213,7 @@ function ChoiceInput({
   labelledBy,
 }: {
   options: CreatorOnboardingChoice[];
-  allowCustomText: boolean;
+  customTextChoiceId: string | null;
   choiceId: string | undefined;
   customText: string;
   onChoice: (id: string) => void;
@@ -222,7 +221,7 @@ function ChoiceInput({
   disabled: boolean;
   labelledBy: string;
 }) {
-  const customOption = allowCustomText ? options[options.length - 1] : undefined;
+  const customOption = options.find((option) => option.id === customTextChoiceId);
   const descriptionPrefix = React.useId();
   return (
     <div className="flex max-w-125 flex-col gap-4">
@@ -307,8 +306,7 @@ function StageBody({
       case "choice": {
         if (!choiceId) return { ready: false };
         const trimmed = customText.trim();
-        const isCustom =
-          input.allowCustomText && choiceId === input.options[input.options.length - 1]?.id;
+        const isCustom = choiceId === input.customTextChoiceId;
         return {
           input: {
             kind: "choice",
@@ -385,7 +383,7 @@ function StageBody({
         {input.kind === "choice" && (
           <ChoiceInput
             options={input.options}
-            allowCustomText={input.allowCustomText}
+            customTextChoiceId={input.customTextChoiceId}
             choiceId={choiceId}
             customText={customText}
             onChoice={setChoiceId}

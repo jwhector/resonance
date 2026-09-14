@@ -266,7 +266,7 @@ function render(session: CreatorOnboardingSession): StageRenderModel {
         input: {
           kind: "choice",
           options: EXPRESSION_STYLE_OPTIONS.map((option) => ({ ...option })),
-          allowCustomText: true,
+          customTextChoiceId: CUSTOM_DIRECTION_CHOICE_ID,
         },
         actions: [GOOD_TO_GO, CHOOSE_FOR_ME, SKIP],
         progress: progress(stage),

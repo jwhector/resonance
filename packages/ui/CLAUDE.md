@@ -70,8 +70,8 @@ presentational — local form state at most, never data or routing.
   navigation, not a transition), `pending`, `error`, `completionSummary`. Load-bearing
   absences: no composer `+`/microphone (`WeaveComposer showDeferredAffordances={false}`), no
   Revise with Weave, no header collapse/close; `coming_soon` actions render labelled,
-  `aria-disabled`, and inert. Two conventions the model does not spell out: a paragraph ending
-  in `?` renders bold, and with `allowCustomText` the **last** choice is the free-text one. The
+  `aria-disabled`, and inert. One convention the model does not spell out: a paragraph ending
+  in `?` renders bold. The option named by `customTextChoiceId` reveals a free-text field. The
   foundation validates with `CommitProfileInputSchema` before enabling submit. Supersedes
   `WeaveInterviewRail` + `ProfileDraftPanels` for creator onboarding once `apps/web` switches.
   `RadioCard` (in `primitives/radio.tsx`) is its dot-less boxed radio option.

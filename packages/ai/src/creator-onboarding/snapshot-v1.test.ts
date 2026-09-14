@@ -461,7 +461,7 @@ describe("snapshot-v1 creator onboarding behaviour", () => {
           { id: "bold_expressive", label: "Bold & Expressive" },
           { id: "custom_direction", label: "Custom direction" },
         ],
-        allowCustomText: true,
+        customTextChoiceId: "custom_direction",
       });
     });
 
