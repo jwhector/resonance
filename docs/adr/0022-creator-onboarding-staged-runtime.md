@@ -47,8 +47,8 @@ dependency.**
 
 `packages/core/src/creator-onboarding.ts` defines both:
 
-- **`CreatorOnboardingBehavior`** — what the creator is asked and what an answer means. Four
-  members (`version`, `start`, `render`, `apply`, `acceptFoundation`), no I/O. Implemented by
+- **`CreatorOnboardingBehavior`** — what the creator is asked and what an answer means. A
+  `version` plus four methods (`start`, `render`, `apply`, `acceptFoundation`), no I/O. Implemented by
   `@resonance/ai` as `snapshot-v1`.
 - **`CreatorOnboardingSessionStore`** — how progress survives a reload. Three methods
   (`load`, `save`, `complete`). Implemented by `@resonance/db`.
