@@ -58,3 +58,13 @@ export {
   createObservationAdapter,
   type ObservationAdapterDeps,
 } from "./adapters/observation-adapter";
+
+// Creator onboarding (ADR-0022). `createCreatorOnboardingStore` is core's
+// CreatorOnboardingSessionStore: the web layer resumes, saves and completes the staged interview
+// through the port, and completion publishes the profile in the same statement that erases the
+// interview's private answers.
+export {
+  createCreatorOnboardingStore,
+  type CreatorOnboardingStoreDeps,
+  type ProfileEmbedder,
+} from "./adapters/creator-onboarding-adapter";
