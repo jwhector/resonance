@@ -122,6 +122,18 @@ every action as `already_completed`; Finish for now is navigation, not a transit
 Generation, editing and commit reuse `CreatorProfileDraftSchema` and `CommitProfileInputSchema`
 unchanged; tightening them toward the corpus's limits is a separate migration.
 
+### 12. One use case runs the loop between the seams (amendment, 2026-09-14)
+
+A `generate` or `commit` outcome is a request back to the caller, so something must sequence
+apply → save → generate → accept → save, or apply → complete, on every request. That sequencing is
+application logic and does not belong in the Next.js shell (ADR-0002). It lives in
+`@resonance/ai` as `createCreatorOnboardingService({ behavior, store, generateFoundation,
+newSessionId })`, with two methods: `open(actor)` and `transition(actor, command)`. The service
+depends only on the two ports and a generator function, so replacing either adapter does not touch
+it. It saves the answer that triggers generation before calling the model, and reports a lost save
+race, a model failure and a replayed commit as explicit notices on the view it returns. The web
+layer's one Server Action parses the command, resolves the actor and calls `transition`.
+
 ## Consequences
 
 **Easier.** The interview becomes resumable and server-authoritative. `ui` renders eleven
