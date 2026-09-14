@@ -19,6 +19,14 @@ packages speak.
 - `profile-draft.ts` — `CreatorProfileDraftSchema` (+ `NameOptionSchema`,
   `CommitProfileInputSchema`): the shared generated-draft contract for the profile the
   interview produces — `ai` generates it, `ui` edits it, `web` validates the commit.
+- `creator-onboarding.ts` — the **staged creator interview** and the two seams it sits behind
+  (ADR-0022): `CreatorOnboardingBehavior` (what to ask; `ai` implements `snapshot-v1`, pure) and
+  `CreatorOnboardingSessionStore` (how progress survives a reload; `db` implements). Plus the
+  eleven `CREATOR_ONBOARDING_STAGES` in flow order, slot/session shapes, `StageRenderModel`,
+  `TransitionCommand`/`TransitionResult` and the generation request/result. Four guarantees are
+  enforced by **shape**: no transcript field, a `completed` session with no `slots`/`draft`, a
+  command with no creator id or version, a closed version enum. Must not import `weave-os.ts`
+  (ADR-0020 amendment). The module's doc comment carries the rest.
 - `embedding.ts` — `EMBEDDING_DIMS` (1024, ADR-0010) + `assertEmbeddingDims` /
   `EmbeddingDimensionError`. Where the shared vector-width constant now lives, because `db`
   (the `vector(1024)` column) cannot import `ai` (the embedder) — the dependency runs the

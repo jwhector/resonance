@@ -42,16 +42,16 @@
         <mxCell id="sw_pkgs" value="packages/* — framework-agnostic domain &amp; platform logic (the monorepo core; pnpm-enforced boundaries)" style="swimlane;startSize=30;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1F3A5F;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="40" y="410" width="1160" height="200" as="geometry" />
         </mxCell>
-        <mxCell id="p_core" value="@resonance/core&#xa;types · Zod · ports&#xa;DiscoveryPort seam" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="sw_pkgs">
+        <mxCell id="p_core" value="@resonance/core&#xa;types · Zod · ports&#xa;Discovery · onboarding seams" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="sw_pkgs">
           <mxGeometry x="20" y="55" width="150" height="75" as="geometry" />
         </mxCell>
         <mxCell id="p_ui" value="@resonance/ui&#xa;shadcn + Figma tokens" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="sw_pkgs">
           <mxGeometry x="185" y="55" width="150" height="75" as="geometry" />
         </mxCell>
-        <mxCell id="p_db" value="@resonance/db&#xa;Drizzle · migrations&#xa;discovery ANN · follows" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="sw_pkgs">
+        <mxCell id="p_db" value="@resonance/db&#xa;Drizzle · migrations&#xa;discovery ANN · follows · onboarding sessions" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="sw_pkgs">
           <mxGeometry x="350" y="55" width="150" height="75" as="geometry" />
         </mxCell>
-        <mxCell id="p_ai" value="@resonance/ai&#xa;agent+tool registry&#xa;embeddings" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="sw_pkgs">
+        <mxCell id="p_ai" value="@resonance/ai&#xa;agent+tool registry&#xa;embeddings · onboarding snapshot-v1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="sw_pkgs">
           <mxGeometry x="515" y="55" width="150" height="75" as="geometry" />
         </mxCell>
         <mxCell id="p_auth" value="@resonance/auth&#xa;Better Auth&#xa;magic-link" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="sw_pkgs">
