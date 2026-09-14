@@ -66,14 +66,16 @@ presentational — local form state at most, never data or routing.
   **One renderer for every stage**: it draws `@resonance/core`'s `StageRenderModel` and decides
   layout from `input.kind` (`none`/`text`/`choice`/`foundation`) and the offered actions, never
   from the stage name — only `completion` switches to the rail layout. Props: `model`,
-  `onAction(action, input?)` (input rides on `submit`, and on `request_help` when text is typed), `onFinish` (any `finish` action —
-  navigation, not a transition), `pending`, `error`, `completionSummary`. Load-bearing
+  `onAction(action, input?)` (input rides on `submit`, and on `request_help` when text is
+  typed), `onFinish` (any `finish` action — navigation, not a transition), `pending`, `error`,
+  `completionSummary`. Load-bearing
   absences: no composer `+`/microphone (`WeaveComposer showDeferredAffordances={false}`), no
   Revise with Weave, no header collapse/close; `coming_soon` actions render labelled,
   `aria-disabled`, and inert. One convention the model does not spell out: a paragraph ending
   in `?` renders bold. The option named by `customTextChoiceId` reveals a free-text field. The
-  foundation validates with `CommitProfileInputSchema` before enabling submit. Supersedes
-  `WeaveInterviewRail` + `ProfileDraftPanels` for creator onboarding once `apps/web` switches.
+  foundation validates with `CommitProfileInputSchema` before enabling submit. It
+  supersedes `WeaveInterviewRail` + `ProfileDraftPanels`, which `apps/web` no longer uses
+  (removal deferred to seed `resonance-37cb`).
   `RadioCard` (in `primitives/radio.tsx`) is its dot-less boxed radio option.
 
 `tagVariants` (in `primitives/tag.tsx`) is exported alongside `Tag` because the chip's look

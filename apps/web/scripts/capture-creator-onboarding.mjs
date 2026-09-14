@@ -8,6 +8,10 @@
 //
 // BASE_URL overrides the server (default http://localhost:3000). The throwaway account is deleted
 // at the end, including the embeddings no cascade reaches, exactly as the E2E teardown does.
+
+// The page.evaluate callbacks run in the browser, where these globals exist.
+/* global document, HTMLElement */
+
 import { chromium } from "@playwright/test";
 import { createRequire } from "node:module";
 import { dirname, resolve } from "node:path";

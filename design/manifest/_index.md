@@ -184,8 +184,9 @@ of those four — the E2E asserts their tabs render distinct copy, which is beha
   Resonance logo the app omits); the ProfileGen draft belongs inline in the conversation, not a
   standalone panel; the interview is one full-bleed surface. Verify each against its frame — don't assume.
 - **Persistent shell chrome.** The authenticated screens share a persistent **~80px left
-  app-nav + Weave sidebar** chrome. Built as `@resonance/ui` `AppNav` (80px rail) + the
-  full-bleed `WeaveInterviewRail`, composed by the interview screen (`resonance-6e42`).
+  app-nav + Weave sidebar** chrome. Built as `@resonance/ui` `AppNav` (80px rail) + a
+  full-bleed Weave surface — originally `WeaveInterviewRail` (`resonance-6e42`), now
+  `CreatorOnboardingStage` on `/onboarding/creator`.
   **`AppNav` is now a shared layout** — `apps/web/app/(app)/layout.tsx` (`resonance-c7db`) — so
   `/onboarding/creator`, `/creator/[id]` and `/discover` all carry the rail. Still open: the
   design's separate 40px `Weave/Sidebar` column (x=81, w=40) is not built as a component; on
