@@ -76,79 +76,51 @@ tests exist, which is the point at which the question can be answered with evide
 
 ### 4. Every session is pinned to a behaviour version
 
-`CREATOR_ONBOARDING_BEHAVIOR_VERSIONS` is a **closed** enum (`snapshot-v1` today). A session
-records the version that produced it, and a session pinned to an unknown version **fails to
-parse**. Silent reinterpretation by rules a session never ran under is not acceptable;
-widening the enum plus an explicit migration is the only way a new provider reads old
-sessions.
+`CREATOR_ONBOARDING_BEHAVIOR_VERSIONS` is a **closed** enum (`snapshot-v1` today): a session
+pinned to an unknown version fails to parse, and widening the enum plus an explicit migration is
+the only way a new provider reads old sessions.
 
 ### 5. Structured state, never a transcript
 
-The session stores named answer slots, statuses, the generated draft, the current stage, the
-behaviour version, and a revision. It does **not** store assistant or user prose.
-
-This is enforced by shape rather than convention: Weave's words live only on
-`StageRenderModel`, which is derived per render, and `CreatorOnboardingSession` has no field
-capable of holding a message. Prose is a function of structured state, so a reload can
-reproduce it without ever having persisted it.
+The session stores named answer slots, statuses, the draft, the current stage, the behaviour
+version and a revision, and has no field for prose; Weave's words live only on
+`StageRenderModel`, derived per render.
 
 ### 6. Raw answers do not outlive the commit
 
-`CreatorOnboardingSession` is a union discriminated on `status`. An in-progress session carries
-`slots` and `draft`; a **completed** session carries only `sessionId`, `behaviorVersion`,
-`completedAt`, `revision`, and the public `committedProfile`. It has no field that can hold a
-private answer, so post-commit cleanup is structural — a parse drops smuggled slots rather
-than trusting anyone to remember to clear them.
-
-Origin stories and resonance moments are sensitive even without a transcript. Action payloads
-and model prompts containing them are never logged.
+`CreatorOnboardingSession` is a union on `status`, and the `completed` branch has no `slots` or
+`draft` field, so post-commit cleanup is structural rather than remembered. Action payloads and
+prompts carrying origin or resonance answers are never logged.
 
 ### 7. Writes are revision-checked and completion is idempotent
 
-Every `TransitionCommand` carries `expectedRevision` and an `idempotencyKey`. A mismatch is
-rejected rather than merged, so a retried request cannot double-advance a stage. The store is
-the single owner of the revision counter: behaviour returns the next session at the revision it
-was derived from, and only a successful `save` bumps it. `complete` publishes the profile,
-clears raw answers, and records completion atomically; once a session is completed, any later
-`complete` — with the same idempotency key or a different one — returns the existing completion
-with `alreadyCompleted: true` and never republishes or overwrites it.
+Every `TransitionCommand` carries `expectedRevision` and an `idempotencyKey`; the store alone
+bumps the revision, and once a session is completed every later `complete`, whatever its key,
+returns the existing completion with `alreadyCompleted: true`.
 
 ### 8. Identity is never client-supplied
 
-`TransitionCommand` has no creator field and no behaviour version — the two things a browser
-must not assert are structurally absent rather than validated away. Identity arrives as a
-separate `CreatorOnboardingActor` resolved server-side from the auth session, the same
-construction as `DiscoveryViewer` (ADR-0017).
+`TransitionCommand` has no creator field and no behaviour version; identity arrives as a
+separate server-resolved `CreatorOnboardingActor`, the same construction as `DiscoveryViewer`
+(ADR-0017).
 
 ### 9. Only two stages gate generation
 
-`CREATOR_ONBOARDING_GENERATION_REQUIRES` names `offering` and `intended_experience`, following
-the corpus's minimum-information rule. Origin, resonance moment, resonant people, expression
-style, and even the creator's own name improve the result without blocking it. Every other
-stage is skippable, and Skip and "I want to do it later" are real resumable transitions rather
-than absences.
+`CREATOR_ONBOARDING_GENERATION_REQUIRES` names `offering` and `intended_experience`, per the
+corpus's minimum-information rule; every other stage is skippable, and Skip and "I want to do
+it later" are real resumable transitions.
 
-### 10. Unavailable capabilities are absent or honestly disabled — never dead
+### 10. Unavailable capabilities are absent or honestly disabled, never dead
 
-Two different treatments, deliberately:
-
-- **Absent.** `revise_with_weave` is not a member of `CREATOR_ONBOARDING_ACTIONS`, so no
-  provider can emit one. The composer's `+` and microphone affordances are not actions at all.
-- **Disabled and labelled.** The completion rail (`1443:78273`) draws four next steps; only
-  Finish for now works. The other three are emitted with `availability: "coming_soon"` so the
-  renderer disables and labels them. They are real boundaries to real future flows, so hiding
-  them would misrepresent the product as much as wiring them to nothing would. `render` and
-  `apply` accept a completed session, so the rail survives a reload: a completed session
-  renders it, and `apply` rejects every action on it as `already_completed`. Finish for now is
-  navigation the UI handles, not a state transition. `acceptFoundation` stays active-only.
+`revise_with_weave` and the composer's `+`/microphone are absent from the contract entirely,
+while the completion rail's three unbuilt actions (`1443:78273`) are emitted `coming_soon` so
+the renderer disables and labels them. A completed session still renders that rail and rejects
+every action as `already_completed`; Finish for now is navigation, not a transition.
 
 ### 11. Public profile validation does not change
 
-Generation, editing, and commit reuse `CreatorProfileDraftSchema` and `CommitProfileInputSchema`
-unchanged, so a model cannot produce something the editor accepts but the commit rejects. The
-corpus recommends tighter lengths and tag counts than the current draft permits; applying that
-is the behaviour provider's business. **Tightening the shared public schemas is a separate
-migration** and is not part of this decision.
+Generation, editing and commit reuse `CreatorProfileDraftSchema` and `CommitProfileInputSchema`
+unchanged; tightening them toward the corpus's limits is a separate migration.
 
 ## Consequences
 

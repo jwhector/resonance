@@ -19,29 +19,14 @@ packages speak.
 - `profile-draft.ts` — `CreatorProfileDraftSchema` (+ `NameOptionSchema`,
   `CommitProfileInputSchema`): the shared generated-draft contract for the profile the
   interview produces — `ai` generates it, `ui` edits it, `web` validates the commit.
-- `creator-onboarding.ts` — the **staged creator interview** and the **two seams the whole flow
-  sits behind** (ADR-0022). `CREATOR_ONBOARDING_STAGES` (eleven stages, in flow order — order is
-  contract, not presentation), the answer/slot/session shapes, `StageRenderModel`,
-  `TransitionCommand`/`TransitionResult`, the foundation generation request/result, and the two
-  ports: **`CreatorOnboardingBehavior`** (what to ask and what an answer means — implemented by
-  `ai` as `snapshot-v1`, pure, no I/O) and **`CreatorOnboardingSessionStore`** (how progress
-  survives a reload — implemented by `db`). Separate because they vary independently: a later
-  Weave OS adapter replaces behaviour while persistence stays.
-  Four properties are enforced by **shape**, so they cannot regress quietly — read them before
-  changing anything here. **No transcript:** prose lives only on `StageRenderModel`, derived per
-  render; the session has nowhere to put a message. **Raw answers die at the commit:** the
-  session is a union on `status`, and a `completed` session has no `slots` or `draft` field at
-  all, so a parse drops smuggled answers. **Nothing spoofable:** `TransitionCommand` has no
-  creator id and no behaviour version — identity arrives as a separate `CreatorOnboardingActor`
-  from the server session, the same construction as `DiscoveryViewer`. **No silent
-  reinterpretation:** `CREATOR_ONBOARDING_BEHAVIOR_VERSIONS` is a closed enum, so a session
-  pinned to an unknown version fails to parse and a new provider needs an explicit migration.
-  Only `offering` and `intended_experience` gate generation
-  (`CREATOR_ONBOARDING_GENERATION_REQUIRES`); everything else is skippable. `revise_with_weave`
-  is deliberately **not** in `CREATOR_ONBOARDING_ACTIONS` — that capability does not exist, so no
-  provider can offer it; the completion rail's three unbuilt actions are instead emitted
-  `coming_soon` and disabled. This module must not import from `weave-os.ts`: the corpus is
-  inert and diverges from the approved design (ADR-0020 amendment).
+- `creator-onboarding.ts` — the **staged creator interview** and the two seams it sits behind
+  (ADR-0022): `CreatorOnboardingBehavior` (what to ask; `ai` implements `snapshot-v1`, pure) and
+  `CreatorOnboardingSessionStore` (how progress survives a reload; `db` implements). Plus the
+  eleven `CREATOR_ONBOARDING_STAGES` in flow order, slot/session shapes, `StageRenderModel`,
+  `TransitionCommand`/`TransitionResult` and the generation request/result. Four guarantees are
+  enforced by **shape**: no transcript field, a `completed` session with no `slots`/`draft`, a
+  command with no creator id or version, a closed version enum. Must not import `weave-os.ts`
+  (ADR-0020 amendment). The module's doc comment carries the rest.
 - `embedding.ts` — `EMBEDDING_DIMS` (1024, ADR-0010) + `assertEmbeddingDims` /
   `EmbeddingDimensionError`. Where the shared vector-width constant now lives, because `db`
   (the `vector(1024)` column) cannot import `ai` (the embedder) — the dependency runs the

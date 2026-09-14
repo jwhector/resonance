@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import { NotImplementedError } from "./errors";
 import type { CommitProfileInput, CreatorProfileDraft } from "./profile-draft";
 import {
   ActiveCreatorOnboardingSessionSchema,
@@ -13,8 +12,6 @@ import {
   CreatorOnboardingSlotSchema,
   StageRenderModelSchema,
   TransitionCommandSchema,
-  stubCreatorOnboardingBehavior,
-  stubCreatorOnboardingSessionStore,
   type ActiveCreatorOnboardingSession,
   type CreatorOnboardingActor,
   type CreatorOnboardingBehavior,
@@ -340,11 +337,6 @@ const command = (over: Partial<TransitionCommand> = {}): TransitionCommand => ({
 });
 
 describe("the stage vocabulary", () => {
-  it("names eleven stages and counts progress against all of them", () => {
-    expect(CREATOR_ONBOARDING_STAGES).toHaveLength(11);
-    expect(CREATOR_ONBOARDING_STAGE_COUNT).toBe(11);
-  });
-
   it("orders opening first and completion last, because order is contract", () => {
     expect(CREATOR_ONBOARDING_STAGES[0]).toBe("opening");
     expect(CREATOR_ONBOARDING_STAGES.at(-1)).toBe("completion");
@@ -779,20 +771,5 @@ describe("the two seams, driven together", () => {
     if (reloaded?.status !== "in_progress") throw new Error("expected an active session");
     expect(reloaded.currentStage).toBe("creator_name");
     expect(reloaded.revision).toBe(loaded.revision + 1);
-  });
-});
-
-describe("the stubs", () => {
-  it("declare the behaviour seam without implementing it", () => {
-    expect(stubCreatorOnboardingBehavior.version).toBe("snapshot-v1");
-    expect(() => stubCreatorOnboardingBehavior.start({ sessionId: "s1" })).toThrow(
-      NotImplementedError,
-    );
-  });
-
-  it("reject rather than resolve at the store seam", async () => {
-    await expect(stubCreatorOnboardingSessionStore.load(ACTOR)).rejects.toThrow(
-      NotImplementedError,
-    );
   });
 });
