@@ -1,5 +1,9 @@
-import { type LanguageModel } from "ai";
-import { resolveEmbedder, type Embedder } from "@resonance/ai";
+import {
+  generateCreatorFoundation,
+  resolveEmbedder,
+  type Embedder,
+  type FoundationGenerator,
+} from "@resonance/ai";
 import { type AuthMailPort } from "@resonance/auth";
 
 /**
@@ -24,21 +28,20 @@ import { type AuthMailPort } from "@resonance/auth";
 export const E2E_HARNESS = process.env.E2E_HARNESS === "1" && process.env.NODE_ENV !== "production";
 
 /**
- * Model override for the onboarding runner, spread into `RunInput.model`. Under the harness: the
- * deterministic onboarding fake — ONE model that both streams the canned Weave line
- * (`runAgentStream`) and returns the canned `proposeProfile` draft (`runAgentStructured`). Live
- * path returns `{}`, so the runner resolves the real model (`resolveModel`, ADR-0018).
+ * Foundation generator for the staged creator-onboarding flow. Under the harness: the fixed fake
+ * draft, so the E2E reaches the foundation stage without a model. Live path: the real
+ * `generateCreatorFoundation`, which resolves the provider itself (ADR-0018).
  */
-export async function onboardingModelOverride(): Promise<{ model?: LanguageModel }> {
-  if (!E2E_HARNESS) return {};
-  const { createFakeOnboardingModel } = await import("@resonance/ai/testing");
-  return { model: createFakeOnboardingModel() };
+export async function onboardingFoundationGenerator(): Promise<FoundationGenerator> {
+  if (!E2E_HARNESS) return (request) => generateCreatorFoundation(request);
+  const { createFakeFoundationGenerator } = await import("@resonance/ai/testing");
+  return createFakeFoundationGenerator();
 }
 
 /**
  * Whether the onboarding entry (`/onboarding/creator`) should run the live-provider fail-fast
  * (`assertAiConfigured`). Under the harness the model AND embedder are injected fakes (see
- * `onboardingModelOverride` / `onboardingEmbedder`), so no real AI credentials exist or are
+ * `onboardingFoundationGenerator` / `onboardingEmbedder`), so no real AI credentials exist or are
  * needed — running the presence check there would spuriously throw and break the E2E. Live path
  * keeps the guard so a partial prod config still fails fast.
  */

@@ -58,3 +58,12 @@ export {
   type FoundationGenerator,
   type GenerateCreatorFoundationDeps,
 } from "./agents/profile-gen/creator-foundation";
+// The use case over both seams: one request's apply → save → generate → save → complete loop, so
+// the web layer's Server Actions only resolve the actor and parse the command.
+export {
+  createCreatorOnboardingService,
+  type CreatorOnboardingService,
+  type CreatorOnboardingServiceDeps,
+  type CreatorOnboardingView,
+  type CreatorOnboardingNotice,
+} from "./creator-onboarding/service";

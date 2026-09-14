@@ -32,6 +32,7 @@ src/
 ├── runner.ts              runAgentStream (streaming) + runAgentStructured (tool-driven)
 ├── testing/               @resonance/ai/testing — fake models, fake foundation generators, fake embedder (DI only, never shipped)
 ├── creator-onboarding/    snapshot-v1.ts (the staged-interview behaviour) + snapshot-v1.copy.ts (its prose/labels/options)
+│                          + service.ts (the open/transition use case over behaviour, store and generator)
 └── agents/
     ├── creator-interview/ prompt.ts + creator-interview.agent.ts (Sonnet, streaming, no tools)
     └── profile-gen/       prompt.ts + profile-gen.agent.ts (transcript → draft) +
@@ -83,6 +84,13 @@ export {
   type GenerateCreatorFoundationDeps,
 };
 export { UnsupportedBehaviorVersionError, CreatorOnboardingStateError };
+export {
+  createCreatorOnboardingService, // ({ behavior, store, generateFoundation, newSessionId })
+  type CreatorOnboardingService, // open(actor) · transition(actor, command) → CreatorOnboardingView
+  type CreatorOnboardingServiceDeps,
+  type CreatorOnboardingView,
+  type CreatorOnboardingNotice,
+};
 ```
 
 ## Staged creator onboarding (ADR-0022)
@@ -101,6 +109,15 @@ export { UnsupportedBehaviorVersionError, CreatorOnboardingStateError };
   question) through `runAgentStructured` on the ProfileGen tier and `proposeProfile` tool.
   Throws `ValidationError` (from core) for a malformed request and `AgentError` for any model
   failure or output that does not parse as `FoundationGenerationResult`. Logs nothing.
+- **`createCreatorOnboardingService(deps)`** — the use case over both seams, so no Next.js code
+  sequences a transition. `open` resumes the creator's session or starts and saves one.
+  `transition` applies one command and runs whatever it asks for: `advanced` → save; `generate`
+  → save the triggering answer first, call the generator, `acceptFoundation`, save again;
+  `commit` → `store.complete` with the command's idempotency key. It returns a
+  `CreatorOnboardingView` (`status`, `render`, `revision`, `committedProfile`, `notice`). A lost
+  save race surfaces as `notice: "stale_revision"` with the winning state, a model failure
+  (`AgentError`) as `"generation_failed"` with the answer kept, and a replayed commit as
+  `"already_completed"`; any other generator error propagates.
 - **Test helpers** (`@resonance/ai/testing`): `FAKE_CREATOR_FOUNDATION_DRAFT`,
   `createFakeFoundationGenerator(draft?)`, `createFailingFoundationGenerator()`, and
   `createFakeFoundationModel(output?)` (a model whose forced tool call returns `output`).
