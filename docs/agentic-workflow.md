@@ -9,8 +9,9 @@ knowledge ownership remains unchanged. Tool availability is checked locally.
 Plan → build (helpers when useful) → integrate → gate → human review → record.
 
 Default to one integrated branch and PR for a coherent feature. Separate PRs are
-appropriate for independently shippable parts, not merely because two packages
-were touched. A plan's child steps are work units, not PR units: siblings that only
+appropriate for a part that something else needs merged first, not merely because it
+is independently shippable or because two packages were touched. A plan's child steps
+are work units, not PR units: siblings that only
 share a contract already on `main` (for example the `db`, `ai` and `ui` steps of one
 feature) build on one integration branch and pass one gate together. Ship a step alone
 only when something else needs it merged first. A small fix can run inline without a
