@@ -61,13 +61,14 @@ Read-only questions do not require a seed, code gate, commit, or push.
    dependencies can need additional input. Visual review uses Lavish when available;
    screenshots, diagrams, and written feedback are a portable fallback.
 7. **Close.** Close completed Seeds tasks and record the feature outcome. Learnings
-   that surface during the gate itself go on top of the same branch: a diff confined to
-   `.mulch/`, `.seeds/` or `workflow/metrics/` is published with the PR without another
-   product review cycle, and if the gate ends without publishing it, wait for a terminal
-   outcome, follow the reported branch_sync next action to recover custody, then push
-   it directly and say so in the handoff. Never push while a run is active: the gate
-   may hold unpushed fix commits. Validate the measurement schema before committing it.
-   Do not invent notes merely to satisfy a hook.
+   that surface during the gate itself are committed only after the run reaches a
+   terminal outcome and branch_sync reports custody returned; never commit onto a branch
+   a run still owns, because the gate may land fix commits on it and the local head
+   diverges. Once custody is back, a diff confined to `.mulch/`, `.seeds/` or
+   `workflow/metrics/` is committed on top and published with the PR without another
+   product review cycle; if the gate ended without publishing it, push it directly after
+   that same custody check and say so in the handoff. Validate the measurement schema
+   before committing it. Do not invent notes merely to satisfy a hook.
 
 ## Checks have different jobs
 
