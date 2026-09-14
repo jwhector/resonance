@@ -14,10 +14,13 @@
 // next visit to /onboarding/creator starts a fresh interview without signing in again.
 //
 // It is a dev tool: it refuses to run with NODE_ENV=production, requires an explicit --email,
-// and prints what it removed. It reads DATABASE_URL from process.env only, so run it as
+// and prints what it removed. It reads DATABASE_URL from process.env only. The pnpm script loads
+// apps/web/.env.local into the process when that file exists, so the usual invocation is
+//   pnpm onboarding:reset -- --email you@example.com
+// (Node flags such as --env-file must come before the script path, so they cannot be passed
+// through pnpm's `--`; without the pnpm script, run
 //   node --env-file=apps/web/.env.local scripts/reset-creator-onboarding.mjs --email you@example.com
-// or `pnpm onboarding:reset -- --email you@example.com` with the variable exported. The
-// workspace TypeScript packages are loaded through the tsx loader, like verify-live.
+// instead.) The workspace TypeScript packages are loaded through the tsx loader, like verify-live.
 
 const args = process.argv.slice(2);
 const emailFlag = args.indexOf("--email");
@@ -29,13 +32,13 @@ if (process.env.NODE_ENV === "production") {
   process.exit(2);
 }
 if (!email || !email.includes("@")) {
-  console.error(
-    "usage: node --env-file=apps/web/.env.local scripts/reset-creator-onboarding.mjs --email <address> [--dry-run]",
-  );
+  console.error("usage: pnpm onboarding:reset -- --email <address> [--dry-run]");
   process.exit(2);
 }
 if (!process.env.DATABASE_URL?.trim()) {
-  console.error("onboarding:reset needs DATABASE_URL (pass --env-file=apps/web/.env.local).");
+  console.error(
+    "onboarding:reset needs DATABASE_URL: put it in apps/web/.env.local (pnpm onboarding:reset loads that file) or export it.",
+  );
   process.exit(2);
 }
 

@@ -117,8 +117,8 @@ and `zod`.
   `apps/web/.env.local`). Two things to know: Resend's shared test sender only delivers to the
   Resend account owner's own address, so sign up with that address (or set `RESEND_FROM_EMAIL` to
   a verified domain); and an account that finished the creator interview cannot walk it again, so
-  `pnpm onboarding:reset -- --email <address>` (`scripts/reset-creator-onboarding.mjs`, needs
-  `DATABASE_URL`) deletes its onboarding session, creator profile, embedding and `creator` role
+  `pnpm onboarding:reset -- --email <address>` (`scripts/reset-creator-onboarding.mjs`; the pnpm
+  script loads `apps/web/.env.local` for `DATABASE_URL`) deletes its onboarding session, creator profile, embedding and `creator` role
   to put it back at the opening. A failed foundation generation is logged by the composition
   root's `onGenerationFailed` reporter; the creator only sees "try again".
 - Live wiring is proven by the credential-gated **`verify:live`** smoke gate (`pnpm verify:live`,
