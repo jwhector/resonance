@@ -1,99 +1,168 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
+import { readOnboardingSession } from "./lib/db";
 import { deleteSignedUpAccounts, signUpAndVerify, skipInterests } from "./lib/signup";
 
 /**
- * End-to-end Creator Onboarding flow (ADR-0013): the real passwordless front door →
- * Weave interview → ProfileGen draft → commit → published profile. Runs entirely under the
- * isolated E2E harness (`E2E_HARNESS=1`, set by `playwright.config.ts`), which selects the
- * deterministic fake model / mail / embedder at the app's composition roots (ADR-0018 §4) — so the
- * flow is deterministic and credential-free — against the real Neon DB.
+ * End-to-end staged creator onboarding (ADR-0022): the real passwordless front door → the
+ * eleven-stage Weave interview → a generated, editable profile foundation → publish → the
+ * Onboarded rail → Finish for now on the published profile.
  *
- * Robustness (ADR-0011): assert only on SETTLED state — role queries,
- * `toBeVisible`, `toHaveURL`, generous timeouts. Never assert on mid-stream tokens. The OTP is
- * pulled from the `E2E_HARNESS`-gated `/api/test/last-otp` seam, which reads the same fake-mail
- * singleton Better Auth writes the code to (see `@resonance/auth` `peekLoginCode`).
+ * Runs under the isolated E2E harness (`E2E_HARNESS=1`, set by `playwright.config.ts`), which
+ * injects the fixed fake foundation generator, embedder and mail at the composition roots
+ * (ADR-0018 §4), against the real Neon database — so resume, persistence and the one-statement
+ * publish are exercised for real.
+ *
+ * Assertions wait on settled state: the stage section's `data-stage` attribute changes only once
+ * the Server Action has returned and the new model is rendered.
  */
 
-/** The canned line the fake interview model streams (see @resonance/ai gateway fake). */
-const CANNED_REPLY = "Thanks for sharing — what first drew you to this work?";
+/** A private answer, distinctive enough to search the stored session for after publishing. */
+const ORIGIN_ANSWER = "My grandmother kept a night garden and let me name the moths";
 
 /**
- * This spec is the one that **commits a creator profile**, so leaving its account behind does not
- * just leak a row — it leaks a published, embedded profile that ranks in every subsequent
- * discovery search. 70 of the dev database's 80 profiles were `New Creator` leftovers from this
- * test before the teardown existed, crowding real results off the first page.
- *
- * The sign-up helper records the address the moment it mints one, and `afterEach` drains that
- * record — Playwright still runs hooks after a timeout, where a `finally` in the aborted body
- * never would, and a timeout inside sign-up is exactly when an account exists that the test never
- * got to name.
+ * This spec publishes creator profiles, and a leftover account leaks a ready, embedded profile
+ * into every later discovery search. The sign-up helper records each address as it is minted, so
+ * `afterEach` can drain them even when a test times out mid-flow.
  */
 test.afterEach(deleteSignedUpAccounts);
 
-test("creator can sign up, interview with Weave, generate + commit a profile", async ({
+function stage(page: Page, name: string) {
+  return page.locator(`section[data-stage="${name}"]`);
+}
+
+async function expectStage(page: Page, name: string): Promise<void> {
+  await expect(stage(page, name)).toBeVisible({ timeout: 20_000 });
+}
+
+/** Answer a multiline stage through the bottom composer and send it. */
+async function answerInComposer(page: Page, current: string, text: string): Promise<void> {
+  await stage(page, current).getByRole("textbox", { name: "Talk to Weave" }).fill(text);
+  await page.getByRole("button", { name: "Yes I’m ready" }).click();
+}
+
+async function reachCreatorOnboarding(
+  page: Page,
+  request: Parameters<typeof signUpAndVerify>[1],
+): Promise<string> {
+  // `/start`'s "share" answer is what routes a new account to the interview rather than the member
+  // front door; interests are skipped because `interests.spec.ts` owns that path.
+  const email = await signUpAndVerify(page, request, "e2e-creator", "share");
+  await skipInterests(page, "share");
+  await expectStage(page, "opening");
+  return email;
+}
+
+test("creator completes the staged interview, resumes after reload, publishes and finishes", async ({
   page,
   request,
 }) => {
-  // 1) /start's "share" answer → /signup → /verify → the OTP from the test seam → signed in,
-  //    standing on /interests. The answer is what carries this account to the interview rather
-  //    than the member front door. Unique per run so re-runs never collide on Better Auth's
-  //    one-account-per-email.
-  await signUpAndVerify(page, request, "e2e-creator", "share");
+  const email = await reachCreatorOnboarding(page, request);
 
-  // 2) Interest selection sits between verification and the interview, for every new account.
-  //    This spec is about the CREATOR path, so it skips the step —
-  //    which the picker supports by design: Continue with nothing selected is a valid, empty
-  //    selection. `interests.spec.ts` owns driving the picking path.
-  await skipInterests(page, "share");
+  // Opening → name. The name is optional; skipping it must not block anything.
+  await page.getByRole("button", { name: "Yes let’s begin" }).click();
+  await expectStage(page, "creator_name");
+  await page.getByRole("button", { name: "Skip" }).click();
 
-  // 3) Interview: the Weave rail renders. Send a turn; assert the assistant reply SETTLES.
-  await expect(page.getByRole("region", { name: "Weave interview" })).toBeVisible();
-  const composer = page.getByRole("textbox", { name: "Talk to Weave" });
-  await composer.fill("I hand-throw stoneware mugs and bowls for everyday use.");
-  await page.getByRole("button", { name: "Send to Weave" }).click();
+  // Offering gates generation, so it offers no Skip.
+  await expectStage(page, "offering");
+  await expect(page.getByRole("button", { name: "Skip" })).toHaveCount(0);
+  await answerInComposer(page, "offering", "Herbal blends and small dreamwork circles");
 
-  // The fake model streams one canned line — assert the settled text, not a partial token.
-  await expect(page.getByText(CANNED_REPLY)).toBeVisible({ timeout: 20_000 });
+  await expectStage(page, "origin");
+  await answerInComposer(page, "origin", ORIGIN_ANSWER);
 
-  // 4) Generate the draft. The button enables after the first user turn.
-  const generate = page.getByRole("button", { name: "Weave, build my profile" });
-  await expect(generate).toBeEnabled();
-  await generate.click();
+  // Resume: a reload mid-interview lands on exactly the stage the creator reached, because the
+  // session is server-side rather than in the browser.
+  await expectStage(page, "intended_experience");
+  await page.reload();
+  await expectStage(page, "intended_experience");
 
-  // ProfileDraftPanels appears — assert the 3 name options + headline + tags all render.
-  await expect(page.getByRole("heading", { name: "Creator Name" })).toBeVisible({
-    timeout: 20_000,
-  });
-  await expect(page.getByText("New Creator")).toBeVisible();
-  await expect(page.getByText("Weave Studio")).toBeVisible();
-  await expect(page.getByText("The Maker")).toBeVisible();
+  await answerInComposer(page, "intended_experience", "Slower, calmer and more reflective");
 
-  const headline = page.getByRole("textbox", { name: "Headline" });
-  await expect(headline).toHaveValue("A creator sharing what they love");
-  await expect(page.getByText("craft")).toBeVisible();
-  await expect(page.getByText("community")).toBeVisible();
+  await expectStage(page, "resonance_moment");
+  await page.getByRole("button", { name: "Skip" }).click();
+  await expectStage(page, "resonant_people");
+  await page.getByRole("button", { name: "Skip" }).click();
 
-  // Edit the headline so we can prove the edit round-trips through commit → DB → render.
-  const editedHeadline = "Hand-thrown stoneware for everyday tables";
-  await headline.fill(editedHeadline);
-
-  // 5) Commit → redirected to /creator/<id>. Assert the saved fields render.
+  // Expression style: a keyboard-operable radio group.
+  await expectStage(page, "expression_style");
+  await page.getByRole("radio", { name: "Dreamy & Reflective" }).check();
   await page.getByRole("button", { name: "Good to go" }).click();
 
+  // Summary → generation → the editable foundation.
+  await expectStage(page, "summary");
+  await page.getByRole("button", { name: "Yes I’m ready" }).click();
+  await expectStage(page, "foundation");
+
+  // The generated foundation is saved before the creator touches it, so a reload keeps it.
+  await page.reload();
+  await expectStage(page, "foundation");
+
+  const foundation = stage(page, "foundation");
+  await expect(foundation.getByRole("heading", { name: "Creator Name" })).toBeVisible();
+  await expect(foundation.getByText("Revise with Weave")).toHaveCount(0);
+  await foundation.getByRole("radio", { name: /Night Bloom Collective/ }).check();
+
+  const headline = foundation.getByRole("textbox", { name: "Headline" });
+  await expect(headline).toHaveValue(
+    "Dreamwork and herbal reflection for slower inner connection.",
+  );
+  const editedHeadline = "Night-garden herbal circles for slower evenings";
+  await headline.fill(editedHeadline);
+
+  await foundation.getByRole("textbox", { name: "New search keyword" }).fill("moth gardens");
+  await foundation.getByRole("button", { name: "Add tag" }).click();
+  await expect(foundation.getByText("moth gardens")).toBeVisible();
+
+  // Publish → the Onboarded rail.
+  await page.getByRole("button", { name: "Good to go" }).click();
+  await expectStage(page, "completion");
+
+  const rail = stage(page, "completion");
+  await expect(rail.getByRole("region", { name: "Your published profile" })).toContainText(
+    "Night Bloom Collective",
+  );
+  // The unbuilt next steps are offered honestly: present, disabled, and labelled as coming soon.
+  for (const name of [/profile image/i, /cover image/i, /refine/i]) {
+    await expect(rail.getByRole("button", { name })).toHaveAttribute("aria-disabled", "true");
+  }
+  await expect(rail.getByText("Coming soon").first()).toBeVisible();
+
+  // Privacy: the stored session no longer holds any interview answer or the draft.
+  const stored = await readOnboardingSession(email);
+  expect(stored?.state).toMatchObject({ status: "completed" });
+  expect(stored?.state).not.toHaveProperty("slots");
+  expect(stored?.state).not.toHaveProperty("draft");
+  expect(JSON.stringify(stored?.state)).not.toContain(ORIGIN_ANSWER);
+
+  // A completed interview reopens on the rail rather than restarting.
+  await page.reload();
+  await expectStage(page, "completion");
+
+  // Finish for now → the published profile, carrying the creator's edits.
+  await page.getByRole("button", { name: "Finish for now" }).click();
   await expect(page).toHaveURL(/\/creator\/[0-9a-f-]{36}/, { timeout: 25_000 });
-  await expect(page.getByText("Profile published")).toBeVisible();
-  // Default selected name is the first option.
-  await expect(page.getByRole("heading", { name: "New Creator" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Night Bloom Collective" })).toBeVisible();
   await expect(page.getByText(editedHeadline)).toBeVisible();
-  // The bio the fake ProfileGen derives from the first interview turn.
-  await expect(page.getByText(/hand-throw stoneware mugs and bowls/i)).toBeVisible();
-  // Tags render as search keywords.
-  await expect(page.getByText("craft")).toBeVisible();
-  await expect(page.getByText("community")).toBeVisible();
+  await expect(page.getByText("moth gardens")).toBeVisible();
+});
+
+test("“I want to do it later” leaves onboarding and the invitation is still waiting", async ({
+  page,
+  request,
+}) => {
+  await reachCreatorOnboarding(page, request);
+
+  await page.getByRole("button", { name: "I want to do it later" }).click();
+  await expect(page).not.toHaveURL(/\/onboarding\/creator/, { timeout: 20_000 });
+
+  await page.goto("/onboarding/creator");
+  await expectStage(page, "opening");
+  await expect(page.getByRole("button", { name: "Yes let’s begin" })).toBeVisible();
 });
 
 test("unauthenticated visit to /onboarding/creator redirects to /signup", async ({ page }) => {
-  // A fresh (isolated) Playwright context has no session cookie — the RSC auth gate must bounce.
+  // A fresh Playwright context has no session cookie — the RSC auth gate must bounce.
   await page.goto("/onboarding/creator");
   await expect(page).toHaveURL(/\/signup/, { timeout: 15_000 });
   await expect(page.getByRole("heading", { name: "Welcome to Resonance" })).toBeVisible();
