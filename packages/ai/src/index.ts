@@ -64,6 +64,7 @@ export {
   createCreatorOnboardingService,
   type CreatorOnboardingService,
   type CreatorOnboardingServiceDeps,
+  type GenerationFailureReport,
   type CreatorOnboardingView,
   type CreatorOnboardingNotice,
 } from "./creator-onboarding/service";

@@ -100,7 +100,9 @@ export {
   transcribed from design screens 14–23 and 06 into `snapshot-v1.copy.ts`. Semantics a caller
   relies on: only `offering` and `intended_experience` are required (they offer no Skip); the
   opening's `later` keeps the session at the opening with the opening slot `skipped`; the
-  summary's `submit` (empty or not) and `skip` both return `generate`; a `submit` with no (or
+  summary's `submit` (empty or not) and `skip` both return `generate`, and when the summary already
+  holds a note (a retry after a failed generation) an empty submit or Skip keeps that note rather
+  than replacing it with a skip; a `submit` with no (or
   whitespace-only) text on an optional text stage records the slot `skipped` and advances, while
   a required stage rejects it as `required_input_missing`; `request_help` on the name
   stage records `{ choiceId: "help_wanted", customText? }`; `choose_for_me` records
@@ -120,7 +122,11 @@ export {
   `CreatorOnboardingView` (`status`, `render`, `revision`, `committedProfile`, `notice`). A lost
   save race surfaces as `notice: "stale_revision"` with the winning state, a model failure
   (`AgentError`) as `"generation_failed"` with the answer kept, and a replayed commit as
-  `"already_completed"`; any other generator error propagates.
+  `"already_completed"`; any other generator error propagates. An optional `onGenerationFailed`
+  dep receives a `GenerationFailureReport` (session id, revision, the `AgentError`'s name and
+  message, and the cause's name/message/status — never an answer) for every `generation_failed`,
+  so a revoked key or a provider outage is visible to the operator; `apps/web` wires it to
+  `console.error`.
 - **Test helpers** (`@resonance/ai/testing`): `FAKE_CREATOR_FOUNDATION_DRAFT`,
   `createFakeFoundationGenerator(draft?)`, `createFailingFoundationGenerator()`, and
   `createFakeFoundationModel(output?)` (a model whose forced tool call returns `output`).

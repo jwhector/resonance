@@ -63,7 +63,9 @@ import {
  *   deferred, so they come back to the same invitation rather than to a question they never
  *   agreed to start.
  * - The summary is where generation is requested: both its Yes I'm ready and its Skip return
- *   `generate`, carrying the answered slots in flow order.
+ *   `generate`, carrying the answered slots in flow order. It is also the only stage answered
+ *   more than once (after a failed generation), so a retry with nothing typed keeps the note
+ *   already saved rather than replacing it with a skip.
  * - Actions that carry no answer (Skip, Choose for me, begin, later) refuse an input, so a
  *   typed answer is never silently discarded by pressing the wrong control.
  */
@@ -431,6 +433,13 @@ function applySummary(
     if ("reason" in read) return reject(read.reason);
     slot = read.text === null ? { status: "skipped" } : answered({ kind: "text", text: read.text });
   }
+
+  // The summary is the one stage a creator answers more than once: a failed generation leaves
+  // them here with the note they typed already saved, and the screen never shows that note back.
+  // A retry that carries no text is therefore a retry, not an erasure — the saved note stands
+  // until a new one replaces it.
+  const previous = session.slots.summary;
+  if (slot.status === "skipped" && previous?.status === "answered") slot = previous;
 
   const slots = { ...session.slots, summary: slot };
   if (missingRequired(slots)) return reject("required_input_missing");

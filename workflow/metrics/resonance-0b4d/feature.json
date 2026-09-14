@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "id": "resonance-0b4d",
+  "size": "S",
+  "risk": "high",
+  "started_at": "2026-09-14T08:30:09.388Z",
+  "ended_at": "2026-09-14T08:39:28.735Z",
+  "base": "4bd5e3da17a2ce51cdb96dfcfb77221976fd897b",
+  "head": "1ac1d442b91f19fe25eab8a0e477dee6bd976817",
+  "outcome": "validated",
+  "coverage": "partial",
+  "diff": {
+    "files": 17,
+    "packages": 2,
+    "added": 270,
+    "deleted": 9,
+    "binary_files": 0
+  }
+}

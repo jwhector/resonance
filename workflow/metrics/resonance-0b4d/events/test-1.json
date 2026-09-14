@@ -1,0 +1,18 @@
+{
+  "id": "test-1",
+  "invocation": "call-003",
+  "worktree_dirty": true,
+  "phase": "test",
+  "reason": "initial",
+  "run": "local-001",
+  "head": "4bd5e3da17a2ce51cdb96dfcfb77221976fd897b",
+  "harness": "claude",
+  "requested_model": "claude-fable-5-1",
+  "resolved_model": "claude-fable-5-1",
+  "effort": "medium",
+  "started_at": "2026-09-14T08:31:00.000Z",
+  "ended_at": "2026-09-14T08:37:00.000Z",
+  "source": "manual",
+  "tokens": null,
+  "outcome": "passed"
+}

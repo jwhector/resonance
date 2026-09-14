@@ -14,6 +14,7 @@ import {
   createFakeFoundationGenerator,
 } from "../testing";
 import type { FoundationGenerator } from "../agents/profile-gen/creator-foundation";
+import { AgentError } from "../errors";
 import {
   createCreatorOnboardingService,
   type CreatorOnboardingService,
@@ -191,6 +192,45 @@ describe("createCreatorOnboardingService", () => {
     const reloaded = await service.open(ACTOR);
     expect(reloaded.revision).toBe(failed.revision);
     expect(reloaded.revision).toBeGreaterThan(summary.revision);
+  });
+
+  it("reports a failed generation to the operator without the creator's answers", async () => {
+    // Shaped like the AI SDK's call error: the request body — with every answer — rides on the
+    // cause, which is exactly what must not reach a log.
+    const providerError = Object.assign(new Error("Invalid API key"), {
+      name: "APICallError",
+      statusCode: 401,
+      requestBodyValues: { messages: [{ role: "user", content: "PRIVATE ORIGIN STORY" }] },
+    });
+    const onGenerationFailed = vi.fn();
+    const memory = memoryStore();
+    const service = createCreatorOnboardingService({
+      behavior,
+      store: memory.store,
+      generateFoundation: async () => {
+        throw new AgentError('Agent "creator-foundation" failed to generate', {
+          cause: providerError,
+        });
+      },
+      newSessionId: () => "session-1",
+      onGenerationFailed,
+    });
+    const summary = await toSummary(service);
+
+    const failed = await service.transition(
+      ACTOR,
+      command(summary, "submit", text("PRIVATE ORIGIN STORY")),
+    );
+    expect(failed.notice).toBe("generation_failed");
+    expect(onGenerationFailed).toHaveBeenCalledTimes(1);
+    const report = onGenerationFailed.mock.calls[0]![0];
+    expect(report).toEqual({
+      sessionId: "session-1",
+      revision: failed.revision,
+      error: { name: "AgentError", message: 'Agent "creator-foundation" failed to generate' },
+      cause: { name: "APICallError", message: "Invalid API key", statusCode: 401 },
+    });
+    expect(JSON.stringify(report)).not.toContain("PRIVATE ORIGIN STORY");
   });
 
   it("lets an unexpected generator error escape rather than disguising it", async () => {
