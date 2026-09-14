@@ -1,6 +1,6 @@
 # ADR-0021: Portable workflow and feature efficiency measurement
 
-- **Status:** Accepted
+- **Status:** Accepted — amended 2026-09-13 (see Amendment)
 - **Date:** 2026-09-13
 - **Supersedes:** ADR-0016 sections 1, 3 and 4 (orchestration, gate layering, review surface).
   Its knowledge-ownership decision remains in effect.

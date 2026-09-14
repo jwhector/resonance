@@ -28,7 +28,7 @@ These were seeded from the founding design interview (2026-06-16).
 | [0018](0018-testing-seams-live-by-default.md)                          | Testing seams — live-by-default code, fakes injected in tests, live-smoke gate    | Accepted                      |
 | [0019](0019-design-fidelity-visual-manifest.md)                        | Design fidelity via the visual manifest — artifact-anchored parity (R1–R4)        | Accepted                      |
 | [0020](0020-weave-os-corpus-governance-and-runner-boundary.md)         | Weave OS — repo-versioned corpus + resolver seam, git governance, runner boundary | Accepted                      |
-| [0021](0021-portable-workflow-and-efficiency-measurement.md)           | Portable workflow and feature efficiency measurement                              | Accepted                      |
+| [0021](0021-portable-workflow-and-efficiency-measurement.md)           | Portable workflow and feature efficiency measurement                              | Accepted — amended 2026-09-13 |
 | [0022](0022-creator-onboarding-staged-runtime.md)                      | Creator onboarding — product-owned staged runtime behind two versioned seams      | Accepted                      |
 
 ## Writing a new ADR

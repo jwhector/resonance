@@ -11,11 +11,10 @@ Plan → build (helpers when useful) → integrate → gate → human review →
 Default to one integrated branch and PR for a coherent feature. Separate PRs are
 appropriate for a part that something else needs merged first, not merely because it
 is independently shippable or because two packages were touched. A plan's child steps
-are work units, not PR units: siblings that only
-share a contract already on `main` (for example the `db`, `ai` and `ui` steps of one
-feature) build on one integration branch and pass one gate together. Ship a step alone
-only when something else needs it merged first. A small fix can run inline without a
-feature plan or subagents.
+are work units, not PR units: siblings that only share a contract already on `main`
+(for example the `db`, `ai` and `ui` steps of one feature) build on one integration
+branch and pass one gate together. A small fix can run inline without a feature plan
+or subagents.
 Read-only questions do not require a seed, code gate, commit, or push.
 
 1. **Orient.** Read root/package context as needed. Run `ml prime` and `sd prime`
@@ -64,9 +63,11 @@ Read-only questions do not require a seed, code gate, commit, or push.
 7. **Close.** Close completed Seeds tasks and record the feature outcome. Learnings
    that surface during the gate itself go on top of the same branch: a diff confined to
    `.mulch/`, `.seeds/` or `workflow/metrics/` is published with the PR without another
-   product review cycle, and if the gate cannot publish it, push it directly and say so
-   in the handoff. Validate the measurement schema before committing it. Do not invent
-   notes merely to satisfy a hook.
+   product review cycle, and if the gate ends without publishing it, wait for a terminal
+   outcome, follow the reported branch_sync next action to recover custody, then push
+   it directly and say so in the handoff. Never push while a run is active: the gate
+   may hold unpushed fix commits. Validate the measurement schema before committing it.
+   Do not invent notes merely to satisfy a hook.
 
 ## Checks have different jobs
 
