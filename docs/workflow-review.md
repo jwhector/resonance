@@ -24,9 +24,14 @@ the owner reconciles findings and records disagreements. If reconciliation chang
 code, obtain current evidence from both reviewers for the final candidate. Preserve
 accepted decisions in the handoff so rereviews do not reopen them without new evidence.
 
-If any harness cannot access the required reviewer, or a high-risk change cannot
-access both, finish implementation and local checks, then pause formal review and
-ask before substituting a model. Other harnesses remain able to develop the feature.
+When the gate cannot pin or report its resolved model, or reports a model other than
+the required one, run it anyway, record the actual `resolved_model` (`null` when
+unknown), and name the substitution or gap in the handoff; do not stop to ask. That
+handoff disclosure is what keeps a downgrade from being silent. An unpinned reviewer is
+an accepted operating state until the operator pins one, and an unknown or substituted
+resolved model keeps the run out of baselines ([workflow-metrics.md](workflow-metrics.md)).
+The one case that still pauses is a high-risk change whose second-model cross-check has
+no available provider at all.
 
 ## Native role adapters
 
@@ -60,6 +65,18 @@ other no-mistakes agent phases and other repos using that global config. Existin
 Do not add unsupported repo-level `agent_config` or claim reviewer-only routing.
 Check the actual run's model evidence after setup. If cheaper housekeeping is desired,
 first add or verify step-specific support in the external gate; do not invent flags.
+
+## Driving gate questions
+
+The gate parks on `ask-user` findings. Escalate one only when it changes product
+behaviour, a design choice, or scope; decide the rest yourself and list each decision in
+the handoff. Trivially decidable findings include deleting dead code with no callers,
+formatting, and a no-live-surface verdict on a change that touched nothing runnable.
+Head them off in `--intent`: state the change's scope (contract-only, docs-only), say a
+no-live-surface verdict is expected when that is true, and pre-authorize removing dead
+code the reviewer finds. The reviewer reads the intent; whether the gate's own triage
+honours standing consents is a tool question, so the intent line is guidance to the
+reviewer, not a switch.
 
 ## Extra rounds and stopping
 

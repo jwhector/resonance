@@ -182,6 +182,15 @@ ratified decision, **mulch** for an agent-discovered learning, a **seed** for wo
   selection" is a single, isolated, clearly-named **E2E-only harness**
   (`apps/web/lib/e2e-harness.ts`, gated on `E2E_HARNESS`) — ADR-0018 §4.
 - Write the test with the behavior. Bug fixes start with a failing test.
+- **Two ports over one piece of state get a composition test.** When a feature defines
+  more than one port over the same session, token or row (a behaviour and a store, a writer
+  and a reader), drive the real round trip across both fakes — load, apply, save, load — and
+  assert the second write succeeds. Per-port tests prove each side alone; only the
+  composition proves they agree on who owns what.
+- **No ritual tests.** A test that asserts an array's length, that a stub throws
+  `NotImplementedError`, or that a constant equals itself adds friction without safety.
+  Assert behaviour a caller depends on: order when order is contract, a rejection reason,
+  a field that must be absent.
 
 ## Commits & ADRs
 

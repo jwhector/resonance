@@ -9,8 +9,12 @@ knowledge ownership remains unchanged. Tool availability is checked locally.
 Plan → build (helpers when useful) → integrate → gate → human review → record.
 
 Default to one integrated branch and PR for a coherent feature. Separate PRs are
-appropriate for independently shippable parts, not merely because two packages
-were touched. A small fix can run inline without a feature plan or subagents.
+appropriate for a part that something else needs merged first, not merely because it
+is independently shippable or because two packages were touched. A plan's child steps
+are work units, not PR units: siblings that only share a contract already on `main`
+(for example the `db`, `ai` and `ui` steps of one feature) build on one integration
+branch and pass one gate together. A small fix can run inline without a feature plan
+or subagents.
 Read-only questions do not require a seed, code gate, commit, or push.
 
 1. **Orient.** Read root/package context as needed. Run `ml prime` and `sd prime`
@@ -41,9 +45,13 @@ Read-only questions do not require a seed, code gate, commit, or push.
    are integrated and accepted. Keep the parent open until delivery is complete.
 5. **Validate once through the owner.** Run focused tests while building. Exercise
    changed behavior with /verify; reuse valid evidence for the same commit rather
-   than running a second full suite as a ritual. Commit coherent changes, then the
-   owner drives `no-mistakes axi run --intent "<goal, constraints, accepted decisions>"`
-   when shipping is authorized. Follow the installed skill for active-run custody.
+   than running a second full suite as a ritual. Record learnings and measurements
+   **before** submitting, so `.mulch/`, `.seeds/` and `workflow/metrics/` ride the same
+   candidate the gate reviews and a learning never costs a second run. Commit coherent
+   changes, then the owner drives
+   `no-mistakes axi run --intent "<goal, constraints, accepted decisions, standing consents>"`
+   when shipping is authorized. Follow the installed skill for active-run custody and
+   [review policy](workflow-review.md) for which gate questions to decide yourself.
    The gate owns formal code review, test, document/lint, push, PR, and CI. Do not
    prepend a standalone /code-review or ask every builder to run a gate.
    [Review policy](workflow-review.md) specifies models and justified extra passes.
@@ -52,10 +60,15 @@ Read-only questions do not require a seed, code gate, commit, or push.
    are the usual human touchpoints; unresolved decisions and separate-PR merge
    dependencies can need additional input. Visual review uses Lavish when available;
    screenshots, diagrams, and written feedback are a portable fallback.
-7. **Record.** Save only useful new knowledge in Mulch. Close completed Seeds tasks
-   and record the feature outcome and sanitized measurements. Do not invent notes
-   merely to satisfy a hook. A metadata-only final measurement update does not start
-   another product review cycle. Validate its schema before committing it.
+7. **Close.** Close completed Seeds tasks and record the feature outcome. Learnings
+   that surface during the gate itself are committed only after the run reaches a
+   terminal outcome and branch_sync reports custody returned; never commit onto a branch
+   a run still owns, because the gate may land fix commits on it and the local head
+   diverges. Once custody is back, a diff confined to `.mulch/`, `.seeds/` or
+   `workflow/metrics/` is committed on top and published with the PR without another
+   product review cycle; if the gate ended without publishing it, push it directly after
+   that same custody check and say so in the handoff. Validate the measurement schema
+   before committing it. Do not invent notes merely to satisfy a hook.
 
 ## Checks have different jobs
 
@@ -82,7 +95,7 @@ reliable base commit. Keep full CI while measuring opportunities to narrow it.
   session/edit/stop hooks. `.claude/agents/reviewer.md` defines its review role.
 - **Other harnesses:** read AGENTS.md and recipes directly; use equivalent tools,
   explicit file scopes, and the same measurement format. Follow the reviewer
-  availability policy before substituting a model.
+  availability policy when the required model is unavailable or substituted.
 - **Firstmate:** optional for overnight or multi-session supervision. Its workers
   follow the same builder contract; it does not change who owns delivery.
 - **No-mistakes:** external shipping executor. Its harness/model selection is

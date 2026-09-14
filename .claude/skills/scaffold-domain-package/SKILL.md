@@ -71,7 +71,7 @@ This recipe runs inside the agentic loop (root CLAUDE.md → _Agentic workflow_,
 
 9. **Register in the knowledge layer (keep the framework self-healing):**
    - **Mulch domain:** `ml add <name>` — creates `.mulch/expertise/<name>.jsonl`.
-   - **ADR index:** `ml record <name> --type reference --classification foundational --name "ratified decisions (ADR index)" --files docs/adr/NNNN-<slug>.md --dir-anchor packages/<name> --tags "adr,ratified-decision" --description "<one-line decision> — open ADR-NNNN before changing."` — **pass `--files` explicitly**, or `ml` auto-fills `files[]` with the whole changeset and pollutes the record.
+   - **ADR index:** `ml record <name> --type reference --classification foundational --name "ADR-NNNN <short-slug>" --files docs/adr/NNNN-<slug>.md --dir-anchor packages/<name> --tags "adr,ratified-decision" --description "<one-line decision> — open ADR-NNNN before changing."` — **pass `--files` explicitly**, or `ml` auto-fills `files[]` with the whole changeset and pollutes the record.
    - **Root CLAUDE.md tree:** add the package to the "How this repo is organized" list.
    - Run **`pnpm check:workspace`** — it fails if a package lacks a `CLAUDE.md` or a mulch domain (the same check gates CI).
 
