@@ -23,6 +23,11 @@ export async function creatorOnboardingService(): Promise<CreatorOnboardingServi
     store: createCreatorOnboardingStore({ db, embedder: await onboardingEmbedder() }),
     generateFoundation: await onboardingFoundationGenerator(),
     newSessionId: () => crypto.randomUUID(),
+    // The creator only ever sees "try again"; this is the one place a failed model call — a
+    // revoked key, a provider outage — becomes visible to whoever runs the app. The report
+    // carries the failure and the session id, never an answer.
+    onGenerationFailed: (failure) =>
+      console.error("creator onboarding: foundation generation failed", failure),
   });
 }
 

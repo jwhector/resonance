@@ -45,12 +45,31 @@ export type CreatorOnboardingView = {
   notice: CreatorOnboardingNotice | null;
 };
 
+/**
+ * What an operator may learn about a generation that failed: which session, which revision, and
+ * the failure itself — never the creator's answers. The generator's underlying error (an AI SDK
+ * call error, a schema error) can carry the whole request, so it is reduced to its name, message
+ * and HTTP status here rather than handed over.
+ */
+export type GenerationFailureReport = {
+  sessionId: string;
+  revision: number;
+  error: { name: string; message: string };
+  cause: { name: string; message: string; statusCode?: number } | null;
+};
+
 export type CreatorOnboardingServiceDeps = {
   behavior: CreatorOnboardingBehavior;
   store: CreatorOnboardingSessionStore;
   generateFoundation: FoundationGenerator;
   /** Mints the id for a brand-new session. */
   newSessionId: () => string;
+  /**
+   * Told about every generation the creator sees fail as `generation_failed`. The creator gets a
+   * retry either way; without this, a bad key or a provider outage would leave no trace anywhere
+   * else. Wire it to the app's logger; it must not throw.
+   */
+  onGenerationFailed?: (failure: GenerationFailureReport) => void;
 };
 
 export type CreatorOnboardingService = {
@@ -63,11 +82,40 @@ export type CreatorOnboardingService = {
   ): Promise<CreatorOnboardingView>;
 };
 
+/** The longest message a report carries; a provider's error body is not always short. */
+const REPORT_MESSAGE_LIMIT = 500;
+
+function describeGenerationFailure(
+  session: CreatorOnboardingSession,
+  error: AgentError,
+): GenerationFailureReport {
+  const cause = error.cause;
+  const describable =
+    typeof cause === "object" && cause !== null && "message" in cause
+      ? (cause as { name?: unknown; message: unknown; statusCode?: unknown })
+      : null;
+  return {
+    sessionId: session.sessionId,
+    revision: session.revision,
+    error: { name: error.name, message: error.message.slice(0, REPORT_MESSAGE_LIMIT) },
+    cause: describable
+      ? {
+          name: typeof describable.name === "string" ? describable.name : "Error",
+          message: String(describable.message).slice(0, REPORT_MESSAGE_LIMIT),
+          ...(typeof describable.statusCode === "number"
+            ? { statusCode: describable.statusCode }
+            : {}),
+        }
+      : null,
+  };
+}
+
 export function createCreatorOnboardingService({
   behavior,
   store,
   generateFoundation,
   newSessionId,
+  onGenerationFailed,
 }: CreatorOnboardingServiceDeps): CreatorOnboardingService {
   function view(
     session: CreatorOnboardingSession,
@@ -122,8 +170,9 @@ export function createCreatorOnboardingService({
           try {
             foundation = await generateFoundation(result.request);
           } catch (error) {
-            if (error instanceof AgentError) return view(saved.session, "generation_failed");
-            throw error;
+            if (!(error instanceof AgentError)) throw error;
+            onGenerationFailed?.(describeGenerationFailure(saved.session, error));
+            return view(saved.session, "generation_failed");
           }
 
           const accepted = behavior.acceptFoundation(saved.session, foundation);

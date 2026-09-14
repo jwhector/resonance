@@ -114,6 +114,8 @@ Full rationale for each: `docs/adr/`.
 - `pnpm install` — install everything
 - `pnpm dev` — run the app + watch packages
 - `pnpm typecheck && pnpm lint && pnpm test` — what CI gates on
+- `pnpm verify:live` — credential-gated live smoke of the real model, embedding, email and DB wiring
+- `pnpm onboarding:reset -- --email <address>` — put a dev account back to the start of creator onboarding
 - Claude edits trigger best-effort formatting and workspace lint via hooks (`.claude/settings.json`)
 - MCP servers are wired in `.mcp.json`: **Figma** (design source of truth),
   **Context7** (live library docs — prefer over memory for API usage), **Neon**

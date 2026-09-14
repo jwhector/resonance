@@ -246,6 +246,30 @@ describe("snapshot-v1 creator onboarding behaviour", () => {
       expect(result.session.slots.summary).toEqual({ status: "skipped" });
     });
 
+    // After a failed generation the creator is back at the summary with their note already saved
+    // and nothing on screen showing it, so a retry that types nothing must not erase it.
+    it.each([
+      ["Yes I'm ready with nothing typed", command()],
+      ["Skip", command({ action: "skip" })],
+    ])("keeps a saved summary note when the retry is %s", (_label, retry) => {
+      const note = { status: "answered", answer: text("Mention the workshops") } as const;
+      const session = at("summary", { slots: { ...at("summary").slots, summary: note } });
+
+      const result = behavior.apply(session, retry);
+      if (result.outcome !== "generate") throw new Error("expected a generation request");
+      expect(result.session.slots.summary).toEqual(note);
+      expect(result.request.answers).toContainEqual({ stage: "summary", answer: note.answer });
+    });
+
+    it("replaces a saved summary note when the retry types a new one", () => {
+      const session = at("summary", {
+        slots: { ...at("summary").slots, summary: { status: "answered", answer: text("Old") } },
+      });
+      const result = behavior.apply(session, command({ input: text("New") }));
+      if (result.outcome !== "generate") throw new Error("expected a generation request");
+      expect(result.session.slots.summary).toEqual({ status: "answered", answer: text("New") });
+    });
+
     it("will not fold a foundation into a session that cannot generate yet", () => {
       expect(behavior.acceptFoundation(at("origin"), { draft: DRAFT })).toMatchObject({
         outcome: "rejected",
