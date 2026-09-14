@@ -13,7 +13,7 @@ must change in the **same PR** as the architectural change it reflects.
 This recipe runs inside the agentic loop (root CLAUDE.md → _Agentic workflow_, ADR-0016):
 
 - **Before you start** — claim the seed (`sd ready` → `sd update <id> --status in_progress`) and `ml prime architecture`.
-- **When you finish** — record the change to the **`architecture`** mulch domain (`ml record architecture --type decision --description "..." --evidence-seeds <id>`), push through the no-mistakes gate, then `sd close <id>`.
+- **When you finish** — record the change to the **`architecture`** mulch domain (`ml record architecture --type decision --description "..." --evidence-seeds <id>`), return changes and evidence to the integration owner; the owner handles shipping and task closure.
 
 ## When this applies
 

@@ -24,7 +24,7 @@ This recipe runs inside the agentic loop (root CLAUDE.md → _Agentic workflow_,
 
 - **Before you start** — claim the seed (`sd ready` → `sd update <id> --status in_progress`) and `ml prime architecture` for prior scaffolding decisions.
 - **Part of the recipe** — a new package is a new context boundary, so **register it as a mulch domain** (`ml add <name>`), give its `CLAUDE.md` the standard _Working here (seeds + mulch)_ stanza, index its ADR with a `reference` record, and add it to the root CLAUDE.md tree (Steps 6 and 9). `pnpm check:workspace` verifies the wiring.
-- **When you finish** — record the scaffolding decision to the **`architecture`** mulch domain (`ml record architecture --type decision --description "..." --evidence-seeds <id>`), update the diagram, push through the gate, then `sd close <id>`.
+- **When you finish** — record the scaffolding decision to the **`architecture`** mulch domain (`ml record architecture --type decision --description "..." --evidence-seeds <id>`), update the diagram, return changes and evidence to the integration owner for shipping and task closure.
 
 ## Steps
 

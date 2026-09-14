@@ -23,7 +23,7 @@ and Neon are its two adapters). Vocabulary and rule:
 This recipe runs inside the agentic loop (root CLAUDE.md → _Agentic workflow_, ADR-0016):
 
 - **Before you start** — claim the seed for this work (`sd ready` → `sd update <id> --status in_progress`) and load prior learnings with `ml prime db` (or `ml prime --files packages/db/...`).
-- **When you finish** — record anything non-obvious to the **`db`** mulch domain (`ml record db --type <convention|pattern|failure|decision> --description "..." --evidence-seeds <id>`), push through the no-mistakes gate, then `sd close <id>`.
+- **When you finish** — record anything non-obvious to the **`db`** mulch domain (`ml record db --type <convention|pattern|failure|decision> --description "..." --evidence-seeds <id>`), return changes and evidence to the integration owner; the owner handles shipping and task closure.
 
 ## Steps
 

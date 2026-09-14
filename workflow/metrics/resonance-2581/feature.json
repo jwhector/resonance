@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "id": "resonance-2581",
+  "size": "M",
+  "risk": "normal",
+  "started_at": "2026-09-13T20:36:00.187Z",
+  "ended_at": "2026-09-13T20:41:25.303Z",
+  "base": "0c5ecddede0a07dc8ee6e3de3b1a2021594dca1d",
+  "head": "c7ec23024844d27a51cbb057897591d898cee148",
+  "outcome": "blocked",
+  "coverage": "partial",
+  "diff": {
+    "files": 36,
+    "packages": 0,
+    "added": 1474,
+    "deleted": 734,
+    "binary_files": 0
+  }
+}

@@ -33,3 +33,6 @@ test-results/
 
 # Lavish review artifacts (ephemeral)
 .lavish/
+
+# Raw workflow evidence stays local; sanitized metrics are committed.
+.workflow-local/

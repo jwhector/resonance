@@ -22,7 +22,7 @@ boolean, and hide complexity inside. Vocabulary and rule:
 This recipe runs inside the agentic loop (root CLAUDE.md → _Agentic workflow_, ADR-0016):
 
 - **Before you start** — claim the seed (`sd ready` → `sd update <id> --status in_progress`), confirm the **Figma MCP is authorized** (`/mcp`), and load prior learnings with `ml prime ui`.
-- **When you finish** — the component is **not done until Step 8 (artifact-anchored pixel verification) passes** (ADR-0019). Then record anything non-obvious to the **`ui`** mulch domain (`ml record ui --type <convention|pattern|failure|decision> --description "..." --evidence-seeds <id>`), push through the no-mistakes gate, and `sd close <id>`.
+- **When you finish** — the component is **not done until Step 8 (artifact-anchored pixel verification) passes** (ADR-0019). Then record anything non-obvious to the **`ui`** mulch domain (`ml record ui --type <convention|pattern|failure|decision> --description "..." --evidence-seeds <id>`), return changes and evidence to the integration owner; the owner handles shipping and task closure.
 
 > **The golden rule (ADR-0019).** The Figma frame is the source of truth — **read it, don't
 > invent.** Every past drift came from an assumption standing in for the design and then

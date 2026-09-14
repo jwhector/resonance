@@ -22,7 +22,7 @@ Keep each individual agent's **interface** small too: one clear job, a tight
 This recipe runs inside the agentic loop (root CLAUDE.md → _Agentic workflow_, ADR-0016):
 
 - **Before you start** — claim the seed for this work (`sd ready` → `sd update <id> --status in_progress`) and load prior learnings with `ml prime ai` (or `ml prime --files packages/ai/...`).
-- **When you finish** — record anything non-obvious to the **`ai`** mulch domain (`ml record ai --type <convention|pattern|failure|decision> --description "..." --evidence-seeds <id>`), push through the no-mistakes gate, then `sd close <id>`.
+- **When you finish** — record anything non-obvious to the **`ai`** mulch domain (`ml record ai --type <convention|pattern|failure|decision> --description "..." --evidence-seeds <id>`), return changes and evidence to the integration owner; the owner handles shipping and task closure.
 
 ## Steps
 

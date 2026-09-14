@@ -9,13 +9,14 @@ A change is not verified because typecheck/lint/tests pass — those check that 
 _consistent_, not that it _does the thing_. Verify by **observing the behavior**: drive the
 affected flow in the real app and confirm the outcome. Then, and only then, call it verified.
 
-## 1. Run the gate (necessary, not sufficient)
+## 1. Reuse checks and verify behavior
 
-Turbo-scoped to the affected packages — the same gate CI + the no-mistakes push gate run:
-
-```bash
-pnpm typecheck && pnpm lint && pnpm test
-```
+Follow [shared check ownership](../../../docs/agentic-workflow.md).
+Run focused tests during development. Reuse passing evidence for the same candidate;
+the integration owner submits formal validation once through no-mistakes. Do not
+add a standalone review or another full suite just because this recipe was invoked.
+CI independently checks the published commit. Current pnpm scripts use Turbo across
+the workspace with caching; they are not automatically Git-affected-only.
 
 ## 2. Exercise the flow
 
