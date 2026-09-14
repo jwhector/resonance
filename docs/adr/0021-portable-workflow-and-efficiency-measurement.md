@@ -47,7 +47,8 @@ review/measurement references.
 to ask before substituting an unavailable reviewer model. In practice the external gate
 neither pins nor reports the model it resolved, so the question could not be answered
 with evidence, and when asked it was waved through. The rule is now: run, record the
-resolved model as unknown, report the gap, and keep such runs out of baselines. The
+resolved model (null when unknown), report the gap or substitution, and keep such runs
+out of baselines. The
 model requirement itself and the second-model cross-check for high-risk work stand.
 Operative text: [workflow-review.md](../workflow-review.md).
 
