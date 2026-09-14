@@ -1,9 +1,26 @@
 import { type CreatorProfileDraft, CreatorProfileDraftSchema } from "@resonance/core";
-import { type AgentDefinition, defineAgent } from "../../registry";
+import { type AgentDefinition, type AgentTool, defineAgent } from "../../registry";
 import { PROFILE_GEN_SYSTEM } from "./prompt";
 
 /** Opus — the heavy-generation tier (ADR-0009 model routing). Swappable via the Gateway. */
 export const PROFILE_GEN_MODEL = "anthropic/claude-opus-4-8";
+
+/**
+ * The tool every profile generator finishes by calling. Shared so the transcript-driven agent
+ * and the structured-answer agent produce a draft through the same validated shape.
+ */
+export const proposeProfileTool: AgentTool = {
+  name: "proposeProfile",
+  description:
+    "Return the finished profile draft. Call this exactly once with the draft you have written — the person will review, edit, pick a name, and publish it themselves.",
+  inputSchema: CreatorProfileDraftSchema,
+  handler: async (raw): Promise<CreatorProfileDraft> => {
+    // Pure: no DB, no embedder, no role flip — generation persists nothing. The AI SDK
+    // already validated `raw` against inputSchema; re-parse to recover the narrowed type
+    // at this boundary (the registry handler receives `unknown`) and hand the draft back.
+    return CreatorProfileDraftSchema.parse(raw);
+  },
+};
 
 /**
  * The ProfileGen agent. Its single `proposeProfile` tool turns the interview transcript into an
@@ -19,18 +36,5 @@ export const profileGenAgent: AgentDefinition<CreatorProfileDraft> =
     id: "profile-gen",
     model: PROFILE_GEN_MODEL,
     system: PROFILE_GEN_SYSTEM,
-    tools: [
-      {
-        name: "proposeProfile",
-        description:
-          "Return the finished profile draft. Call this exactly once with the draft you have written — the person will review, edit, pick a name, and publish it themselves.",
-        inputSchema: CreatorProfileDraftSchema,
-        handler: async (raw): Promise<CreatorProfileDraft> => {
-          // Pure: no DB, no embedder, no role flip — generation persists nothing. The AI SDK
-          // already validated `raw` against inputSchema; re-parse to recover the narrowed type
-          // at this boundary (the registry handler receives `unknown`) and hand the draft back.
-          return CreatorProfileDraftSchema.parse(raw);
-        },
-      },
-    ],
+    tools: [proposeProfileTool],
   });

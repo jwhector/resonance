@@ -30,12 +30,19 @@ src/
 ├── gateway.ts             resolveModel() — live: Gateway string OR direct @ai-sdk/anthropic; injected model in tests
 ├── embeddings.ts          Embedder: resolveEmbedder — live Gateway OR direct voyage-ai-provider
 ├── runner.ts              runAgentStream (streaming) + runAgentStructured (tool-driven)
-├── test/                  @resonance/ai/testing — createFakeModel + createFakeEmbedder (DI only, never shipped)
+├── testing/               @resonance/ai/testing — fake models, fake foundation generators, fake embedder (DI only, never shipped)
+├── creator-onboarding/    snapshot-v1.ts (the staged-interview behaviour) + snapshot-v1.copy.ts (its prose/labels/options)
+│                          + service.ts (the open/transition use case over behaviour, store and generator)
 └── agents/
     ├── creator-interview/ prompt.ts + creator-interview.agent.ts (Sonnet, streaming, no tools)
-    └── profile-gen/       prompt.ts + profile-gen.agent.ts (generates a draft) +
+    └── profile-gen/       prompt.ts + profile-gen.agent.ts (transcript → draft) +
+                           creator-foundation.ts (structured answers → draft, same tool + tier) +
                            commit-profile.ts (persists the committed draft)
 ```
+
+The legacy `creator-interview` agent, transcript-driven `profileGenAgent` and
+`commitCreatorProfile` are superseded by the staged runtime below and are no longer used by
+`apps/web`; they remain only for the verify-live checks until cleanup seed `resonance-37cb`.
 
 ## Public API
 
@@ -68,7 +75,55 @@ export { creatorInterviewAgent, CREATOR_INTERVIEW_MODEL, CREATOR_INTERVIEW_SYSTE
 // commitCreatorProfile is the explicit "put on profile" step (persists + embeds + role flip).
 export { profileGenAgent, PROFILE_GEN_MODEL };
 export { commitCreatorProfile, type CommitProfileContext, type CommitProfileResult };
+// Staged creator onboarding (ADR-0022) — contract types come from @resonance/core.
+export { snapshotV1CreatorOnboardingBehavior }; // implements CreatorOnboardingBehavior
+export {
+  generateCreatorFoundation, // (request, deps?: { model }) => Promise<FoundationGenerationResult>
+  creatorFoundationAgent,
+  type FoundationGenerator,
+  type GenerateCreatorFoundationDeps,
+};
+export { UnsupportedBehaviorVersionError, CreatorOnboardingStateError };
+export {
+  createCreatorOnboardingService, // ({ behavior, store, generateFoundation, newSessionId })
+  type CreatorOnboardingService, // open(actor) · transition(actor, command) → CreatorOnboardingView
+  type CreatorOnboardingServiceDeps,
+  type CreatorOnboardingView,
+  type CreatorOnboardingNotice,
+};
 ```
+
+## Staged creator onboarding (ADR-0022)
+
+- **`snapshotV1CreatorOnboardingBehavior`** — the pure stage machine behind `@resonance/core`'s
+  `CreatorOnboardingBehavior`. No I/O, no model call, never reads `@resonance/weave-os`. Copy is
+  transcribed from design screens 14–23 and 06 into `snapshot-v1.copy.ts`. Semantics a caller
+  relies on: only `offering` and `intended_experience` are required (they offer no Skip); the
+  opening's `later` keeps the session at the opening with the opening slot `skipped`; the
+  summary's `submit` (empty or not) and `skip` both return `generate`; a `submit` with no (or
+  whitespace-only) text on an optional text stage records the slot `skipped` and advances, while
+  a required stage rejects it as `required_input_missing`; `request_help` on the name
+  stage records `{ choiceId: "help_wanted", customText? }`; `choose_for_me` records
+  `{ choiceId: "weave_chooses" }`; `acceptFoundation` works only from `summary` (any other stage
+  is `unsupported_action`).
+  A session pinned to another version **throws** `UnsupportedBehaviorVersionError` from every
+  method; a foundation-stage session with no draft throws `CreatorOnboardingStateError`.
+- **`generateCreatorFoundation(request, deps?)`** — structured answers (each paired with its
+  question) through `runAgentStructured` on the ProfileGen tier and `proposeProfile` tool.
+  Throws `ValidationError` (from core) for a malformed request and `AgentError` for any model
+  failure or output that does not parse as `FoundationGenerationResult`. Logs nothing.
+- **`createCreatorOnboardingService(deps)`** — the use case over both seams, so no Next.js code
+  sequences a transition. `open` resumes the creator's session or starts and saves one.
+  `transition` applies one command and runs whatever it asks for: `advanced` → save; `generate`
+  → save the triggering answer first, call the generator, `acceptFoundation`, save again;
+  `commit` → `store.complete` with the command's idempotency key. It returns a
+  `CreatorOnboardingView` (`status`, `render`, `revision`, `committedProfile`, `notice`). A lost
+  save race surfaces as `notice: "stale_revision"` with the winning state, a model failure
+  (`AgentError`) as `"generation_failed"` with the answer kept, and a replayed commit as
+  `"already_completed"`; any other generator error propagates.
+- **Test helpers** (`@resonance/ai/testing`): `FAKE_CREATOR_FOUNDATION_DRAFT`,
+  `createFakeFoundationGenerator(draft?)`, `createFailingFoundationGenerator()`, and
+  `createFakeFoundationModel(output?)` (a model whose forced tool call returns `output`).
 
 The generated/committed shapes are the **shared `@resonance/core` contract** —
 `CreatorProfileDraft` (generation output) and `CommitProfileInput` (commit payload). Import
@@ -107,8 +162,8 @@ two seams can't drift. `selectProvider` is internal (not on the `@resonance/ai` 
 
 ## Test-only fakes: `@resonance/ai/testing`
 
-`createFakeModel(modelId)` (deterministic text-only language model) and `createFakeEmbedder()`
-(deterministic 1024-dim embedder) live behind the `@resonance/ai/testing` subpath export — injected
+`createFakeOnboardingModel()` (the legacy interview + ProfileGen model), the foundation fakes
+above, and `createFakeEmbedder()` (deterministic 1024-dim embedder) live behind the `@resonance/ai/testing` subpath export — injected
 into `RunInput.model` / an `Embedder` DI seam by unit tests. They are **never** imported by
 shipped runtime code and are not on the main `@resonance/ai` entrypoint (ADR-0018).
 

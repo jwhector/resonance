@@ -102,3 +102,25 @@ export async function readOnboardingIntent(email: string): Promise<string | null
     throw new Error(`No account for ${email} — nothing to read an intent from`);
   return rows[0]?.onboarding_intent ?? null;
 }
+
+/**
+ * The stored creator-onboarding session for an account, read straight from the row: its revision
+ * and the raw `state` JSON.
+ *
+ * What the page shows after publishing is rendered from the public profile, so it cannot prove the
+ * private interview answers are gone. Only the stored row can, which is why the privacy assertion
+ * reads here rather than off the screen. `null` when the account has no session yet.
+ */
+export async function readOnboardingSession(
+  email: string,
+): Promise<{ revision: number; state: Record<string, unknown> } | null> {
+  ensureDatabaseUrl();
+  const raw = rawClient(createDb());
+  const rows = (await raw`
+    select s.revision, s.state
+    from creator_onboarding_sessions s
+    join "user" u on u.id = s.user_id
+    where u.email = ${email}
+  `) as Array<{ revision: number; state: Record<string, unknown> }>;
+  return rows[0] ?? null;
+}

@@ -5,8 +5,8 @@
 // Registry shape — every AI feature is an AgentDefinition run through the shared runner.
 export { type ModelId, type AgentTool, type AgentDefinition, defineAgent } from "./registry";
 
-// Typed failure surfaced by the runner.
-export { AgentError } from "./errors";
+// Typed failures: the runner's, and the onboarding behaviour's two wiring faults.
+export { AgentError, UnsupportedBehaviorVersionError, CreatorOnboardingStateError } from "./errors";
 
 // The model seam — live by default (Gateway or direct Anthropic), injected model in tests.
 // Fakes live in @resonance/ai/testing, never on this shipped entrypoint (ADR-0018).
@@ -47,3 +47,23 @@ export {
   type CommitProfileContext,
   type CommitProfileResult,
 } from "./agents/profile-gen/commit-profile";
+
+// Staged creator onboarding (ADR-0022). The behaviour is a pure stage machine implementing
+// @resonance/core's CreatorOnboardingBehavior; generation turns its structured request into a
+// validated foundation through the shared runner. The contract types live in @resonance/core.
+export { snapshotV1CreatorOnboardingBehavior } from "./creator-onboarding/snapshot-v1";
+export {
+  generateCreatorFoundation,
+  creatorFoundationAgent,
+  type FoundationGenerator,
+  type GenerateCreatorFoundationDeps,
+} from "./agents/profile-gen/creator-foundation";
+// The use case over both seams: one request's apply → save → generate → save → complete loop, so
+// the web layer's Server Actions only resolve the actor and parse the command.
+export {
+  createCreatorOnboardingService,
+  type CreatorOnboardingService,
+  type CreatorOnboardingServiceDeps,
+  type CreatorOnboardingView,
+  type CreatorOnboardingNotice,
+} from "./creator-onboarding/service";

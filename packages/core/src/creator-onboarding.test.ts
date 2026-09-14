@@ -10,6 +10,7 @@ import {
   CompletedCreatorOnboardingSessionSchema,
   CreatorOnboardingSessionSchema,
   CreatorOnboardingSlotSchema,
+  CreatorOnboardingStageInputSchema,
   StageRenderModelSchema,
   TransitionCommandSchema,
   type ActiveCreatorOnboardingSession,
@@ -91,7 +92,7 @@ function makeFakeBehavior(): CreatorOnboardingBehavior {
             { id: "dreamy_reflective", label: "Dreamy & Reflective" },
             { id: "bold_expressive", label: "Bold & Expressive" },
           ],
-          allowCustomText: true,
+          customTextChoiceId: null,
         },
         actions: [
           { id: "submit", label: "Good to go", emphasis: "primary", availability: "available" },
@@ -351,6 +352,19 @@ describe("the stage vocabulary", () => {
 
   it("offers no Revise with Weave action, so no provider can emit one", () => {
     expect(CREATOR_ONBOARDING_ACTIONS).not.toContain("revise_with_weave");
+  });
+
+  it("names the free-text choice by id, and refuses an id that is not an option", () => {
+    const options = [
+      { id: "own_words", label: "Custom direction" },
+      { id: "calm_clean", label: "Calm & Clean" },
+    ];
+    const parse = (customTextChoiceId: string | null) =>
+      CreatorOnboardingStageInputSchema.safeParse({ kind: "choice", options, customTextChoiceId });
+
+    expect(parse("own_words").success).toBe(true);
+    expect(parse(null).success).toBe(true);
+    expect(parse("not_an_option").success).toBe(false);
   });
 });
 

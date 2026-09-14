@@ -64,3 +64,43 @@ export const Radio = React.forwardRef<
   );
 });
 Radio.displayName = "Radio";
+
+export interface RadioCardProps extends React.ComponentPropsWithoutRef<
+  typeof RadioGroupPrimitive.Item
+> {
+  /** The value this option contributes to the group. */
+  value: string;
+}
+
+/**
+ * RadioCard — a single-choice option drawn as a whole outlined box with no dot, for choices
+ * whose label *is* the control (the expression-style options, Figma `1556:79716`). Same Radix
+ * item as `Radio`, so it keeps the group's roving focus and arrow-key selection; the children
+ * become the radio's accessible name.
+ *
+ * The selected state is the design's 2px Resonance-indigo border. The unselected border is
+ * also 2px so selecting an option does not shift the layout, and the padding is 2px less
+ * than the drawn inset because CSS adds the border outside the padding box where Figma draws
+ * the stroke inside it. PROVISIONAL: the unselected stroke width and colour are read off the
+ * screenshot, not the frame inspector.
+ */
+export const RadioCard = React.forwardRef<
+  React.ComponentRef<typeof RadioGroupPrimitive.Item>,
+  RadioCardProps
+>(({ className, children, ...props }, ref) => (
+  <RadioGroupPrimitive.Item
+    ref={ref}
+    className={cn(
+      "flex h-14 w-full items-center rounded-md border-2 border-border bg-surface px-3.5 text-left text-body-lg text-foreground transition-colors",
+      "hover:border-border-strong",
+      "data-[state=checked]:border-primary data-[state=checked]:text-primary",
+      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+      "disabled:cursor-not-allowed disabled:opacity-50",
+      className,
+    )}
+    {...props}
+  >
+    {children}
+  </RadioGroupPrimitive.Item>
+));
+RadioCard.displayName = "RadioCard";

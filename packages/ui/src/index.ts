@@ -8,7 +8,14 @@ export * as tokens from "./tokens";
 export { Button, buttonVariants, type ButtonProps } from "./primitives/button";
 export { TextInput, type TextInputProps } from "./primitives/text-input";
 export { Checkbox, type CheckboxProps } from "./primitives/checkbox";
-export { Radio, RadioGroup, type RadioProps, type RadioGroupProps } from "./primitives/radio";
+export {
+  Radio,
+  RadioCard,
+  RadioGroup,
+  type RadioProps,
+  type RadioCardProps,
+  type RadioGroupProps,
+} from "./primitives/radio";
 export { OtpInput, type OtpInputProps } from "./primitives/otp-input";
 export { MailIcon, type MailIconProps } from "./primitives/mail-icon";
 export { Textarea, type TextareaProps } from "./primitives/textarea";
@@ -36,6 +43,12 @@ export {
   ProfileDraftPanels,
   type ProfileDraftPanelsProps,
 } from "./components/profile-draft-panels";
+// Staged creator onboarding — one renderer for every stage model (ADR-0022,
+// design/manifest/screens/14-creator-opening … 23-creator-profile-foundation, 06-onboarded)
+export {
+  CreatorOnboardingStage,
+  type CreatorOnboardingStageProps,
+} from "./components/creator-onboarding-stage";
 
 // Member discovery — the `Member/Search/Result/*` chrome (design/manifest/screens/12-search-creators)
 export { SearchBar, type SearchBarProps } from "./components/search-bar";

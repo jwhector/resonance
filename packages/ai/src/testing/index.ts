@@ -9,7 +9,9 @@
 import type { LanguageModel } from "ai";
 import { MockLanguageModelV3, simulateReadableStream } from "ai/test";
 import { type CreatorProfileDraft, CreatorProfileDraftSchema } from "@resonance/core";
+import type { FoundationGenerator } from "../agents/profile-gen/creator-foundation";
 import { EMBEDDING_DIMS, EMBEDDING_MODEL, type Embedder, makeEmbedder } from "../embeddings";
+import { AgentError } from "../errors";
 import type { ModelId } from "../registry";
 
 const zeroUsage = () => ({
@@ -101,6 +103,79 @@ export function createFakeOnboardingModel(
         warnings: [],
       };
     },
+  });
+}
+
+/**
+ * The fixed foundation every fake foundation generator returns, so web tests and the
+ * deterministic E2E harness can assert on exact values. Schema-parsed at module load, so it can
+ * never drift out of the contract it stands in for.
+ */
+export const FAKE_CREATOR_FOUNDATION_DRAFT: CreatorProfileDraft = CreatorProfileDraftSchema.parse({
+  nameOptions: [
+    {
+      name: "Moonroot Studio",
+      description:
+        "Reflective herbal and dream-centered experiences grounded in slowness and inner connection.",
+    },
+    {
+      name: "Night Bloom Collective",
+      description: "Quiet herbal gatherings for people seeking slower, more intentional rhythms.",
+    },
+    {
+      name: "Lumen Herb Lab",
+      description: "A plain, botanical name that says what the work is.",
+    },
+  ],
+  headline: "Dreamwork and herbal reflection for slower inner connection.",
+  bio: "Explores dreamwork, herbal blends, and reflective sessions designed to help people slow down, reconnect with themselves, and listen more closely to their inner rhythm.",
+  tags: ["dreamwork", "herbalism", "reflection", "tea blends"],
+});
+
+/**
+ * A deterministic stand-in for `generateCreatorFoundation`: ignores the answers and resolves the
+ * given draft (the fixed one by default). Injected wherever the web layer accepts a
+ * `FoundationGenerator`, so the staged flow runs end to end without a model.
+ */
+export function createFakeFoundationGenerator(
+  draft: CreatorProfileDraft = FAKE_CREATOR_FOUNDATION_DRAFT,
+): FoundationGenerator {
+  return async () => ({ draft: CreatorProfileDraftSchema.parse(draft) });
+}
+
+/**
+ * A generator that always fails the way the live one does when the model misbehaves, for
+ * exercising the caller's error path without a malformed model response.
+ */
+export function createFailingFoundationGenerator(): FoundationGenerator {
+  return async () => {
+    throw new AgentError('Agent "creator-foundation" returned an invalid foundation');
+  };
+}
+
+/**
+ * A model that answers the foundation agent's forced `proposeProfile` call with `output` — the
+ * fixed draft by default. Pass anything else (a draft missing fields, a string) to drive the
+ * malformed-output path through the real runner and validation.
+ */
+export function createFakeFoundationModel(
+  output: unknown = FAKE_CREATOR_FOUNDATION_DRAFT,
+): MockLanguageModelV3 {
+  return new MockLanguageModelV3({
+    modelId: "resonance/fake-creator-foundation",
+    doGenerate: async () => ({
+      content: [
+        {
+          type: "tool-call" as const,
+          toolCallId: "fake-foundation-1",
+          toolName: "proposeProfile",
+          input: typeof output === "string" ? output : JSON.stringify(output),
+        },
+      ],
+      finishReason: toolCallsReason(),
+      usage: zeroUsage(),
+      warnings: [],
+    }),
   });
 }
 

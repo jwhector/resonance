@@ -7,9 +7,13 @@ extraction-ready.
 
 ## Status: three slices live
 
-- **Creator Interview → ProfileGen** (ADR-0013) — the shell wires `ui` ↔ `ai` ↔ `db` behind
-  creator auth: passwordless sign-in → Weave interview → ProfileGen draft → commit →
-  published profile.
+- **Staged creator onboarding** (ADR-0022; replaces the free-form chat slice of ADR-0013) —
+  `/onboarding/creator` resumes or starts the creator's server-side session in the RSC and renders
+  `@resonance/ui`'s `CreatorOnboardingStage`. Every press goes through one Server Action,
+  `transitionCreatorOnboarding`, which parses a `TransitionCommand`, takes identity from the
+  session and calls `@resonance/ai`'s onboarding service; stage rules, generation, saves and the
+  one-statement publish all live behind that call. Finish for now navigates to the published
+  profile.
 - **Member discovery core** (`pl-bbca`) — `/discover`: session-optional ranked creator search
   over `@resonance/core`'s `DiscoveryPort`, plus follow/unfollow. Creators is the only tab with
   a data source; the other three render designed empty states.
@@ -46,10 +50,10 @@ app/
 │                                 every in-app route. Adds no URL segment.
 ├── (app)/discover/               member discovery: page.tsx (RSC, URL state) ·
 │                                 discover-client.tsx · actions.ts · contracts.ts
-├── (app)/onboarding/creator/     Weave interview client + ProfileGen Server Actions
-│                                 (page.tsx · interview-client.tsx · actions.ts)
+├── (app)/onboarding/creator/     staged interview: page.tsx (RSC open/resume) · onboarding.ts
+│                                 (composition root) · actions.ts (the one transition action) ·
+│                                 onboarding-client.tsx
 ├── (app)/creator/[id]/           published creator profile (name, headline, bio, offerings, tags)
-├── api/onboarding/interview/     streaming interview route (live model, ADR-0009)
 ├── api/auth/[...all]/            Better Auth mount (via lib/auth.ts getWebAuth)
 ├── api/test/last-otp/            E2E-ONLY OTP read-back — gated on E2E_HARNESS
 ├── api/test/last-magic-link/     E2E-ONLY magic-link read-back — same gate, other channel
@@ -58,7 +62,7 @@ lib/
 ├── auth.ts            getWebAuth() (the one instance the mount serves) + getWebSession() — all
 │                      apps/web session reads route through it, so ONE instance runs per process
 ├── e2e-harness.ts     the SINGLE, production-guarded E2E fake-selection seam (ADR-0018)
-├── auth-client.ts · interview-messages.ts
+├── auth-client.ts
 e2e/
 ├── onboarding-creator.spec.ts    full-flow Playwright (runs under E2E_HARNESS)
 ├── discovery.spec.ts             member discovery front door + follow/unfollow (E2E_HARNESS)
@@ -98,7 +102,7 @@ and `zod`.
 - The full-flow Playwright E2E stays deterministic through ONE isolated seam —
   [`lib/e2e-harness.ts`](lib/e2e-harness.ts) (`E2E_HARNESS=1`, hard-guarded off in production) —
   which injects the test-only fakes (`@resonance/ai/testing`, `@resonance/auth/testing`) at the
-  composition roots (interview stream, `generateDraft`, `commitProfile`, and the auth mount). It
+  composition roots (foundation generation, the profile embedder, and the auth mount). It
   is **not** a general fakes flag threaded through the packages (ADR-0018 §4). The harness fake mail
   is a `globalThis` singleton and registers its buffers for read-back with **explicit**
   `observeLoginCodes(fake)` and `observeMagicLinks(fake)` calls (never a construction side-effect),

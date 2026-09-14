@@ -19,6 +19,7 @@ src/
 │   ├── auth.ts                 Better Auth tables: user, session, account, verification
 │   ├── community.ts            follows (user → user follow graph)
 │   ├── creator.ts              creator_profiles, embeddings (+ Zod schemas)
+│   ├── creator-onboarding.ts   creator_onboarding_sessions (one staged interview per creator)
 │   ├── interests.ts            topics (curated taxonomy), member_interests (member → topic)
 │   ├── weave-observation.ts    weave_observations, weave_evaluations,
 │   │                           weave_evaluation_scores, weave_limitation_verdicts
@@ -37,6 +38,8 @@ src/
 │   └── users.ts                setUserRoles, setOnboardingIntent — the single write
 │                               paths for user.roles and user.onboarding_intent
 ├── adapters/
+│   ├── creator-onboarding-adapter.ts  createCreatorOnboardingStore — core's
+│   │                           CreatorOnboardingSessionStore, live impl (see below)
 │   ├── discovery-adapter.ts    createDiscoveryAdapter — core's DiscoveryPort, live impl
 │   └── observation-adapter.ts  createObservationAdapter — core's ObservationPort, live impl
 └── testing/
@@ -51,6 +54,7 @@ drizzle/
                                 embeddings.source_id widened uuid → text
     0006_seed_topics.sql        Hand-written (--custom): the 13 curated topic rows
     0007_nifty_the_watchers.sql drizzle-kit generated: user.onboarding_intent
+    0008_concerned_thing.sql    drizzle-kit generated: creator_onboarding_sessions
 ```
 
 ## Public API
@@ -110,7 +114,38 @@ export {
   createObservationAdapter,
   type ObservationAdapterDeps,
 } from "./adapters/observation-adapter";
+
+// Creator onboarding (ADR-0022)
+export {
+  createCreatorOnboardingStore, // core's CreatorOnboardingSessionStore
+  type CreatorOnboardingStoreDeps, // { db, embedder }
+  type ProfileEmbedder, // the embedProfile slice of @resonance/ai's Embedder
+} from "./adapters/creator-onboarding-adapter";
 ```
+
+### Creator onboarding — resume, compare-and-bump, one-statement commit
+
+`createCreatorOnboardingStore({ db, embedder })` is the live `CreatorOnboardingSessionStore`
+(ADR-0022). There are no exported query helpers behind it: the port is the whole interface.
+
+- **One row per creator, keyed by `user_id`.** Every method takes the server-resolved actor and
+  nothing else identifies a row, so there is no id to substitute.
+- **`state` is the core session JSON**, parsed through `CreatorOnboardingSessionSchema` on every
+  read. `revision` and `session_id` are columns (the SQL needs them) and are stripped from the
+  JSON on write. Unparseable state — including an unknown behaviour version — throws
+  `ResonanceError("onboarding_session_unreadable")` whose message never quotes stored values.
+- **`save` is one compare-and-bump upsert**: it writes only when the stored revision is the one
+  the caller acted on and the stored session is still in progress; otherwise it returns
+  `stale` with the authoritative session. It refuses a completed session outright.
+- **`complete` is one statement.** Embedding runs first (an outage writes nothing), then a single
+  data-modifying `WITH` completes the session, upserts the profile (`status = 'ready'`, existing
+  offerings left alone), upserts its embedding and adds `creator` to `user.roles`. Every clause
+  selects from the session update, so a session that is no longer in progress writes nothing
+  anywhere. The outcome is read back, and `completion_key` tells the original commit
+  (`alreadyCompleted: false`) from any replay or losing racer (`true`).
+
+`commitCreatorProfile` in `@resonance/ai` is the older, ordered-writes route to the same
+tables; the staged onboarding flow commits through this store instead.
 
 ### Discovery — one query, eight invariants
 
