@@ -320,8 +320,8 @@ weave_context:
 
 Notes. `session.definition_id` + `definition_version` are the `DefinitionRef` (ADR-0023
 deviation 6); `session.status` mirrors `SessionState.lifecycle.status`. `conversation_context.messages`
-is bounded and session-scoped, and is erased at completion — ADR-0023 _Open question 1_,
-PROVISIONAL. `revision_context` and `assets` are carried empty this slice.
+is kept and re-rendered on resume (decided 2026-09-23); whether it is erased at completion is
+still open — ADR-0023 _Open question 1_. `revision_context` and `assets` are carried empty this slice.
 
 ### WeaveContextSlice — ContextAssembler → ConversationRuntime (PROVISIONAL, ADR-0023 deviation 2)
 

@@ -1,6 +1,6 @@
 # ADR-0022: Creator onboarding — a product-owned staged runtime behind two versioned seams
 
-- **Status:** Accepted — partly superseded 2026-09-22 (§§ 1, 3, 4, 9, 12 by ADR-0023; see the note below)
+- **Status:** Accepted — partly superseded 2026-09-22 (§§ 1, 3, 4, 5, 9, 12 by ADR-0023; see the note below)
 - **Date:** 2026-09-13
 
 > **Amendment (ADR-0023, 2026-09-22) — the "later Weave OS adapter" is designed, and it is not
@@ -10,8 +10,8 @@
 > ADR-0023 therefore answers the consume/retranscribe/replace fork with **consume**: a
 > `weave-runtime` package executes the compiled corpus definition, superseding §§ 1 (the behaviour
 > seam), 3, 4 (the closed version enum becomes a definition pin), 9 and 12. The product properties
-> §§ 2, 5–8, 10 and 11 stand, with § 5 relaxed to "no transcript survives the session" pending one
-> open question there. `snapshot-v1` keeps running the product until the runtime passes the same
+> §§ 2, 6–8, 10 and 11 stand. § 5 ("structured state, never a transcript") is superseded as of
+> 2026-09-23: the conversation history is kept; whether it survives completion is still open. `snapshot-v1` keeps running the product until the runtime passes the same
 > conformance tests. See [ADR-0023](0023-weave-runtime-orchestrated-stage-workflow.md).
 
 ## Context

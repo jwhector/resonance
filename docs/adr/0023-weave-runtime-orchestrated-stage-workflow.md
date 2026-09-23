@@ -5,8 +5,8 @@
   the only parts not yet settled.
 - **Date:** 2026-09-22
 - **Reverses:** ADR-0020 § 2 ("machinery typed but deliberately not executed").
-- **Supersedes in part:** ADR-0022 §§ 1, 3, 4, 9 and 12; answers the fork its _Revisit when_ left
-  open. Its product properties (§§ 2, 5–8, 10, 11) stand — see § 6.
+- **Supersedes in part:** ADR-0022 §§ 1, 3, 4, 5, 9 and 12; answers the fork its _Revisit when_ left
+  open. Its product properties (§§ 2, 6–8, 10, 11) stand — see § 6.
 - **Amends:** ADR-0020 and ADR-0022 (notes added there).
 
 ## Context
@@ -308,9 +308,11 @@ The "later Weave OS adapter" is this runtime, and it does not fit behind
 - **§ 9 (only two stages gate generation) is superseded** by reading the definition's
   `minimumInformation`, which names the same two captures today.
 - **§ 12 (the service loop) is superseded** by the runtime's own orchestration.
-- **§§ 2, 5, 6, 7, 8, 10 and 11 stand** as product properties: the `RenderPayload` is semantic (one
-  renderer, no stage-specific components); Weave's prose is not the session's record beyond what
-  _Open question 1_ allows; raw answers do not outlive the commit (the DataGate writes what was
+- **§ 5 (structured state, never a transcript) is superseded** as of 2026-09-23: the conversation
+  history is kept in `weave_context` and re-rendered on resume. What remains open is whether it
+  survives completion (_Open question 1_).
+- **§§ 2, 6, 7, 8, 10 and 11 stand** as product properties: the `RenderPayload` is semantic (one
+  renderer, no stage-specific components); raw answers do not outlive the commit (the DataGate writes what was
   confirmed, then the session's captures and conversation context are erased); commands carry an
   expected revision and an idempotency key; identity is server-resolved; unavailable capabilities
   are absent or `coming_soon`; the public profile schemas remain the commit contract (widened for
@@ -356,14 +358,15 @@ The "later Weave OS adapter" is this runtime, and it does not fit behind
 
 ### Open questions (the ADR-0022 collision)
 
-1. **Conversation context vs. "no transcript".** The Figma's `weave_context` carries
-   `conversation_context.messages`, its `StageState` stores `weave_prompt`, and the SessionStore
-   frame's "Loading a Session" scenario (`3166:81192`) re-renders "previous conversation including
-   current conversation" on resume. A generated Weave turn cannot be re-derived after a reload the
-   way `snapshot-v1`'s copy can. Proposed: persist a **bounded, session-scoped** conversation
-   context (the current stage's Weave prompt, a short `recent_turns` window, a
-   `conversation_summary`), erased at completion with the captures. ADR-0022 § 5's rule relaxes
-   from "no transcript field" to "no transcript survives the session". PROVISIONAL.
+1. **Conversation context vs. "no transcript" — decided 2026-09-23: the conversation history is
+   kept.** The Figma's `weave_context` carries `conversation_context.messages`, its `StageState`
+   stores `weave_prompt`, and the SessionStore frame's "Loading a Session" scenario (`3166:81192`)
+   re-renders "previous conversation including current conversation" on resume; a generated Weave
+   turn cannot be re-derived after a reload the way `snapshot-v1`'s copy can. So `weave_context`
+   persists the conversation (Weave's turns and the creator's messages) and the runtime re-renders
+   it on resume; ADR-0022 § 5 ("structured state, never a transcript") is superseded on that point.
+   Still open: whether the history is erased at completion with the captures (the earlier
+   proposal) or survives the published profile. PROVISIONAL until answered.
 2. **Cutover.** Whether in-flight `snapshot-v1` sessions finish under `snapshot-v1` (proposed) or
    are restarted on the runtime. PROVISIONAL.
 3. **The `summary` stage.** The 9/10/26 screens and `snapshot-v1` have a pre-generation summary
