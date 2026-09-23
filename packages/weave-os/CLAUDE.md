@@ -1,31 +1,38 @@
 # @resonance/weave-os
 
-## ⏸ Status: DEFERRED (2026-07-28) — built, but inert
+## ▶ Status: REACTIVATED (2026-09-22) — the corpus is the definition source for a stage runtime
 
-**Do not resume this work without explicit notice from Jared.** Seed `resonance-5c86`
-carries the full context; the `architecture` mulch domain carries the decision record.
+The 2026-07-28 deferral is lifted. The designer's most recent architecture is the Figma page
+**Weave OS Architecture** in the file "Resonance 9-21-26" (node `2580:57143`); it wins over the
+five July documents wherever they disagree, and everything it labels `.py` or `.sql` is
+TypeScript in this monorepo. **ADR-0023** ratifies how the repo adopts it: a request-scoped
+stage runtime executes the compiled `emerging_creator_onboarding` definition through the
+Figma's module shape, with this package as the **DefinitionLoader** — the module that answers a
+definition request with a versioned, compiled definition. ADR-0020 § 2's "typed but deliberately
+not executed" is reversed; §§ 1 and 3–6 stand.
 
-This package is complete and tested, but **nothing imports it**. The two prompt literals in
-`@resonance/ai` still run the product, so behaviour is unchanged and the package is safe to
-leave dormant. Waves 3–4 of plan `pl-9c75` (wiring it into `ai`, the simulated-run harness,
-and the web composition root) were never started.
+What changes here, and what does not:
 
-It was paused because the blocker is the **source design, not the engineering**. Two of the
-four root files and five of the six active flows were never authored by the designer; the
-specs carry two incompatible principle vocabularies and two incompatible stage vocabularies;
-and inheritance is declared in both directions, so a promotion into either promotion-target
-file currently reaches no conversation. [`DEFECTS.md`](DEFECTS.md) lists all 25 findings
-(4 blocking) and is the artifact to settle with the designer **before** any resumption —
-especially D-06 and D-17.
+- `resolveWeaveOs` keeps its four return values. The runtime now reads `flow` and `outputs`, not
+  only `system`. A `DefinitionRef` (type, id, version, location) is derived from the flow header
+  and `releaseId`; nothing is re-parsed at request time (ADR-0020 § 1).
+- The flow schema in `@resonance/core` gains the per-stage fields the runtime needs (`stageType`,
+  `followUpPolicy`, …). The full contract set is in
+  [`docs/weave-runtime-contracts.md`](../../docs/weave-runtime-contracts.md); every value the
+  Figma or the corpus does not state is marked **PROVISIONAL** there until the designer approves.
+- [`DEFECTS.md`](DEFECTS.md) still lists what the source documents leave open. The designer's
+  list ([`docs/weave-runtime-designer-list.md`](../../docs/weave-runtime-designer-list.md))
+  carries a PROVISIONAL default for each blank that blocks onboarding, phrased for his approval.
+  Reactivation corrects nothing in the corpus silently; rule 5 below still applies.
+- The 2026-09-13 product runtime (ADR-0022, `snapshot-v1`) keeps running the product until the
+  stage runtime passes the same conformance tests; ADR-0023 says which of its decisions it
+  supersedes.
 
-A cheaper path to most of the near-term value was identified and not taken: put the
-philosophy and the seven principles straight into the system prompt, and use each
-principle's `prioritize`/`avoid` list as an LLM-judge rubric over transcripts. That needs no
-corpus, registry, or engine.
+> **The validator failing is still correct.** It reports 7 unresolved `applied_principles`
+> references by name on every build, and a test pins exactly that (D-06). The designer's list
+> asks for the mapping; nothing here guesses it.
 
-> **The validator failing is correct.** It reports 7 unresolved `applied_principles`
-> references by name on every build, and a test pins exactly that. It is an open question
-> for the designer, not a bug to fix.
+Work is tracked on the reconciliation epic: `sd search "Weave OS reconciliation"`.
 
 ---
 
@@ -44,11 +51,11 @@ Four return values because the corpus holds three kinds of content:
 
 - **`system`** — the composed prompt. Philosophy, principles, active rules, active
   heuristics, and each stage's purpose and copy.
-- **`flow`** — the machinery: `flowMap`, `sessionState`, per-stage `captures` and
-  `actions`. Typed and validated, and **deliberately not executed**. The gap between what
-  the corpus specifies and what the runtime does is the tracked artefact a future
-  evaluator scores; it is not an omission. **Do not implement the 11-stage interview
-  here** — that is an explicit non-goal.
+- **`flow`** — the machinery: `flowMap`, `sessionState`, per-stage `captures`, `actions`
+  and the per-stage runtime fields (`stageType`, `followUpPolicy`, …). Typed and validated
+  here; **executed by the `weave-runtime` package**, not here (ADR-0023). This package is the
+  definition source and never runs a stage: keep the interview's execution out of it so the
+  corpus stays a governed artefact rather than a program.
 - **`outputs`** — generation constraints, keyed by output id. Validates a generated
   artefact; it is not prompt copy.
 - **`releaseId`** — a content hash of the compiled corpus, pinned once per conversation and

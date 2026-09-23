@@ -1,7 +1,19 @@
 # ADR-0020: Weave OS — repo-versioned corpus behind a resolver seam, git-native governance, and the request/job-scoped runner boundary
 
-- **Status:** Accepted
+- **Status:** Accepted — amended 2026-09-22 (§ 2 reversed by ADR-0023; see the note below)
 - **Date:** 2026-07-28
+
+> **Amendment (ADR-0023, 2026-09-22) — § 2's "typed but deliberately not executed" is
+> reversed.** The designer's most recent architecture is the Figma page _Weave OS Architecture_
+> in the file "Resonance 9-21-26" (node `2580:57143`); it supersedes the five documents listed
+> below wherever they disagree, and everything it labels `.py` or `.sql` is TypeScript in this
+> monorepo. The flow machinery `resolveWeaveOs` returns is now **executed** by a request-scoped
+> stage runtime that adopts the Figma's module shape. § 1 (build-time compile), § 3 (git
+> governance + CODEOWNERS), § 4 (registry split), § 5 (child-side inheritance) and § 6 (the
+> request- vs job-scoped runner boundary) stand; the runtime is request-scoped and does not
+> touch § 6. The question the ADR-0022 amendment (in Consequences) left open — whether a later
+> Weave OS adapter consumes, retranscribes or replaces the corpus — is answered there too: it
+> consumes. See [ADR-0023](0023-weave-runtime-orchestrated-stage-workflow.md).
 
 ## Context
 
@@ -248,6 +260,11 @@ callers must learn which of three incompatible lifetimes they are buying (ADR-00
   `emerging_creator_onboarding.yaml` is deliberately left open until the MVP contract and its
   conformance tests exist — the same "don't design blind" reasoning §6 applies to the
   executor. The divergence is a recorded debt, not an oversight. See ADR-0022.
+- **Amendment (ADR-0023, 2026-09-22) — § 2 is reversed and the ADR-0022 fork is closed.** The
+  flow machinery is executed by the `weave-runtime` package, which adopts the designer's Figma
+  architecture (node `2580:57143`) with the deviations ADR-0023 records. The "tracked gap between
+  spec and runtime" becomes a conformance suite the runtime must pass rather than a permanent
+  artefact; §§ 1, 3, 4, 5 and 6 are unchanged. See ADR-0023.
 
 ## Alternatives considered
 
